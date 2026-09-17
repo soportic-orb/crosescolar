@@ -7,7 +7,9 @@ declare(strict_types=1);
 
 $base = getenv('CROS_TEST_URL') ?: 'http://127.0.0.1:8123';
 $jar = sys_get_temp_dir() . '/cros-test-cookies.txt';
+$adminJar = $jar;
 @unlink($jar);
+@unlink(sys_get_temp_dir() . '/cros-test-anon.txt');
 $passed = 0;
 $failed = 0;
 $unique = 'P' . substr(bin2hex(random_bytes(3)), 0, 5); // fa que cada execució sigui independent
@@ -15,6 +17,8 @@ $unique = 'P' . substr(bin2hex(random_bytes(3)), 0, 5); // fa que cada execució
 function req(string $method, string $url, array $data = [], array $options = []): array
 {
     global $jar;
+    // Amb «anon» la petició es fa sense la sessió d'administració (visitant anònim).
+    $jar = !empty($options['anon']) ? sys_get_temp_dir() . '/cros-test-anon.txt' : $GLOBALS['adminJar'];
     $ch = curl_init($url);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
@@ -45,6 +49,11 @@ function req(string $method, string $url, array $data = [], array $options = [])
 function token(string $html): string
 {
     return preg_match('/name="_token" value="([^"]+)"/', $html, $m) ? $m[1] : '';
+}
+
+function csrf_from(string $base): string
+{
+    return token(req('GET', $base . '/admin')['body']);
 }
 
 function check(string $name, bool $condition, string $detail = ''): void
@@ -258,6 +267,40 @@ $csv = req('GET', $base . '/admin/comandes/exportar');
 check('Exportació CSV de comandes', $csv['status'] === 200 && str_contains($csv['headers'], 'text/csv'));
 $csv2 = req('GET', $base . '/admin/inscripcions/exportar');
 check('Exportació CSV d\'inscripcions', $csv2['status'] === 200 && str_contains($csv2['body'], 'Ferrer'));
+
+echo "\n== Web en preparació ==\n";
+$soonForm = req('GET', $base . '/admin/configuracio/coming_soon');
+check('Hi ha la secció de configuració', $soonForm['status'] === 200 && str_contains($soonForm['body'], 'Amagar el web al públic'));
+req('POST', $base . '/admin/configuracio/coming_soon', [
+    '_token' => token($soonForm['body']),
+    'coming_soon' => '1',
+    'coming_soon_title' => 'Aviat publicarem el web',
+    'coming_soon_text' => '<p>Estem preparant el web del cros.</p>',
+    'coming_soon_countdown' => '1',
+    'coming_soon_contact' => '1',
+]);
+
+$anonHome = req('GET', $base . '/', [], ['anon' => true]);
+check('El visitant veu l\'avís a la portada', str_contains($anonHome['body'], 'Aviat publicarem el web'), 'estat ' . $anonHome['status']);
+check('El visitant no veu el contingut del web', !str_contains($anonHome['body'], 'Programa de la jornada'));
+check('L\'avís no s\'indexa', str_contains($anonHome['body'], 'noindex'));
+check('El visitant no veu la botiga de tiquets', !str_contains(req('GET', $base . '/esmorzar', [], ['anon' => true])['body'], 'Tria els teus tiquets'));
+check('El visitant no veu les categories', !str_contains(req('GET', $base . '/categories-i-premis', [], ['anon' => true])['body'], 'Benjamí'));
+check('robots.txt bloqueja la indexació', str_contains(req('GET', $base . '/robots.txt', [], ['anon' => true])['body'], 'Disallow: /'));
+check('L\'accés al panell continua disponible', str_contains(req('GET', $base . '/admin/acces', [], ['anon' => true])['body'], 'Accés al panell'));
+
+$adminHome = req('GET', $base . '/');
+check('L\'administració continua veient el web', str_contains($adminHome['body'], 'Programa de la jornada'));
+check('L\'administració veu l\'avís de mode amagat', str_contains($adminHome['body'], 'Web en preparació'));
+
+$soonWebhook = req('POST', $base . '/stripe/webhook', [], [
+    'anon' => true, 'raw' => '{}', 'headers' => ['Content-Type: application/json', 'Stripe-Signature: t=1,v1=0'],
+]);
+check('El webhook de Stripe no queda bloquejat', $soonWebhook['status'] === 400, 'estat ' . $soonWebhook['status']);
+
+$publish = req('POST', $base . '/admin/properament', ['_token' => csrf_from($base), 'enable' => '0']);
+check('El commutador ràpid torna a publicar el web', $publish['status'] === 302);
+check('El visitant torna a veure el web', str_contains(req('GET', $base . '/', [], ['anon' => true])['body'], 'Programa de la jornada'));
 
 echo "\n== Webhook de Stripe ==\n";
 $payload = json_encode([

@@ -54,6 +54,18 @@ $navItems = [
 <body>
 <a class="visually-hidden" href="#contingut">Salta al contingut principal</a>
 
+<?php if (\Cros\Core\Settings::bool('coming_soon') && \Cros\Core\Auth::check()): ?>
+  <div class="preview-bar">
+    <span><?= \Cros\Core\Icons::svg('eye', 'icon', 18) ?>
+      <strong>Web en preparació:</strong> els visitants veuen l'avís «<?= e(setting('coming_soon_title', 'Aviat publicarem el web')) ?>». Vós el veieu sencer perquè teniu la sessió iniciada.</span>
+    <form method="post" action="<?= e(url('/admin/properament')) ?>">
+      <?= csrf_field() ?>
+      <input type="hidden" name="enable" value="0">
+      <button type="submit">Publicar el web ara</button>
+    </form>
+  </div>
+<?php endif; ?>
+
 <header class="site-header">
   <div class="container site-header__inner">
     <a class="brand" href="<?= e(url('/')) ?>">

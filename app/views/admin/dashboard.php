@@ -26,6 +26,21 @@ $currency = (string) setting('payments_currency', 'EUR');
   </div>
 </div>
 
+<?php if (\Cros\Core\Settings::bool('coming_soon')): ?>
+  <div class="alert alert--warning mt-2 flex-between">
+    <span>
+      <strong>El web està amagat al públic.</strong>
+      Els visitants veuen l'avís «<?= e(setting('coming_soon_title', 'Aviat publicarem el web')) ?>».
+      <a href="<?= e(url('/admin/configuracio/coming_soon')) ?>">Editar l'avís</a>
+    </span>
+    <form method="post" action="<?= e(url('/admin/properament')) ?>">
+      <?= csrf_field() ?>
+      <input type="hidden" name="enable" value="0">
+      <button class="btn btn--sm" type="submit">Publicar el web ara</button>
+    </form>
+  </div>
+<?php endif; ?>
+
 <?php if (!$stripeReady): ?>
   <div class="alert alert--warning mt-2">
     Encara no heu configurat les credencials de Stripe: la venda en línia està desactivada.

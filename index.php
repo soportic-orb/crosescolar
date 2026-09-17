@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/app/bootstrap.php';
 
+use Cros\Core\Auth;
 use Cros\Core\Router;
 use Cros\Core\Settings;
 use Cros\Core\Updater;
@@ -36,6 +37,22 @@ Settings::load();
 
 View::share('settings', Settings::load());
 View::share('currentPath', $path);
+
+// Web en preparació: el públic només veu l'avís «Aviat publicarem el web».
+// Les persones amb sessió iniciada al panell veuen el web complet.
+// El webhook de Stripe i l'àrea de gestió sempre queden accessibles.
+if (Settings::bool('coming_soon')
+    && !str_starts_with($path, '/admin')
+    && !str_starts_with($path, '/validar')
+    && $path !== '/stripe/webhook'
+    && $path !== '/robots.txt'
+    && !Auth::check()
+) {
+    View::render('public/coming-soon', [
+        'title' => setting('coming_soon_title', 'Aviat publicarem el web'),
+    ], 'layouts/coming-soon');
+    exit;
+}
 
 /** @var Router $router */
 $router = require CROS_APP . '/routes.php';

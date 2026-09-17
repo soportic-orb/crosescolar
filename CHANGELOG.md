@@ -3,6 +3,22 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.1.0] — 2026-09-17
+
+### Afegit
+- **Mode «web en preparació»**: una opció amaga el web al públic i hi mostra l'avís
+  «Aviat publicarem el web» (títol, text i imatge de fons configurables, amb data,
+  compte enrere i dades de contacte opcionals).
+  - Les persones amb sessió iniciada al panell continuen veient el web complet, amb
+    una barra superior que recorda l'estat i permet publicar-lo amb un sol clic.
+  - El panell, la validació de tiquets i el webhook de Stripe no queden bloquejats.
+  - Mentre està actiu, el web no s'indexa (`noindex` i `robots.txt` restrictiu).
+- Botó de publicació ràpida al tauler del panell.
+
+### Corregit
+- El menú de navegació ja no es parteix en dues línies en pantalles d'entre 960 i
+  1240 píxels.
+
 ## [1.0.1] — 2026-09-17
 
 ### Corregit

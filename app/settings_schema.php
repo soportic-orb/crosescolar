@@ -31,6 +31,23 @@ return [
         ],
     ],
 
+    'coming_soon' => [
+        'title' => 'Web en preparació',
+        'icon' => 'eye',
+        'description' => 'Amaga el web al públic i mostra només un avís. Les persones amb sessió iniciada al panell continuen veient el web complet.',
+        'fields' => [
+            'coming_soon' => ['label' => 'Amagar el web al públic', 'type' => 'bool', 'default' => '0',
+                'help' => 'Mentre estigui activat, qualsevol visitant veurà l\'avís «Aviat publicarem el web».'],
+            'coming_soon_title' => ['label' => 'Títol de l\'avís', 'type' => 'text', 'default' => 'Aviat publicarem el web'],
+            'coming_soon_text' => ['label' => 'Text de l\'avís', 'type' => 'html', 'rows' => 5,
+                'default' => '<p>Estem preparant el web del Cros Escolar La Granada amb tota la informació de la cursa, els recorreguts i la venda de tiquets de l\'esmorzar.</p><p>Torneu-hi ben aviat!</p>'],
+            'coming_soon_image' => ['label' => 'Imatge de fons', 'type' => 'image', 'default' => '',
+                'help' => 'Opcional. Si no n\'hi ha cap, es fa servir la del banner de la portada o el fons il·lustrat de vinyes.'],
+            'coming_soon_countdown' => ['label' => 'Mostrar la data i el compte enrere', 'type' => 'bool', 'default' => '1'],
+            'coming_soon_contact' => ['label' => 'Mostrar el contacte i les xarxes', 'type' => 'bool', 'default' => '1'],
+        ],
+    ],
+
     'home' => [
         'title' => 'Portada',
         'icon' => 'home',

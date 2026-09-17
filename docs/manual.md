@@ -9,6 +9,26 @@ Guia pràctica per a l'equip de l'AFA. Accés: `https://cros.afalagranada.cat/ad
 | **Administrador** | Tot, incloent-hi credencials de Stripe, correu, usuaris i actualitzacions |
 | **Editor** | Continguts, comandes, inscripcions i validació de tiquets |
 
+## Web en preparació («Aviat publicarem el web»)
+
+Mentre prepareu els continguts podeu mantenir el web amagat:
+
+1. **Configuració → Web en preparació** i activeu *Amagar el web al públic*.
+2. Personalitzeu el títol, el text i, si voleu, una imatge de fons.
+
+A partir d'aquell moment:
+
+- Qualsevol visitant veu només l'avís, amb la data de la cursa, el compte enrere i
+  el contacte (podeu amagar aquests dos blocs).
+- **Vosaltres continueu veient el web sencer** sempre que tingueu la sessió iniciada
+  al panell. A dalt de tot hi apareix una barra recordant que el web està amagat,
+  amb un botó per publicar-lo a l'instant.
+- El panell, la validació de tiquets i el webhook de Stripe continuen funcionant.
+- El web no s'indexa als cercadors mentre estigui amagat.
+
+Per publicar-lo: botó **Publicar el web ara** (a la barra superior o al tauler) o
+desactiveu l'opció a la configuració.
+
 ## Abans de la cursa
 
 ### 1. Personalitzar la portada

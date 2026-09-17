@@ -37,6 +37,20 @@ class SettingsController extends Controller
         ]);
     }
 
+    /** Commutador ràpid del mode «web en preparació». */
+    public function toggleComingSoon(): void
+    {
+        Auth::requireLogin();
+        $this->checkCsrf();
+        $enable = input_bool('enable');
+        Settings::set('coming_soon', (string) $enable);
+        Auth::logActivity('coming_soon', 'settings', 0, ['actiu' => $enable]);
+        flash('success', $enable === 1
+            ? 'El web queda amagat: els visitants veuran l\'avís «' . setting('coming_soon_title', 'Aviat publicarem el web') . '».'
+            : 'El web ja és visible per a tothom.');
+        $this->back('/admin');
+    }
+
     public function update(array $params): void
     {
         Auth::requireLogin();

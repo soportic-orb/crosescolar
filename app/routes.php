@@ -60,6 +60,7 @@ $router->get('/admin', [DashboardController::class, 'index']);
 $router->get('/admin/perfil', [AuthController::class, 'profile']);
 $router->post('/admin/perfil', [AuthController::class, 'updateProfile']);
 
+$router->post('/admin/properament', [SettingsController::class, 'toggleComingSoon']);
 $router->get('/admin/configuracio', [SettingsController::class, 'index']);
 $router->get('/admin/configuracio/{group}', [SettingsController::class, 'edit']);
 $router->post('/admin/configuracio/{group}', [SettingsController::class, 'update']);

@@ -150,6 +150,11 @@ class PageController extends Controller
     {
         header('Content-Type: text/plain; charset=utf-8');
         echo "User-agent: *\n";
+        if (\Cros\Core\Settings::bool('coming_soon')) {
+            // Mentre el web està en preparació no s'ha d'indexar res.
+            echo "Disallow: /\n";
+            exit;
+        }
         echo "Disallow: /admin\n";
         echo "Disallow: /tiquets\n";
         echo "Disallow: /els-meus-tiquets\n";

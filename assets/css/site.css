@@ -66,6 +66,19 @@ ul, ol { padding-left: 1.2em; }
 }
 .icon { flex: none; }
 
+/* --------------------------------------------- Barra de web en preparació */
+.preview-bar {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .6rem 1.2rem;
+  padding: .6rem clamp(1rem, 4vw, 2rem); background: var(--green-900); color: #fff; font-size: .9rem;
+}
+.preview-bar span { display: inline-flex; align-items: center; gap: .5rem; }
+.preview-bar form { margin: 0; }
+.preview-bar button {
+  padding: .35rem .9rem; border-radius: 999px; border: 1px solid rgba(255, 255, 255, .45);
+  background: rgba(255, 255, 255, .12); color: #fff; font: inherit; font-weight: 700; cursor: pointer;
+}
+.preview-bar button:hover { background: rgba(255, 255, 255, .25); }
+
 /* ------------------------------------------------------------- Capçalera */
 .site-header {
   position: sticky; top: 0; z-index: 50;
@@ -95,6 +108,15 @@ ul, ol { padding-left: 1.2em; }
 .nav a:hover, .nav a:focus-visible { background: var(--green-100); color: var(--green-800); }
 .nav a.is-active { color: var(--green-700); background: var(--green-100); }
 .nav .btn { margin-left: .4rem; }
+.nav a, .nav .btn { white-space: nowrap; }
+
+/* Pantalles intermèdies: el menú ha de cabre en una sola línia */
+@media (min-width: 961px) and (max-width: 1240px) {
+  .nav a { padding: .5rem .6rem; font-size: .9rem; }
+  .nav .btn { padding: .6rem 1rem; font-size: .88rem; }
+  .brand__text span { font-size: .95rem; }
+  .brand img { max-height: 40px; }
+}
 
 .nav-toggle {
   margin-left: auto; display: none; align-items: center; justify-content: center;

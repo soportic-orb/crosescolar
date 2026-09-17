@@ -35,6 +35,8 @@ dels tiquets de l'esmorzar popular amb Stripe.
 - **Configuració**: credencials de Stripe (xifrades), correu SMTP, colors, SEO i textos legals.
 - **Sistema**: usuaris i rols, registre d'activitat, correus enviats, còpies de seguretat
   i **actualitzacions automàtiques (OTA)**.
+- **Web en preparació**: amaga el web al públic amb un avís de «Aviat publicarem el web»
+  mentre l'organització hi treballa; qui té la sessió iniciada continua veient-lo sencer.
 
 ---
 
