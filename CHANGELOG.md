@@ -3,6 +3,32 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.0.1] — 2026-09-17
+
+### Corregit
+- **L'assistent es quedava aturat en prémer «Instal·lar»**: com que els formularis
+  s'enviaven a una adreça que ja contenia `?pas=2`, el pas de l'URL tenia prioritat
+  sobre el del formulari i l'assistent tornava a mostrar la mateixa pantalla un cop
+  i un altre. Ara mana sempre el pas enviat pel formulari i els formularis apunten
+  explícitament a `install.php`.
+- Els continguts d'exemple tornen a estar marcats per defecte i es respecta la
+  decisió de l'usuari si els desmarca.
+- L'instal·lador executa la feina en sis fases curtes i independents, de manera que
+  no pot excedir el temps màxim d'execució del servidor ni quedar-se aturat.
+- L'instal·lador ja no fa servir la sessió: un doble clic al botó «Instal·lar» no pot
+  bloquejar la petició esperant el fitxer de sessió (el botó també es desactiva sol).
+- Totes les fases són repetibles: una instal·lació interrompuda es pot reprendre
+  sense duplicar dades.
+- Els errors fatals durant la instal·lació es mostren per pantalla i es registren a
+  `storage/logs/install-AAAA-MM-DD.log`, amb la durada de cada fase.
+- Les connexions a la base de dades tenen un temps d'espera de 10 s a l'instal·lador
+  i de 15 s a l'aplicació, en comptes d'esperar indefinidament.
+
+### Afegit
+- Camp per indicar el sòcol Unix de MySQL i pista automàtica quan falla la connexió.
+- El pas 2 mostra la versió del servidor i avisa si l'usuari no pot crear taules.
+- El pas 1 mostra els límits de PHP (temps d'execució, memòria i mida de pujada).
+
 ## [1.0.0] — 2026-09-17
 
 Primera versió del web del Cros Escolar La Granada.

@@ -82,7 +82,7 @@ Instruccions detallades (nginx, permisos, Stripe, correu): [`docs/instalacio.md`
 ├── assets/                CSS i JavaScript (sense compilació)
 ├── uploads/               Imatges i documents pujats des del panell
 ├── storage/               Registres, còpies de seguretat i fitxers temporals
-├── tests/                 Proves funcionals sobre SQLite
+├── tests/                 Proves funcionals (SQLite) i de l'instal·lador (MySQL)
 └── tools/build-release.php Generador de paquets d'actualització
 ```
 
@@ -96,6 +96,12 @@ Les proves funcionals aixequen l'aplicació sencera sobre SQLite, sense necessit
 CROS_TEST_FRESH=1 php tests/env.php             # crea la base de dades de proves
 php -S 127.0.0.1:8123 -t . tests/server.php &   # servidor local
 php tests/functional.php                        # 45 comprovacions
+```
+
+Prova de l'assistent d'instal·lació contra un MySQL real (s'omet si no es configura):
+
+```bash
+CROS_DB_NAME=cros CROS_DB_USER=cros CROS_DB_PASS=secret php tests/installer.php
 ```
 
 Accés de proves: `admin@example.test` / `provaprova`.

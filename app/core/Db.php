@@ -28,6 +28,7 @@ class Db
             'pass'    => (string) config('db.pass', ''),
             'charset' => (string) config('db.charset', 'utf8mb4'),
             'socket'  => (string) config('db.socket', ''),
+            'timeout' => (int) config('db.timeout', 15),
         ];
         return self::$pdo = self::connect($cfg);
     }
@@ -45,6 +46,8 @@ class Db
             PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES   => false,
+            // Evita que una base de dades que no respon deixi la petició penjada.
+            PDO::ATTR_TIMEOUT            => (int) ($cfg['timeout'] ?? 15),
         ]);
         $pdo->exec("SET sql_mode='STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION'");
         return $pdo;

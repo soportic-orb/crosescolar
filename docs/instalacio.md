@@ -62,11 +62,19 @@ Deseu i CloudPanel recarregarà nginx automàticament.
 ## 5. Executar l'instal·lador
 
 1. Obriu `https://cros.afalagranada.cat/install.php`.
-2. **Pas 1** — comprovació de requisits (PHP, extensions i permisos).
-3. **Pas 2** — dades de la base de dades creada al punt 2.
+2. **Pas 1** — comprovació de requisits (PHP, extensions i permisos). Hi veureu també
+   el temps màxim d'execució i la memòria del servidor.
+3. **Pas 2** — dades de la base de dades creada al punt 2. Si la connexió falla,
+   proveu `127.0.0.1` en comptes de `localhost` (o a l'inrevés) o indiqueu el camí
+   del sòcol Unix al camp corresponent.
 4. **Pas 3** — nom del web, data de la cursa i compte d'administració.
    Deixeu marcada l'opció de continguts d'exemple per començar amb una estructura
    completa que després podreu editar.
+
+   En prémer **Instal·lar**, la feina es reparteix en sis passos curts
+   (configuració → taules → compte → opcions → continguts → final), cadascun en una
+   petició independent. Així la instal·lació no pot excedir el temps màxim d'execució
+   del servidor i, si algun pas falla, veureu exactament quin.
 5. **Pas 4** — esborreu `install.php`:
 
 ```bash
@@ -98,6 +106,33 @@ a HTTPS des de CloudPanel.
 | Les imatges pujades no es veuen | `chmod -R 775 uploads` i comproveu el propietari del lloc |
 | No arriben els correus | Configureu SMTP a **Configuració → Correu** i proveu-ho a **Sistema → Correus** |
 | Pàgina en blanc | Reviseu `storage/logs/app-AAAA-MM.log` |
+| **L'instal·lador es queda aturat en prémer «Instal·lar»** | Vegeu l'apartat següent |
+
+### Si l'instal·lador es queda aturat
+
+Cada pas de la instal·lació queda registrat a `storage/logs/install-AAAA-MM-DD.log`
+amb l'hora i la durada. Obriu aquest fitxer: l'última línia indica en quin pas s'ha
+quedat.
+
+```
+[10:42:01] Inici de la fase «schema»
+[10:42:01] Fi de la fase «schema» {"ms":62}
+[10:42:02] Inici de la fase «admin»      ← s'ha quedat aquí
+```
+
+Causes habituals i solució:
+
+| Causa | Com es detecta | Solució |
+|---|---|---|
+| Doble clic al botó «Instal·lar» | La segona petició queda bloquejada esperant la sessió | El botó ara es desactiva automàticament; refresqueu i torneu-hi |
+| Temps màxim d'execució baix (`max_execution_time`) | El registre s'atura enmig d'una fase | Ja no hauria de passar: cada fase és una petició curta. Si passa, pugeu `max_execution_time` a 120 a CloudPanel (PHP → Settings) |
+| `fastcgi_read_timeout` d'nginx massa baix | Error 504 al navegador | Afegiu `fastcgi_read_timeout 120;` al vhost |
+| Base de dades que no respon | La fase `config` triga 10 s i dona error de connexió | Comproveu l'amfitrió: `localhost` (sòcol) o `127.0.0.1` (TCP) |
+| Falten permisos a `app/` o `storage/` | Error explícit a la pantalla | `chmod 775 app storage` i repetiu |
+
+La instal·lació es pot **repetir tantes vegades com calgui**: cap pas duplica dades.
+Si voleu començar del tot de nou, esborreu `app/config.php` i
+`storage/installed.lock`, i buideu la base de dades.
 
 ## Còpies de seguretat
 
