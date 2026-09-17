@@ -54,11 +54,18 @@ Per deixar-ho a punt, trieu una de les dues opcions:
 
 **A. Amb GitHub (recomanat si ja hi teniu el codi)**
 
-1. Genereu el paquet: `php tools/build-release.php --version=1.1.0`
-2. Creeu una versió nova al dipòsit amb l'etiqueta `v1.1.0` i adjunteu-hi el ZIP de `dist/`.
-   Si ho feu amb una etiqueta (`git tag v1.1.0 && git push --tags`), el flux de treball
-   de GitHub Actions ja ho publica automàticament.
-3. Al panell, **Sistema → Actualitzacions → Comprovar ara**.
+El dipòsit porta un flux de treball que valida el codi, executa totes les proves,
+genera el paquet i publica la versió amb el ZIP i el manifest adjunts. Es pot llançar
+de dues maneres:
+
+- **Des del web de GitHub:** pestanya *Actions* → *Publicar versió* → **Run workflow**.
+  El camp «Versió» és opcional: si es deixa buit s'agafa la d'`app/version.php`.
+- **Amb una etiqueta:** `git tag v1.1.1 && git push origin v1.1.1`.
+
+Quan acabi, al panell: **Sistema → Actualitzacions → Comprovar ara**.
+
+El resum SHA-256 del paquet s'inclou a les notes de la versió i el panell el fa servir
+per comprovar que el fitxer descarregat no s'ha manipulat.
 
 **B. Sense GitHub (allotjant els fitxers al mateix servidor)**
 
