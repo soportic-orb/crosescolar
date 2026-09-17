@@ -62,7 +62,7 @@ set_error_handler(static function (int $severity, string $message, string $file 
         return false;
     }
     // Els avisos menors es registren però no aturen la petició en producció.
-    $minor = E_DEPRECATED | E_USER_DEPRECATED | E_NOTICE | E_USER_NOTICE | E_STRICT;
+    $minor = E_DEPRECATED | E_USER_DEPRECATED | E_NOTICE | E_USER_NOTICE;
     if (($severity & $minor) || !$debug) {
         log_line('php', $message, ['file' => $file, 'line' => $line, 'severity' => $severity]);
         return true;

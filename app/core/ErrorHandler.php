@@ -35,7 +35,7 @@ class ErrorHandler
             : '';
 
         try {
-            View::render('errors/error', [
+            View::render($isAdmin ? 'errors/admin-error' : 'errors/error', [
                 'status' => $status,
                 'message' => $message,
                 'details' => $details,
