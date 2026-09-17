@@ -5,6 +5,11 @@ on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Versió a publicar (X.Y.Z). Si es deixa buit, s'agafa la d'app/version.php"
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -35,6 +40,20 @@ jobs:
           php-version: '8.2'
           extensions: zip, gd, mbstring, pdo_mysql, curl
 
+      - name: Determinar la versió
+        id: versio
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            V="${{ inputs.version }}"
+          elif [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            V="${GITHUB_REF_NAME#v}"
+          else
+            V="$(php -r 'echo (require "app/version.php")["version"];')"
+          fi
+          echo "Versió a publicar: $V"
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "tag=v$V" >> "$GITHUB_OUTPUT"
+
       - name: Comprovar la sintaxi de tots els fitxers
         run: find . -name '*.php' -not -path './dist/*' -print0 | xargs -0 -n1 php -l > /dev/null
 
@@ -58,14 +77,17 @@ jobs:
         run: php tests/installer.php
 
       - name: Generar el paquet
+        env:
+          VERSION: ${{ steps.versio.outputs.version }}
+          TAG: ${{ steps.versio.outputs.tag }}
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
           php tools/build-release.php --version="$VERSION" \
-            --url="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}"
+            --url="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}"
 
       - name: Preparar les notes de la versió
+        env:
+          VERSION: ${{ steps.versio.outputs.version }}
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
           SHA=$(php -r 'echo json_decode(file_get_contents("dist/manifest.json"), true)["sha256"];')
           {
             awk -v v="## [$VERSION]" 'index($0, v) == 1 { f = 1; next } f && /^## \[/ { exit } f' CHANGELOG.md
@@ -83,7 +105,9 @@ jobs:
       - name: Publicar la versió
         uses: softprops/action-gh-release@v2
         with:
-          name: "Cros Escolar La Granada ${{ github.ref_name }}"
+          tag_name: ${{ steps.versio.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          name: "Cros Escolar La Granada ${{ steps.versio.outputs.tag }}"
           files: |
             dist/*.zip
             dist/manifest.json
