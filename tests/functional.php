@@ -10,6 +10,7 @@ $jar = sys_get_temp_dir() . '/cros-test-cookies.txt';
 @unlink($jar);
 $passed = 0;
 $failed = 0;
+$unique = 'P' . substr(bin2hex(random_bytes(3)), 0, 5); // fa que cada execució sigui independent
 
 function req(string $method, string $url, array $data = [], array $options = []): array
 {
@@ -79,7 +80,7 @@ $csrf = token($form['body']);
 $registration = req('POST', $base . '/inscripcio', [
     '_token' => $csrf,
     'first_name' => 'Laia',
-    'last_name' => 'Ferrer Miró',
+    'last_name' => 'Ferrer ' . $unique,
     'birth_year' => (string) ((int) date('Y') - 9),
     'gender' => 'femeni',
     'category_id' => '',
@@ -98,7 +99,7 @@ check('Assigna la categoria per any', str_contains($done['body'], 'Aleví'), 'ca
 
 $duplicate = req('POST', $base . '/inscripcio', [
     '_token' => token(req('GET', $base . '/inscripcio')['body']),
-    'first_name' => 'Laia', 'last_name' => 'Ferrer Miró', 'birth_year' => (string) ((int) date('Y') - 9),
+    'first_name' => 'Laia', 'last_name' => 'Ferrer ' . $unique, 'birth_year' => (string) ((int) date('Y') - 9),
     'tutor_name' => 'Marc Ferrer', 'tutor_email' => 'families@example.test', 'consent_data' => '1',
 ]);
 check('Evita inscripcions duplicades', $duplicate['status'] === 302 && !str_contains($duplicate['headers'], 'confirmada'));
@@ -150,6 +151,7 @@ check('El nou lema surt al web', str_contains(req('GET', $base . '/')['body'], '
 
 $xss = req('POST', $base . '/admin/configuracio/home', [
     '_token' => token(req('GET', $base . '/admin/configuracio/home')['body']),
+    'countdown_enabled' => '1',
     'intro_title' => 'La cursa del poble',
     'intro_text' => '<p>Text correcte</p><script>alert(1)</script><a href="javascript:alert(2)">enllaç</a>',
 ]);
