@@ -80,7 +80,11 @@ $salesOpen = \Cros\Controllers\TicketsController::salesOpen();
       <h2><?= e(setting('intro_title', 'La cursa del poble')) ?></h2>
       <div class="prose"><?= setting_html('intro_text') ?></div>
       <div class="flex" style="gap:.8rem;margin-top:1.4rem">
-        <a class="btn" href="<?= e(url('/inscripcio')) ?>"><?= \Cros\Core\Icons::svg('run', 'icon', 18) ?> Inscriu-t'hi</a>
+        <?php $registrationsOpen = \Cros\Controllers\RegistrationController::open(); ?>
+        <a class="btn" href="<?= e(url('/inscripcio')) ?>">
+          <?= \Cros\Core\Icons::svg('run', 'icon', 18) ?>
+          <?= $registrationsOpen ? 'Inscriu-t\'hi' : 'Com inscriure-s\'hi' ?>
+        </a>
         <a class="btn btn--ghost" href="<?= e(url('/categories-i-premis')) ?>">Categories i horaris</a>
       </div>
     </div>
@@ -95,7 +99,8 @@ $salesOpen = \Cros\Controllers\TicketsController::salesOpen();
           <?php if (setting('collaborators', '')): ?>
             <tr><th>Col·labora</th><td><?= e(setting('collaborators')) ?></td></tr>
           <?php endif; ?>
-          <tr><th>Inscripció</th><td><?= \Cros\Controllers\RegistrationController::open() ? 'Oberta' : 'Presencial el mateix dia' ?></td></tr>
+          <tr><th>Inscripció</th>
+            <td><a href="<?= e(url('/inscripcio')) ?>"><?= \Cros\Controllers\RegistrationController::open() ? 'Oberta en línia' : 'Consulteu com fer-la' ?></a></td></tr>
         </tbody>
       </table>
       <?php if ($documents): ?>

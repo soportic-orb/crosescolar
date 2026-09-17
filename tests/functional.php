@@ -51,6 +51,12 @@ function token(string $html): string
     return preg_match('/name="_token" value="([^"]+)"/', $html, $m) ? $m[1] : '';
 }
 
+/** Text de la pàgina amb les entitats HTML descodificades (apòstrofs, accents…). */
+function text(string $html): string
+{
+    return html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+}
+
 function csrf_from(string $base): string
 {
     return token(req('GET', $base . '/admin')['body']);
@@ -267,6 +273,44 @@ $csv = req('GET', $base . '/admin/comandes/exportar');
 check('Exportació CSV de comandes', $csv['status'] === 200 && str_contains($csv['headers'], 'text/csv'));
 $csv2 = req('GET', $base . '/admin/inscripcions/exportar');
 check('Exportació CSV d\'inscripcions', $csv2['status'] === 200 && str_contains($csv2['body'], 'Ferrer'));
+
+echo "\n== Inscripcions sense formulari en línia ==\n";
+$regForm = req('GET', $base . '/admin/configuracio/registrations');
+check('Hi ha l\'opció de desactivar el formulari', str_contains(text($regForm['body']), 'Formulari d\'inscripció en línia actiu'));
+req('POST', $base . '/admin/configuracio/registrations', [
+    '_token' => token($regForm['body']),
+    // Sense «registrations_enabled»: el formulari queda desactivat.
+    'registrations_title' => 'Inscripció a la cursa',
+    'registrations_closed_text' => '<p>Enguany les inscripcions es fan a la secretaria de l\'escola.</p>',
+    'registrations_closed_link_label' => 'Full d\'inscripció (PDF)',
+    'registrations_closed_link_url' => 'https://exemple.test/full.pdf',
+]);
+$closedPage = req('GET', $base . '/inscripcio', [], ['anon' => true]);
+check('Es mostra el text informatiu', str_contains(text($closedPage['body']), 'secretaria de l\'escola'), 'estat ' . $closedPage['status']);
+check('No hi ha cap formulari d\'inscripció', !str_contains($closedPage['body'], 'name="first_name"'));
+check('No hi surten els blocs del formulari', !str_contains($closedPage['body'], 'Cal omplir un formulari per cada participant'));
+check('El botó opcional apareix si es configura', str_contains(text($closedPage['body']), 'Full d\'inscripció (PDF)'));
+$blockedRegistration = req('POST', $base . '/inscripcio', [
+    '_token' => token(req('GET', $base . '/els-meus-tiquets', [], ['anon' => true])['body']),
+    'first_name' => 'Prova', 'last_name' => 'Tancada', 'birth_year' => '2015',
+    'tutor_name' => 'Prova', 'tutor_email' => 'tancada@example.test', 'consent_data' => '1',
+], ['anon' => true]);
+check('No s\'accepten inscripcions amb el formulari desactivat', $blockedRegistration['status'] === 302
+    && !str_contains($blockedRegistration['headers'], 'confirmada'), 'estat ' . $blockedRegistration['status']);
+check('La comprovació no ha creat cap inscripció',
+    !str_contains(req('GET', $base . '/admin/inscripcions?q=tancada%40example.test')['body'], 'Tancada'));
+check('La portada convida a consultar com inscriure\'s',
+    str_contains(text(req('GET', $base . '/', [], ['anon' => true])['body']), 'Com inscriure-s\'hi'));
+
+req('POST', $base . '/admin/configuracio/registrations', [
+    '_token' => token(req('GET', $base . '/admin/configuracio/registrations')['body']),
+    'registrations_enabled' => '1',
+    'registrations_notify' => '1',
+    'registrations_closed_link_label' => '',
+    'registrations_closed_link_url' => '',
+]);
+$openPage = req('GET', $base . '/inscripcio', [], ['anon' => true]);
+check('En reactivar-lo torna a sortir el formulari', str_contains($openPage['body'], 'name="first_name"'));
 
 echo "\n== Web en preparació ==\n";
 $soonForm = req('GET', $base . '/admin/configuracio/coming_soon');

@@ -58,7 +58,22 @@ desactiveu l'opció a la configuració.
 **Patrocinadors → Afegir**: nom, logotip (PNG o SVG amb fons transparent), enllaç i tipus
 (institucional, principal, col·laborador). Arrossegueu les files per canviar-ne l'ordre.
 
-### 5. Tiquets de l'esmorzar
+### 5. Inscripcions: amb formulari o només informació
+
+**Configuració → Inscripcions** decideix què veu la gent a la pàgina d'inscripció:
+
+- **Formulari d'inscripció en línia actiu**: es mostra el formulari complet i les
+  inscripcions arriben a **Inscripcions** del panell (amb exportació a CSV).
+- **Desactivat**: la pàgina mostra **només el text informatiu** que hi escriviu, sense
+  cap formulari. És l'opció per fer les inscripcions a l'escola, en paper o amb un
+  altre servei. Opcionalment podeu afegir-hi un botó (per exemple cap a un PDF amb el
+  full d'inscripció o cap a un formulari extern).
+
+El formulari també es tanca sol quan es passa la **data de tancament**; deixeu la data
+buida si no en voleu posar cap. En tots dos casos, si algú prova d'enviar el formulari
+tot i estar tancat, la inscripció es rebutja.
+
+### 6. Tiquets de l'esmorzar
 **Tipus de tiquet**: nom, descripció, preu, existències i màxim per comanda.
 Deixeu les existències en blanc per no limitar-les.
 **Configuració → Esmorzar**: obrir o tancar la venda, data límit i textos.

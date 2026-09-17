@@ -3,6 +3,21 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.2.0] — 2026-09-17
+
+### Canviat
+- **Inscripcions**: quan el formulari en línia està desactivat (o s'ha passat la data
+  de tancament), la pàgina mostra **només el text informatiu**, sense el formulari ni
+  els blocs laterals que hi feien referència.
+- L'opció del panell es diu ara «Formulari d'inscripció en línia actiu» i explica què
+  passa en desactivar-la; el text informatiu té el seu propi camp ben identificat.
+- La portada adapta els enllaços: el botó diu «Com inscriure-s'hi» i la fitxa de dades
+  pràctiques enllaça amb la pàgina d'inscripció.
+
+### Afegit
+- Botó opcional sota el text informatiu (text i enllaç configurables) per apuntar a un
+  PDF, a un formulari extern o a qualsevol altra pàgina.
+
 ## [1.1.1] — 2026-09-17
 
 ### Corregit

@@ -1,7 +1,14 @@
 <?php
-/** Formulari d'inscripció. */
+/**
+ * Pàgina d'inscripció.
+ * Amb el formulari en línia actiu es mostra el formulari complet; si està
+ * desactivat (o s'ha passat la data límit), només s'hi mostra el text informatiu.
+ */
 $errors = $errors ?? [];
 $sizes = ['4', '6', '8', '10', '12', '14', 'S', 'M', 'L', 'XL'];
+$linkLabel = trim((string) setting('registrations_closed_link_label', ''));
+$linkUrl = trim((string) setting('registrations_closed_link_url', ''));
+$externalLink = (bool) preg_match('#^https?://#i', $linkUrl);
 ?>
 <?= \Cros\Core\View::partial('partials/page-header', [
     'title' => setting('registrations_title', 'Inscripció a la cursa'),
@@ -9,14 +16,30 @@ $sizes = ['4', '6', '8', '10', '12', '14', 'S', 'M', 'L', 'XL'];
     'breadcrumb' => ['Inscripció' => ''],
 ]) ?>
 
+<?php if (!$open): ?>
+
+  <section class="section">
+    <div class="container-narrow">
+      <div class="prose"><?= setting_html('registrations_closed_text') ?></div>
+      <?php if ($linkLabel !== '' && $linkUrl !== ''): ?>
+        <p style="margin-top:1.8rem">
+          <a class="btn" href="<?= e($externalLink || preg_match('#^(mailto:|tel:)#i', $linkUrl) ? $linkUrl : url($linkUrl)) ?>"
+             <?= $externalLink ? 'target="_blank" rel="noopener"' : '' ?>>
+            <?= e($linkLabel) ?>
+            <?= $externalLink ? \Cros\Core\Icons::svg('external', 'icon', 16) : \Cros\Core\Icons::svg('arrow', 'icon', 18) ?>
+          </a>
+        </p>
+      <?php endif; ?>
+    </div>
+  </section>
+
+<?php else: ?>
+
 <section class="section">
   <div class="container split">
     <div>
       <div class="prose"><?= setting_html('registrations_intro') ?></div>
 
-      <?php if (!$open): ?>
-        <div class="notice-box"><?= setting_html('registrations_closed_text') ?></div>
-      <?php else: ?>
         <form method="post" action="<?= e(url('/inscripcio')) ?>" class="form" style="margin-top:1.5rem">
           <?= csrf_field() ?>
           <div class="honeypot"><label>No omplir<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
@@ -118,7 +141,6 @@ $sizes = ['4', '6', '8', '10', '12', '14', 'S', 'M', 'L', 'XL'];
             <?= \Cros\Core\Icons::svg('check', 'icon', 18) ?> Enviar la inscripció
           </button>
         </form>
-      <?php endif; ?>
     </div>
 
     <aside>
@@ -141,3 +163,5 @@ $sizes = ['4', '6', '8', '10', '12', '14', 'S', 'M', 'L', 'XL'];
     </aside>
   </div>
 </section>
+
+<?php endif; ?>
