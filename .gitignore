@@ -1,0 +1,16 @@
+# Configuració generada per l'instal·lador
+/app/config.php
+/storage/installed.lock
+/storage/logs/*
+!/storage/logs/.gitkeep
+/storage/backups/*
+!/storage/backups/.gitkeep
+/storage/tmp/*
+!/storage/tmp/.gitkeep
+/storage/cache/*
+/uploads/**/*
+!/uploads/**/.gitkeep
+/dist/
+.DS_Store
+Thumbs.db
+*.log
