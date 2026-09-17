@@ -184,12 +184,16 @@ class Updater
                 }
             }
             $zip = $zip ?: (string) ($data['zipball_url'] ?? '');
+            // Les notes de la versió poden incloure el resum SHA-256 del paquet
+            // («SHA-256: abc123…»), que es fa servir per verificar-ne la integritat.
+            $notes = (string) ($data['body'] ?? '');
+            $sha = preg_match('/\b([a-f0-9]{64})\b/i', $notes, $shaMatch) ? strtolower($shaMatch[1]) : '';
             return [
                 'latest'      => ltrim((string) $data['tag_name'], 'vV'),
-                'notes'       => (string) ($data['body'] ?? ''),
+                'notes'       => $notes,
                 'zip_url'     => $zip,
                 'zip_api_url' => $apiUrl,
-                'sha256'      => '',
+                'sha256'      => $sha,
                 'min_php'     => '',
                 'published'   => (string) ($data['published_at'] ?? ''),
             ];

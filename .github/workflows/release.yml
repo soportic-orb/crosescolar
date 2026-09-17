@@ -33,7 +33,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
-          extensions: zip, gd, mbstring
+          extensions: zip, gd, mbstring, pdo_mysql, curl
 
       - name: Comprovar la sintaxi de tots els fitxers
         run: find . -name '*.php' -not -path './dist/*' -print0 | xargs -0 -n1 php -l > /dev/null
@@ -60,13 +60,31 @@ jobs:
       - name: Generar el paquet
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          php tools/build-release.php --version="${VERSION:-1.0.0}" \
+          php tools/build-release.php --version="$VERSION" \
             --url="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}"
+
+      - name: Preparar les notes de la versió
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          SHA=$(php -r 'echo json_decode(file_get_contents("dist/manifest.json"), true)["sha256"];')
+          {
+            awk -v v="## [$VERSION]" 'index($0, v) == 1 { f = 1; next } f && /^## \[/ { exit } f' CHANGELOG.md
+            echo ""
+            echo "---"
+            echo ""
+            echo "**Paquet d'actualització:** \`cros-escolar-$VERSION.zip\`"
+            echo ""
+            echo "**SHA-256:** \`$SHA\`"
+            echo ""
+            echo "Per actualitzar un web ja instal·lat: Panell → Sistema → Actualitzacions → Comprovar ara."
+          } > dist/notes.md
+          cat dist/notes.md
 
       - name: Publicar la versió
         uses: softprops/action-gh-release@v2
         with:
+          name: "Cros Escolar La Granada ${{ github.ref_name }}"
           files: |
             dist/*.zip
             dist/manifest.json
-          body_path: CHANGELOG.md
+          body_path: dist/notes.md

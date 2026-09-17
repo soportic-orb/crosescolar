@@ -60,6 +60,7 @@ try {
     check('Interpreta una llista de versions', $result['available'] === true && $result['latest'] === '9.9.9', $result['error']);
     check('Pren el paquet adjunt', $result['zip_url'] === 'https://exemple.test/paquet.zip');
     check('Guarda l\'adreça de l\'API per a dipòsits privats', str_contains((string) $result['zip_api_url'], '/releases/assets/1'));
+    check('Llegeix el resum SHA-256 de les notes de la versió', $result['sha256'] === str_repeat('1', 64), $result['sha256']);
 
     $result = checkUrl($base . '/releases-buit.json');
     check('Un origen sense versions no és cap error', $result['error'] === '' && $result['available'] === false);

@@ -1,6 +1,6 @@
 [
   {"tag_name": "v9.9.9", "draft": false, "prerelease": false, "published_at": "2026-12-01T10:00:00Z",
-   "body": "Novetats de prova",
+   "body": "Novetats de prova\n\nSHA-256: 1111111111111111111111111111111111111111111111111111111111111111",
    "assets": [{"name": "cros-escolar-9.9.9.zip", "browser_download_url": "https://exemple.test/paquet.zip",
                "url": "https://api.github.com/repos/x/y/releases/assets/1"}],
    "zipball_url": "https://exemple.test/zipball"},
