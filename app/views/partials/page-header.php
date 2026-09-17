@@ -17,5 +17,13 @@
     <h1><?= e($heading ?? $title ?? '') ?></h1>
     <?php if (!empty($subtitle)): ?><p><?= e($subtitle) ?></p><?php endif; ?>
   </div>
-  <?= \Cros\Core\Icons::svg('vine', 'page-header__vines', 220) ?>
+  <svg class="page-header__vines" viewBox="0 0 600 120" width="600" height="120" aria-hidden="true" fill="none"
+       stroke="currentColor" stroke-width="2" stroke-linecap="round">
+    <?php for ($i = 0; $i < 12; $i++): ?>
+      <g transform="translate(<?= $i * 52 ?>,0)">
+        <path d="M26 120V78M14 84h24M17 70h18"/>
+        <circle cx="26" cy="62" r="5"/>
+      </g>
+    <?php endfor; ?>
+  </svg>
 </section>

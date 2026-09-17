@@ -144,6 +144,12 @@ ul, ol { padding-left: 1.2em; }
   background: var(--green-800);
   overflow: hidden;
 }
+.hero--plain {
+  background:
+    repeating-linear-gradient(112deg, rgba(255, 255, 255, .04) 0 2px, transparent 2px 30px),
+    radial-gradient(90% 70% at 80% 0%, rgba(123, 160, 91, .45), transparent 60%),
+    linear-gradient(165deg, #12301c 5%, #2f6b3c 60%, #4f9457 130%);
+}
 .hero__bg { position: absolute; inset: 0; z-index: -2; }
 .hero__bg img { width: 100%; height: 100%; object-fit: cover; }
 .hero__overlay {
@@ -405,7 +411,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--g
 .page-header { padding: clamp(2.5rem, 6vw, 4rem) 0 clamp(1.5rem, 4vw, 2.5rem); background: linear-gradient(160deg, var(--green-800), var(--green-600)); color: #fff; position: relative; overflow: hidden; }
 .page-header h1 { color: #fff; margin-bottom: .3rem; }
 .page-header p { color: rgba(255, 255, 255, .88); max-width: 60ch; margin: 0; }
-.page-header__vines { position: absolute; right: -40px; bottom: -30px; opacity: .18; pointer-events: none; }
+.page-header__vines { position: absolute; right: 0; bottom: -8px; width: min(600px, 70%); height: auto; opacity: .16; pointer-events: none; }
 .breadcrumb { display: flex; gap: .5rem; font-size: .85rem; margin-bottom: .8rem; color: rgba(255, 255, 255, .75); }
 .breadcrumb a { color: rgba(255, 255, 255, .9); text-decoration: none; }
 

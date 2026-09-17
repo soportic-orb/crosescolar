@@ -216,6 +216,41 @@ $unknown = req('POST', $base . '/admin/validacio', ['_token' => token($scanner['
     ['headers' => ['X-Requested-With: XMLHttpRequest']]);
 check('Rebutja codis inexistents', (json_decode($unknown['body'], true)['status'] ?? '') === 'error');
 
+echo "\n== Compra amb Stripe (credencials falses) ==\n";
+$shopForm = req('GET', $base . '/esmorzar');
+$checkout = req('POST', $base . '/esmorzar', [
+    '_token' => token($shopForm['body']),
+    'name' => 'Núria Casals',
+    'email' => 'nuria@example.test',
+    'phone' => '600111222',
+    'terms' => '1',
+    'qty' => [1 => 1],
+]);
+check('La compra no peta amb credencials invàlides', $checkout['status'] === 302 && str_contains($checkout['headers'], '/esmorzar'), 'estat ' . $checkout['status']);
+$shopAfter = req('GET', $base . '/esmorzar');
+check('Informa l\'usuari de l\'error de pagament', str_contains($shopAfter['body'], 'alert--error'));
+
+$closeForm = req('GET', $base . '/admin/configuracio/tickets');
+req('POST', $base . '/admin/configuracio/tickets', [
+    '_token' => token($closeForm['body']),
+    'tickets_title' => 'Tiquets per a l\'esmorzar',
+    'tickets_deadline' => '2026-10-02',
+    'tickets_max_per_order' => '20',
+]);
+$closedShop = req('GET', $base . '/esmorzar');
+check('Tanca la venda si es desactiva', str_contains($closedShop['body'], 'venda anticipada de tiquets ja està tancada') || str_contains($closedShop['body'], 'notice-box'));
+$validToken = token(req('GET', $base . '/els-meus-tiquets')['body']); // token vàlid d'un altre formulari
+$blockedCheckout = req('POST', $base . '/esmorzar', ['_token' => $validToken, 'name' => 'X', 'email' => 'x@example.test', 'terms' => '1', 'qty' => [1 => 1]]);
+check('Rebutja compres amb la venda tancada', $blockedCheckout['status'] === 302 && str_contains($blockedCheckout['headers'], '/esmorzar'), 'estat ' . $blockedCheckout['status']);
+check('No crea cap comanda amb la venda tancada', str_contains(req('GET', $base . '/admin/comandes?q=x%40example.test')['body'], 'Cap comanda amb aquests filtres'));
+req('POST', $base . '/admin/configuracio/tickets', [
+    '_token' => token(req('GET', $base . '/admin/configuracio/tickets')['body']),
+    'tickets_enabled' => '1',
+    'tickets_title' => 'Tiquets per a l\'esmorzar',
+    'tickets_deadline' => '2026-10-02',
+    'tickets_max_per_order' => '20',
+]);
+
 echo "\n== Exportacions ==\n";
 $csv = req('GET', $base . '/admin/comandes/exportar');
 check('Exportació CSV de comandes', $csv['status'] === 200 && str_contains($csv['headers'], 'text/csv'));

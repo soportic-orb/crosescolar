@@ -7,7 +7,7 @@ $countdownTarget = $eventDate !== '' ? $eventDate . 'T' . ($eventTime !== '' ? $
 $salesOpen = \Cros\Controllers\TicketsController::salesOpen();
 ?>
 
-<section class="hero">
+<section class="hero<?= $heroImage === '' ? ' hero--plain' : '' ?>">
   <?php if ($heroImage !== ''): ?>
     <div class="hero__bg"><img src="<?= e(upload_url($heroImage)) ?>" alt="" fetchpriority="high"></div>
   <?php endif; ?>
@@ -124,11 +124,21 @@ $salesOpen = \Cros\Controllers\TicketsController::salesOpen();
         <?= \Cros\Core\View::partial('partials/course-card', ['course' => $course]) ?>
       <?php endforeach; ?>
     </div>
-    <?php $mainCourse = $courses[0]; ?>
-    <div style="margin-top:2rem">
-      <h3><?= e($mainCourse['name']) ?> — mapa</h3>
-      <?= \Cros\Core\View::partial('partials/wikiloc', ['course' => $mainCourse]) ?>
-    </div>
+    <?php
+    $mainCourse = null;
+    foreach ($courses as $course) {
+        if (\Cros\Models\Content::wikilocId($course) !== '' || !empty($course['gpx_file'])) {
+            $mainCourse = $course;
+            break;
+        }
+    }
+    ?>
+    <?php if ($mainCourse): ?>
+      <div style="margin-top:2rem">
+        <h3><?= e($mainCourse['name']) ?> — mapa del recorregut</h3>
+        <?= \Cros\Core\View::partial('partials/wikiloc', ['course' => $mainCourse]) ?>
+      </div>
+    <?php endif; ?>
   </div>
 </section>
 <?php endif; ?>

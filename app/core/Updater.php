@@ -19,6 +19,9 @@ class Updater
         'storage',
         '.env',
         '.htaccess.local',
+        // L'instal·lador no es torna a crear en actualitzar: si l'heu esborrat,
+        // per seguretat, ha de continuar esborrat.
+        'install.php',
     ];
 
     public static function currentVersion(): string
@@ -251,10 +254,17 @@ class Updater
     /** Bolcat SQL de totes les taules. */
     public static function dumpDatabase(): string
     {
-        $out = "-- Còpia de seguretat " . date('c') . "\nSET FOREIGN_KEY_CHECKS=0;\n";
-        $tables = array_map(fn ($row) => reset($row), Db::all('SHOW TABLES'));
+        $sqlite = Db::driver() === 'sqlite';
+        $out = "-- Còpia de seguretat " . date('c') . "\n" . ($sqlite ? '' : "SET FOREIGN_KEY_CHECKS=0;\n");
+        $tables = $sqlite
+            ? array_column(Db::all("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'"), 'name')
+            : array_map(fn ($row) => reset($row), Db::all('SHOW TABLES'));
         foreach ($tables as $table) {
-            $create = Db::one('SHOW CREATE TABLE `' . $table . '`');
+            if ($sqlite) {
+                $create = ['Create Table' => (string) Db::val('SELECT sql FROM sqlite_master WHERE name = :name', ['name' => $table], '')];
+            } else {
+                $create = Db::one('SHOW CREATE TABLE `' . $table . '`');
+            }
             $out .= "\nDROP TABLE IF EXISTS `$table`;\n" . ($create['Create Table'] ?? '') . ";\n";
             $rows = Db::all('SELECT * FROM `' . $table . '`');
             foreach (array_chunk($rows, 50) as $chunk) {
@@ -272,7 +282,7 @@ class Updater
                 $out .= "INSERT INTO `$table` ($columns) VALUES " . implode(',', $values) . ";\n";
             }
         }
-        return $out . "\nSET FOREIGN_KEY_CHECKS=1;\n";
+        return $out . ($sqlite ? "\n" : "\nSET FOREIGN_KEY_CHECKS=1;\n");
     }
 
     /** Activa o desactiva el mode manteniment. */
