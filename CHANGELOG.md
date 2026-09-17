@@ -3,6 +3,24 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.1.1] — 2026-09-17
+
+### Corregit
+- **Comprovar actualitzacions donava «El servidor d'actualitzacions ha respost amb el
+  codi 404»** quan el dipòsit encara no tenia cap versió publicada: l'API de GitHub
+  respon 404 a `releases/latest` en aquest cas. Ara el panell consulta la llista de
+  versions i ho mostra com un avís informatiu amb les instruccions per publicar-ne una.
+- Missatges d'error entenedors segons el problema real: dipòsit no trobat, accés
+  denegat, límit de consultes superat, manifest inexistent o resposta que no és JSON.
+- La pàgina d'actualitzacions mostra l'origen configurat i un resum d'estat correcte
+  («Cap versió publicada a l'origen», «Esteu al dia», «Versió X disponible»).
+
+### Afegit
+- Suport per descarregar paquets de dipòsits privats de GitHub amb token (fa servir
+  l'adreça de l'API i no envia el token al servidor de fitxers).
+- `tests/updates.php`: 17 comprovacions del sistema d'actualitzacions, incloses les
+  respostes reals de l'API de GitHub.
+
 ## [1.1.0] — 2026-09-17
 
 ### Afegit

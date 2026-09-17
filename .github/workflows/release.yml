@@ -45,6 +45,9 @@ jobs:
           sleep 3
           php tests/functional.php
 
+      - name: Proves del sistema d'actualitzacions
+        run: php tests/updates.php
+
       - name: Prova de l'instal·lador (MySQL real)
         env:
           CROS_DB_HOST: 127.0.0.1

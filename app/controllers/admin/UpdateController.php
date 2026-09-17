@@ -18,6 +18,7 @@ class UpdateController extends Controller
         $this->adminView('updates/index', [
             'title' => 'Actualitzacions',
             'current' => app_version(),
+            'manifestUrl' => Updater::manifestUrl(),
             'result' => is_array($result) ? $result : null,
             'backups' => $this->backups(),
             'pendingMigrations' => array_map('basename', Migrator::pending()),
@@ -33,6 +34,8 @@ class UpdateController extends Controller
         $result = Updater::check(true);
         if ($result['error'] !== '') {
             flash('error', 'No s\'ha pogut comprovar: ' . $result['error']);
+        } elseif (($result['notice'] ?? '') !== '') {
+            flash('info', $result['notice']);
         } elseif ($result['available']) {
             flash('success', 'Hi ha una versió nova disponible: ' . $result['latest']);
         } else {
@@ -52,7 +55,11 @@ class UpdateController extends Controller
         }
         try {
             @set_time_limit(300);
-            $zip = Updater::download((string) $result['zip_url'], (string) ($result['sha256'] ?? ''));
+            $zip = Updater::download(
+                (string) $result['zip_url'],
+                (string) ($result['sha256'] ?? ''),
+                (string) ($result['zip_api_url'] ?? '')
+            );
             $log = Updater::apply($zip, setting('update_backup', '1') === '1');
             flash('success', implode(' ', $log));
         } catch (\Throwable $e) {

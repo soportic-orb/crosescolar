@@ -44,6 +44,52 @@ A **Configuració → Actualitzacions**:
 També s'accepta directament la resposta de l'API de GitHub
 (`https://api.github.com/repos/<usuari>/<repositori>/releases/latest`).
 
+## «L'origen d'actualitzacions encara no té cap versió publicada»
+
+És l'estat normal fins que es publica la primera versió: l'API de GitHub respon amb un
+404 a `releases/latest` quan el dipòsit no té cap *release*. El panell ho detecta,
+consulta la llista de versions i ho mostra com un avís informatiu, no com un error.
+
+Per deixar-ho a punt, trieu una de les dues opcions:
+
+**A. Amb GitHub (recomanat si ja hi teniu el codi)**
+
+1. Genereu el paquet: `php tools/build-release.php --version=1.1.0`
+2. Creeu una versió nova al dipòsit amb l'etiqueta `v1.1.0` i adjunteu-hi el ZIP de `dist/`.
+   Si ho feu amb una etiqueta (`git tag v1.1.0 && git push --tags`), el flux de treball
+   de GitHub Actions ja ho publica automàticament.
+3. Al panell, **Sistema → Actualitzacions → Comprovar ara**.
+
+**B. Sense GitHub (allotjant els fitxers al mateix servidor)**
+
+1. `php tools/build-release.php --version=1.1.0 --url=https://cros.afalagranada.cat/actualitzacions`
+2. Pugeu `dist/manifest.json` i `dist/cros-escolar-1.1.0.zip` a
+   `/actualitzacions/` del web (o a qualsevol adreça pública).
+3. Poseu `https://cros.afalagranada.cat/actualitzacions/manifest.json` a
+   **Configuració → Actualitzacions → URL del manifest**.
+
+Mentrestant, sempre podeu instal·lar un paquet a mà des de
+**Sistema → Actualitzacions → Instal·lar un paquet manualment**.
+
+### Dipòsits privats
+
+Si el dipòsit de GitHub és privat, cal un token d'accés amb permís de lectura
+(«Contents: read») a **Configuració → Actualitzacions → Token d'accés**. El panell
+el fa servir tant per llegir la llista de versions com per descarregar el paquet
+(en aquest cas fa servir l'adreça de l'API, perquè l'enllaç de descàrrega directa
+no accepta tokens).
+
+## Missatges d'error habituals
+
+| Missatge | Què vol dir | Solució |
+|---|---|---|
+| L'origen encara no té cap versió publicada | L'origen respon bé però no hi ha cap *release* | Publiqueu-ne una (vegeu més amunt) |
+| GitHub respon que no ha trobat res (404) | El dipòsit no existeix o és privat sense token | Reviseu l'URL o afegiu un token |
+| Ha denegat l'accés (401/403) | Token incorrecte o caducat | Torneu a generar el token |
+| S'ha superat el límit de consultes | Massa consultes anònimes a l'API de GitHub | Espereu una estona o poseu un token |
+| No s'ha trobat el manifest (404) | L'URL del `manifest.json` no existeix | Comproveu que el fitxer és accessible pel navegador |
+| La resposta no és un JSON vàlid | L'URL retorna una pàgina HTML | Comproveu que apunteu al fitxer i no a una pàgina d'error |
+
 ## Publicar una versió nova
 
 ```bash

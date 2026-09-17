@@ -1,0 +1,8 @@
+{
+  "version": "9.9.9",
+  "released": "2026-12-01",
+  "min_php": "8.0.0",
+  "zip_url": "https://exemple.test/cros-escolar-9.9.9.zip",
+  "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "notes": "Versió de prova"
+}

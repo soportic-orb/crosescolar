@@ -45,34 +45,37 @@ class Updater
         }
 
         $result = [
-            'current'   => self::currentVersion(),
-            'latest'    => self::currentVersion(),
-            'available' => false,
-            'notes'     => '',
-            'zip_url'   => '',
-            'sha256'    => '',
-            'min_php'   => '',
-            'published' => '',
-            'error'     => '',
-            'checked_at' => date('Y-m-d H:i:s'),
-            'cached'    => false,
+            'current'     => self::currentVersion(),
+            'latest'      => self::currentVersion(),
+            'available'   => false,
+            'notes'       => '',
+            'zip_url'     => '',
+            'zip_api_url' => '',
+            'sha256'      => '',
+            'min_php'     => '',
+            'published'   => '',
+            'error'       => '',
+            'notice'      => '',
+            'checked_at'  => date('Y-m-d H:i:s'),
+            'cached'      => false,
         ];
 
         $url = self::manifestUrl();
         if ($url === '') {
-            $result['error'] = 'No s\'ha configurat cap URL de manifest d\'actualitzacions.';
+            $result['notice'] = 'No s\'ha configurat cap origen d\'actualitzacions.';
             return $result;
         }
 
         try {
-            $body = self::httpGet($url);
-            $data = json_decode($body, true);
-            if (!is_array($data)) {
-                throw new \RuntimeException('El manifest no conté JSON vàlid.');
+            $manifest = self::fetchManifest($url);
+            if ($manifest === null) {
+                // L'origen funciona però encara no s'hi ha publicat cap versió.
+                $result['notice'] = 'L\'origen d\'actualitzacions encara no té cap versió publicada.';
+                log_line('update', 'Origen sense versions publicades', ['url' => $url]);
+            } else {
+                $result = array_merge($result, $manifest);
+                $result['available'] = version_compare($result['latest'], self::currentVersion(), '>');
             }
-            $manifest = self::normalizeManifest($data);
-            $result = array_merge($result, $manifest);
-            $result['available'] = version_compare($manifest['latest'], self::currentVersion(), '>');
         } catch (\Throwable $e) {
             $result['error'] = $e->getMessage();
             log_line('update', 'Error consultant el manifest', ['url' => $url, 'error' => $e->getMessage()]);
@@ -83,50 +86,153 @@ class Updater
         return $result;
     }
 
+    /**
+     * Descarrega i interpreta el manifest.
+     * @return array|null null si l'origen respon bé però no hi ha cap versió publicada.
+     */
+    private static function fetchManifest(string $url): ?array
+    {
+        $response = self::http($url);
+
+        // L'API de GitHub respon 404 a «releases/latest» quan encara no hi ha cap
+        // versió publicada (o quan només n'hi ha de preliminars): ho comprovem a la llista.
+        if ($response['status'] === 404 && self::isGithubApi($url) && str_contains($url, '/releases/latest')) {
+            $listUrl = preg_replace('#/releases/latest.*$#', '/releases?per_page=10', $url) ?? $url;
+            $list = self::http($listUrl);
+            if ($list['status'] === 200) {
+                $releases = json_decode($list['body'], true);
+                if (is_array($releases)) {
+                    foreach ($releases as $release) {
+                        if (is_array($release) && empty($release['draft'])) {
+                            return self::normalizeManifest($release);
+                        }
+                    }
+                    return null;
+                }
+            }
+            throw new \RuntimeException(self::describeError($list['status'], $list['body'], $url));
+        }
+
+        if ($response['status'] >= 400) {
+            throw new \RuntimeException(self::describeError($response['status'], $response['body'], $url));
+        }
+
+        $data = json_decode($response['body'], true);
+        if (!is_array($data)) {
+            throw new \RuntimeException('La resposta de l\'origen d\'actualitzacions no és un JSON vàlid. Comproveu l\'URL a Configuració → Actualitzacions.');
+        }
+        if ($data === []) {
+            return null;
+        }
+        // Llista de versions de GitHub
+        if (isset($data[0]) && is_array($data[0])) {
+            foreach ($data as $release) {
+                if (is_array($release) && empty($release['draft'])) {
+                    return self::normalizeManifest($release);
+                }
+            }
+            return null;
+        }
+        return self::normalizeManifest($data);
+    }
+
+    private static function isGithubApi(string $url): bool
+    {
+        return strtolower((string) parse_url($url, PHP_URL_HOST)) === 'api.github.com';
+    }
+
+    /** Converteix un codi d'error HTTP en un missatge entenedor. */
+    private static function describeError(int $status, string $body, string $url): string
+    {
+        $data = json_decode($body, true);
+        $apiMessage = is_array($data) && !empty($data['message']) ? (string) $data['message'] : '';
+        $github = self::isGithubApi($url);
+
+        if ($status === 404) {
+            return $github
+                ? 'GitHub respon que no ha trobat res (404). Comproveu que el dipòsit existeix, '
+                    . 'que hi heu publicat alguna versió («release») i, si és privat, que heu indicat un token d\'accés.'
+                : 'No s\'ha trobat el manifest d\'actualitzacions (404). Reviseu l\'URL a Configuració → Actualitzacions.';
+        }
+        if ($status === 401 || $status === 403) {
+            if (stripos($apiMessage, 'rate limit') !== false) {
+                return 'S\'ha superat el límit de consultes de l\'API de GitHub. Torneu-ho a provar d\'aquí una estona '
+                    . 'o configureu un token d\'accés a Configuració → Actualitzacions.';
+            }
+            return 'L\'origen d\'actualitzacions ha denegat l\'accés (' . $status . '). '
+                . 'Comproveu el token d\'accés' . ($apiMessage !== '' ? ': ' . $apiMessage : '.');
+        }
+        if ($status === 0) {
+            return 'No s\'ha pogut connectar amb l\'origen d\'actualitzacions. Comproveu que el servidor té sortida a Internet.';
+        }
+        return 'El servidor d\'actualitzacions ha respost amb el codi ' . $status
+            . ($apiMessage !== '' ? ' (' . $apiMessage . ')' : '') . '.';
+    }
+
     /** Admet el format propi i el de l'API de versions de GitHub. */
     private static function normalizeManifest(array $data): array
     {
         if (isset($data['tag_name'])) { // GitHub Releases
             $zip = '';
+            $apiUrl = '';
             foreach ($data['assets'] ?? [] as $asset) {
                 if (str_ends_with((string) ($asset['name'] ?? ''), '.zip')) {
                     $zip = (string) ($asset['browser_download_url'] ?? '');
+                    // Els dipòsits privats necessiten l'adreça de l'API amb el token.
+                    $apiUrl = (string) ($asset['url'] ?? '');
                     break;
                 }
             }
             $zip = $zip ?: (string) ($data['zipball_url'] ?? '');
             return [
-                'latest'    => ltrim((string) $data['tag_name'], 'vV'),
-                'notes'     => (string) ($data['body'] ?? ''),
-                'zip_url'   => $zip,
-                'sha256'    => '',
-                'min_php'   => '',
-                'published' => (string) ($data['published_at'] ?? ''),
+                'latest'      => ltrim((string) $data['tag_name'], 'vV'),
+                'notes'       => (string) ($data['body'] ?? ''),
+                'zip_url'     => $zip,
+                'zip_api_url' => $apiUrl,
+                'sha256'      => '',
+                'min_php'     => '',
+                'published'   => (string) ($data['published_at'] ?? ''),
             ];
         }
         return [
-            'latest'    => (string) ($data['version'] ?? '0.0.0'),
-            'notes'     => (string) ($data['notes'] ?? ''),
-            'zip_url'   => (string) ($data['zip_url'] ?? ($data['url'] ?? '')),
-            'sha256'    => (string) ($data['sha256'] ?? ''),
-            'min_php'   => (string) ($data['min_php'] ?? ''),
-            'published' => (string) ($data['released'] ?? ''),
+            'latest'      => (string) ($data['version'] ?? '0.0.0'),
+            'notes'       => (string) ($data['notes'] ?? ''),
+            'zip_url'     => (string) ($data['zip_url'] ?? ($data['url'] ?? '')),
+            'zip_api_url' => '',
+            'sha256'      => (string) ($data['sha256'] ?? ''),
+            'min_php'     => (string) ($data['min_php'] ?? ''),
+            'published'   => (string) ($data['released'] ?? ''),
         ];
     }
 
     /** Descarrega el paquet i en verifica la integritat. */
-    public static function download(string $url, string $sha256 = ''): string
+    public static function download(string $url, string $sha256 = '', string $apiUrl = ''): string
     {
-        if (!preg_match('#^https://#i', $url)) {
+        // Amb token (dipòsits privats) s'ha de fer servir l'adreça de l'API de GitHub.
+        $token = (string) setting('update_token', '');
+        $useApi = $token !== '' && $apiUrl !== '';
+        $source = $useApi ? $apiUrl : $url;
+
+        if (!preg_match('#^https://#i', $source)) {
             throw new \RuntimeException('L\'URL del paquet ha de ser https.');
         }
-        $target = CROS_ROOT . '/storage/tmp/update-' . date('YmdHis') . '.zip';
-        self::ensureDir(dirname($target));
-        $content = self::httpGet($url, true);
-        if (strlen($content) < 1024) {
+
+        $response = self::http($source, [
+            'accept' => 'application/octet-stream',
+            'timeout' => 120,
+            // El servidor de fitxers no ha de rebre la capçalera d'autorització.
+            'strip_auth_on_redirect' => true,
+        ]);
+        if ($response['status'] >= 400) {
+            throw new \RuntimeException(self::describeError($response['status'], $response['body'], $source));
+        }
+        if (strlen($response['body']) < 1024) {
             throw new \RuntimeException('El paquet descarregat és buit o massa petit.');
         }
-        file_put_contents($target, $content);
+
+        $target = CROS_ROOT . '/storage/tmp/update-' . date('YmdHis') . '.zip';
+        self::ensureDir(dirname($target));
+        file_put_contents($target, $response['body']);
         if ($sha256 !== '' && !hash_equals(strtolower($sha256), hash_file('sha256', $target))) {
             @unlink($target);
             throw new \RuntimeException('La signatura SHA-256 del paquet no coincideix. S\'ha cancel·lat l\'actualització.');
@@ -377,43 +483,68 @@ class Updater
         @rmdir($dir);
     }
 
-    /** Petició HTTP GET amb cURL o fallback. */
-    private static function httpGet(string $url, bool $binary = false): string
+    /**
+     * Petició HTTP GET.
+     * @return array{status:int,body:string}
+     */
+    private static function http(string $url, array $options = []): array
     {
+        $accept = (string) ($options['accept'] ?? 'application/json');
+        $timeout = (int) ($options['timeout'] ?? 20);
+        $withAuth = ($options['auth'] ?? true) !== false;
         $headers = [
-            'Accept: ' . ($binary ? 'application/octet-stream' : 'application/json'),
+            'Accept: ' . $accept,
             'User-Agent: CrosEscolar-Updater/' . app_version(),
         ];
-        if ($token = (string) setting('update_token', '')) {
+        $token = (string) setting('update_token', '');
+        if ($withAuth && $token !== '') {
             $headers[] = 'Authorization: Bearer ' . $token;
         }
+
         if (function_exists('curl_init')) {
+            // Amb «strip_auth_on_redirect» la redirecció se segueix a mà, sense el token:
+            // els servidors de fitxers (per exemple els de GitHub) la rebutgen.
+            $follow = empty($options['strip_auth_on_redirect']);
             $ch = curl_init($url);
             curl_setopt_array($ch, [
                 CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_FOLLOWLOCATION => $follow,
                 CURLOPT_MAXREDIRS => 5,
-                CURLOPT_TIMEOUT => $binary ? 120 : 20,
+                CURLOPT_TIMEOUT => $timeout,
+                CURLOPT_CONNECTTIMEOUT => 15,
                 CURLOPT_HTTPHEADER => $headers,
                 CURLOPT_SSL_VERIFYPEER => true,
             ]);
             $body = curl_exec($ch);
             $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $location = (string) curl_getinfo($ch, CURLINFO_REDIRECT_URL);
             $error = curl_error($ch);
             curl_close($ch);
+
             if ($body === false) {
-                throw new \RuntimeException('Error de connexió: ' . $error);
+                throw new \RuntimeException('No s\'ha pogut connectar amb l\'origen d\'actualitzacions: ' . $error);
             }
-            if ($status >= 400) {
-                throw new \RuntimeException('El servidor d\'actualitzacions ha respost amb el codi ' . $status . '.');
+            if (!$follow && in_array($status, [301, 302, 303, 307, 308], true) && $location !== '') {
+                return self::http($location, ['accept' => $accept, 'timeout' => $timeout, 'auth' => false]);
             }
-            return (string) $body;
+            return ['status' => $status, 'body' => (string) $body];
         }
-        $context = stream_context_create(['http' => ['header' => implode("\r\n", $headers), 'timeout' => $binary ? 120 : 20]]);
+
+        $context = stream_context_create(['http' => [
+            'header' => implode("\r\n", $headers),
+            'timeout' => $timeout,
+            'ignore_errors' => true,
+        ]]);
         $body = @file_get_contents($url, false, $context);
+        $status = 0;
+        foreach ($http_response_header ?? [] as $header) {
+            if (preg_match('#^HTTP/\S+\s+(\d{3})#', $header, $m)) {
+                $status = (int) $m[1];
+            }
+        }
         if ($body === false) {
             throw new \RuntimeException('No s\'ha pogut descarregar: ' . $url);
         }
-        return $body;
+        return ['status' => $status, 'body' => (string) $body];
     }
 }

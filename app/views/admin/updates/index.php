@@ -11,7 +11,19 @@ use Cros\Core\Icons;
   <div class="kpi">
     <div class="kpi__label">Última comprovació</div>
     <div class="kpi__value" style="font-size:1.1rem"><?= e($result['checked_at'] ?? 'Mai') ?></div>
-    <div class="kpi__foot"><?= e($result['latest'] ?? '—') ?> disponible</div>
+    <div class="kpi__foot">
+      <?php if (!$result): ?>
+        Encara no s'ha comprovat
+      <?php elseif (!empty($result['error'])): ?>
+        No s'ha pogut comprovar
+      <?php elseif (!empty($result['notice'])): ?>
+        Cap versió publicada a l'origen
+      <?php elseif (!empty($result['available'])): ?>
+        Versió <?= e($result['latest']) ?> disponible
+      <?php else: ?>
+        Esteu al dia
+      <?php endif; ?>
+    </div>
   </div>
   <div class="kpi">
     <div class="kpi__label">Permisos d'escriptura</div>
@@ -37,11 +49,32 @@ use Cros\Core\Icons;
     </form>
   </div>
   <div class="panel__body">
+    <p class="text-soft" style="margin-top:0">
+      Origen configurat:
+      <?php if ($manifestUrl !== ''): ?>
+        <span class="mono"><?= e($manifestUrl) ?></span>
+      <?php else: ?>
+        <em>cap</em>
+      <?php endif; ?>
+      · <a href="<?= e(url('/admin/configuracio/updates')) ?>">Canviar-lo</a>
+    </p>
+
     <?php if (!$result): ?>
       <p class="text-soft">Encara no s'ha comprovat cap actualització. Premeu «Comprovar ara».</p>
     <?php elseif (!empty($result['error'])): ?>
       <div class="alert alert--error"><?= e($result['error']) ?></div>
       <p class="text-soft">Reviseu l'URL del manifest a <a href="<?= e(url('/admin/configuracio/updates')) ?>">Configuració → Actualitzacions</a>.</p>
+    <?php elseif (!empty($result['notice'])): ?>
+      <div class="alert alert--info"><?= e($result['notice']) ?></div>
+      <p class="text-soft" style="margin-bottom:.4rem">Això és normal fins que es publiqui la primera versió. Hi ha dues maneres de publicar-ne una:</p>
+      <ul class="help-list">
+        <li><strong>Amb GitHub:</strong> creeu una versió («release») amb l'etiqueta <span class="mono">v<?= e($current) ?></span>
+          i adjunteu-hi el fitxer ZIP generat amb <span class="mono">php tools/build-release.php</span>.</li>
+        <li><strong>Sense GitHub:</strong> pugeu <span class="mono">manifest.json</span> i el ZIP a una carpeta del web
+          (per exemple <span class="mono"><?= e(rtrim(base_url(), '/')) ?>/actualitzacions/</span>) i poseu l'adreça del
+          manifest a Configuració → Actualitzacions.</li>
+      </ul>
+      <p class="text-soft">Mentrestant podeu instal·lar qualsevol paquet a mà des del bloc de sota.</p>
     <?php elseif (!empty($result['available'])): ?>
       <div class="alert alert--success">
         Hi ha disponible la versió <strong><?= e($result['latest']) ?></strong>
