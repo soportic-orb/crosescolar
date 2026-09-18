@@ -64,6 +64,12 @@ jobs:
           sleep 3
           php tests/functional.php
 
+      - name: Proves de la cursa (dorsals i resultats)
+        run: php tests/race.php
+
+      - name: Proves del motor de PDF
+        run: php tests/pdf.php
+
       - name: Proves del sistema d'actualitzacions
         run: php tests/updates.php
 

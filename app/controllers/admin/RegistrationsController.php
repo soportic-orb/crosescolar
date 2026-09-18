@@ -6,6 +6,7 @@ namespace Cros\Controllers\Admin;
 use Cros\Core\Auth;
 use Cros\Core\Controller;
 use Cros\Core\Db;
+use Cros\Models\Bib;
 use Cros\Models\Content;
 use Cros\Models\Registration;
 
@@ -156,7 +157,7 @@ class RegistrationsController extends Controller
         header('Content-Disposition: attachment; filename="inscripcions-' . date('Y-m-d') . '.csv"');
         $out = fopen('php://output', 'w');
         fwrite($out, "\xEF\xBB\xBF");
-        fputcsv($out, ['Codi', 'Nom', 'Cognoms', 'Any', 'Gènere', 'Categoria', 'Escola', 'Curs', 'Tutor/a', 'Correu', 'Telèfon', 'Talla', 'Notes', 'Estat', 'Consent. dades', 'Consent. imatge', 'Data'], ';', '"', '\\');
+        fputcsv($out, ['Dorsal', 'Codi', 'Nom', 'Cognoms', 'Any', 'Gènere', 'Categoria', 'Escola', 'Curs', 'Tutor/a', 'Correu', 'Telèfon', 'Talla', 'Notes', 'Estat', 'Consent. dades', 'Consent. imatge', 'Data'], ';', '"', '\\');
         foreach ($rows as $row) {
             fputcsv($out, array_values($row), ';', '"', '\\');
         }
@@ -164,10 +165,77 @@ class RegistrationsController extends Controller
         exit;
     }
 
+    /** Dorsal d'un participant en PDF. */
+    public function bibPdf(array $params): void
+    {
+        Auth::requireLogin();
+        $row = Registration::find((int) $params['id']);
+        if (!$row) {
+            abort(404, 'Inscripció no trobada.');
+        }
+        $this->sendPdf(Bib::pdf([$row]), 'dorsal-' . Bib::number($row) . '.pdf');
+    }
+
+    /** Tots els dorsals (o els d'una categoria) en un sol PDF per imprimir. */
+    public function bibsPdf(): void
+    {
+        Auth::requireLogin();
+        $categoryId = (int) input('categoria', 0);
+        $sql = 'SELECT r.*, c.name AS category_name FROM registrations r
+                LEFT JOIN categories c ON c.id = r.category_id';
+        $params = [];
+        if ($categoryId > 0) {
+            $sql .= ' WHERE r.category_id = :cat';
+            $params['cat'] = $categoryId;
+        }
+        $sql .= ' ORDER BY r.bib_number ASC, r.id ASC';
+        $rows = Db::all($sql, $params);
+        if (!$rows) {
+            flash('info', 'No hi ha cap inscripció amb aquests filtres.');
+            $this->back('/admin/inscripcions');
+        }
+        $name = $categoryId > 0 ? 'dorsals-categoria-' . $categoryId : 'dorsals-tots';
+        $this->sendPdf(Bib::pdf($rows), $name . '.pdf');
+    }
+
+    /** Dorsal d'exemple per comprovar el disseny. */
+    public function sampleBib(): void
+    {
+        Auth::requireLogin();
+        $pdf = Bib::sample();
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: inline; filename="dorsal-de-prova.pdf"');
+        header('Content-Length: ' . strlen($pdf));
+        echo $pdf;
+        exit;
+    }
+
+    /** Assigna dorsal a les inscripcions que encara no en tenen. */
+    public function assignBibs(): void
+    {
+        Auth::requireLogin();
+        $this->checkCsrf();
+        $count = Registration::assignMissing();
+        flash('success', $count > 0
+            ? 'S\'han assignat ' . $count . ' dorsals.'
+            : 'Totes les inscripcions ja tenien dorsal.');
+        $this->back('/admin/inscripcions');
+    }
+
+    private function sendPdf(string $pdf, string $filename): void
+    {
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Content-Length: ' . strlen($pdf));
+        echo $pdf;
+        exit;
+    }
+
     /** @return array{0:array<string,mixed>,1:array<string,string>} */
     private function collect(): array
     {
         $data = [
+            'bib_number' => input('bib_number') !== '' ? (int) input('bib_number') : null,
             'first_name' => (string) input('first_name'),
             'last_name' => (string) input('last_name'),
             'birth_year' => input('birth_year') !== '' ? (int) input('birth_year') : null,

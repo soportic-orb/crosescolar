@@ -16,6 +16,10 @@ $navItems = [
     '/inscripcio' => 'Inscripció',
     '/contacte' => 'Contacte',
 ];
+if (\Cros\Core\Settings::bool('results_published')) {
+    // Un cop publicats, els resultats passen a ser el primer que busca la gent.
+    $navItems = ['/' => 'Inici', '/resultats' => 'Resultats'] + $navItems;
+}
 ?>
 <!doctype html>
 <html lang="ca">
@@ -86,8 +90,8 @@ $navItems = [
       <?php foreach ($navItems as $href => $label): ?>
         <a href="<?= e(url($href)) ?>"<?= $path === $href ? ' class="is-active"' : '' ?>><?= e($label) ?></a>
       <?php endforeach; ?>
-      <a class="btn btn--accent btn--sm" href="<?= e(url('/esmorzar')) ?>">
-        <?= \Cros\Core\Icons::svg('ticket', 'icon', 18) ?> Tiquets esmorzar
+      <a class="btn btn--accent btn--sm" href="<?= e(url('/inscripcio')) ?>">
+        <?= \Cros\Core\Icons::svg('run', 'icon', 18) ?> Inscripcions al cros
       </a>
     </nav>
   </div>
@@ -136,8 +140,13 @@ $navItems = [
           <li><a href="<?= e(url('/recorreguts')) ?>">Recorreguts</a></li>
           <li><a href="<?= e(url('/categories-i-premis')) ?>">Categories i premis</a></li>
           <li><a href="<?= e(url('/inscripcio')) ?>">Inscripció</a></li>
-          <li><a href="<?= e(url('/esmorzar')) ?>">Tiquets de l'esmorzar</a></li>
-          <li><a href="<?= e(url('/els-meus-tiquets')) ?>">Els meus tiquets</a></li>
+          <li><a href="<?= e(url('/esmorzar')) ?>">Esmorzar popular</a></li>
+          <?php if (\Cros\Controllers\TicketsController::saleMode()): ?>
+            <li><a href="<?= e(url('/els-meus-tiquets')) ?>">Els meus tiquets</a></li>
+          <?php endif; ?>
+          <?php if (\Cros\Core\Settings::bool('results_published')): ?>
+            <li><a href="<?= e(url('/resultats')) ?>">Resultats</a></li>
+          <?php endif; ?>
         </ul>
       </div>
       <div>

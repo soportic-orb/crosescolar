@@ -14,6 +14,8 @@ class Registration
         $code = self::generateCode();
         $id = Db::insert('registrations', [
             'code' => $code,
+            'bib_number' => self::nextBib(),
+            'token' => random_token(16),
             'first_name' => $data['first_name'],
             'last_name' => $data['last_name'],
             'birth_year' => $data['birth_year'] !== '' ? (int) $data['birth_year'] : null,
@@ -36,6 +38,72 @@ class Registration
         $registration = self::find($id) ?? [];
         self::notify($registration);
         return $registration;
+    }
+
+    /** Següent número de dorsal lliure (comença per 1). */
+    public static function nextBib(): int
+    {
+        return (int) Db::val('SELECT COALESCE(MAX(bib_number), 0) FROM registrations', [], 0) + 1;
+    }
+
+    /** Assigna dorsal i codi d'accés a les inscripcions que no en tinguin. */
+    public static function assignMissing(): int
+    {
+        $rows = Db::all('SELECT id, bib_number, token FROM registrations WHERE bib_number IS NULL OR token IS NULL ORDER BY created_at ASC, id ASC');
+        $next = self::nextBib();
+        $count = 0;
+        foreach ($rows as $row) {
+            $data = [];
+            if ($row['bib_number'] === null) {
+                $data['bib_number'] = $next++;
+            }
+            if (empty($row['token'])) {
+                $data['token'] = random_token(16);
+            }
+            if ($data) {
+                Db::update('registrations', $data, 'id = :id', ['id' => $row['id']]);
+                $count++;
+            }
+        }
+        return $count;
+    }
+
+    /** Inscripció a partir del codi d'accés privat que s'envia per correu. */
+    public static function findByToken(string $token): ?array
+    {
+        if (strlen($token) < 16) {
+            return null;
+        }
+        return Db::one(
+            'SELECT r.*, c.name AS category_name FROM registrations r
+             LEFT JOIN categories c ON c.id = r.category_id WHERE r.token = :token',
+            ['token' => $token]
+        );
+    }
+
+    /** Inscripció pel número de dorsal. */
+    public static function findByBib(int $bib): ?array
+    {
+        return Db::one(
+            'SELECT r.*, c.name AS category_name FROM registrations r
+             LEFT JOIN categories c ON c.id = r.category_id WHERE r.bib_number = :bib',
+            ['bib' => $bib]
+        );
+    }
+
+    /** Totes les inscripcions fetes amb la mateixa adreça de contacte. */
+    public static function forEmail(string $email): array
+    {
+        $email = mb_strtolower(trim($email));
+        if ($email === '') {
+            return [];
+        }
+        return Db::all(
+            'SELECT r.*, c.name AS category_name FROM registrations r
+             LEFT JOIN categories c ON c.id = r.category_id
+             WHERE LOWER(r.tutor_email) = :email ORDER BY r.bib_number ASC, r.id ASC',
+            ['email' => $email]
+        );
     }
 
     public static function find(int $id): ?array
@@ -74,6 +142,7 @@ class Registration
         if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)) {
             Mailer::sendTemplate($email, 'Inscripció confirmada — ' . setting('site_name', 'Cros Escolar La Granada'), 'registration-confirmation', [
                 'registration' => $registration,
+                'siblings' => count(self::forEmail($email)),
             ]);
         }
         $notify = (string) setting('mail_admin_notify', '');
@@ -96,7 +165,7 @@ class Registration
     public static function exportRows(): array
     {
         return Db::all(
-            'SELECT r.code, r.first_name, r.last_name, r.birth_year, r.gender, c.name AS category,
+            'SELECT r.bib_number, r.code, r.first_name, r.last_name, r.birth_year, r.gender, c.name AS category,
                     r.school, r.class_group, r.tutor_name, r.tutor_email, r.tutor_phone, r.shirt_size,
                     r.notes, r.status, r.consent_data, r.consent_image, r.created_at
              FROM registrations r LEFT JOIN categories c ON c.id = r.category_id

@@ -202,10 +202,12 @@ $salesOpen = \Cros\Controllers\TicketsController::salesOpen();
             <a class="btn btn--accent" href="<?= e(url('/esmorzar')) ?>">
               <?= \Cros\Core\Icons::svg('ticket', 'icon', 18) ?> Comprar tiquets
             </a>
+            <a class="btn btn--light" href="<?= e(url('/els-meus-tiquets')) ?>">Els meus tiquets</a>
           <?php else: ?>
-            <span class="chip chip--muted">Venda anticipada tancada</span>
+            <a class="btn btn--light" href="<?= e(url('/esmorzar')) ?>">
+              <?= \Cros\Core\Icons::svg('info', 'icon', 18) ?> Informació de l'esmorzar
+            </a>
           <?php endif; ?>
-          <a class="btn btn--light" href="<?= e(url('/els-meus-tiquets')) ?>">Els meus tiquets</a>
         </div>
       </div>
       <?php if ($ticketTypes): ?>
@@ -227,6 +229,19 @@ $salesOpen = \Cros\Controllers\TicketsController::salesOpen();
     </div>
   </div>
 </section>
+
+<?php if (\Cros\Core\Settings::bool('results_published')): ?>
+<section class="section">
+  <div class="container" style="text-align:center">
+    <span class="eyebrow"><?= \Cros\Core\Icons::svg('trophy', 'icon', 16) ?> Ja hi ha classificació</span>
+    <h2><?= e(setting('results_title', 'Resultats de la cursa')) ?></h2>
+    <p class="lead" style="margin-inline:auto">Consulta la classificació per categories de l'última edició.</p>
+    <a class="btn" style="margin-top:.8rem" href="<?= e(url('/resultats')) ?>">
+      Veure els resultats <?= \Cros\Core\Icons::svg('arrow', 'icon', 18) ?>
+    </a>
+  </div>
+</section>
+<?php endif; ?>
 
 <?php if ($gallery): ?>
 <section class="section" id="galeria">

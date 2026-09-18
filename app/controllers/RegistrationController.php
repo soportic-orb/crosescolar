@@ -5,6 +5,7 @@ namespace Cros\Controllers;
 
 use Cros\Core\Controller;
 use Cros\Core\Db;
+use Cros\Models\Bib;
 use Cros\Models\Content;
 use Cros\Models\Registration;
 
@@ -98,6 +99,41 @@ class RegistrationController extends Controller
 
         $registration = Registration::create($data);
         redirect('/inscripcio/confirmada/' . $registration['code']);
+    }
+
+    /** Dorsal del participant (enllaç privat del correu de confirmació). */
+    public function bib(array $params): void
+    {
+        $registration = Registration::findByToken((string) $params['token']);
+        if (!$registration) {
+            abort(404, 'Aquest enllaç no és vàlid.');
+        }
+        $this->sendBib([$registration], 'dorsal-' . Bib::number($registration) . '.pdf');
+    }
+
+    /** Dorsals de tots els participants inscrits amb la mateixa adreça de contacte. */
+    public function bibs(array $params): void
+    {
+        $registration = Registration::findByToken((string) $params['token']);
+        if (!$registration) {
+            abort(404, 'Aquest enllaç no és vàlid.');
+        }
+        $rows = Registration::forEmail((string) $registration['tutor_email']);
+        if (!$rows) {
+            $rows = [$registration];
+        }
+        $this->sendBib($rows, 'dorsals.pdf');
+    }
+
+    private function sendBib(array $registrations, string $filename): void
+    {
+        $pdf = Bib::pdf($registrations);
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Content-Length: ' . strlen($pdf));
+        header('Cache-Control: private, max-age=0, must-revalidate');
+        echo $pdf;
+        exit;
     }
 
     public function done(array $params): void

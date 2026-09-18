@@ -33,6 +33,13 @@ use Cros\Core\Settings;
           <span class="mono"><?= e(url('/stripe/webhook')) ?></span>
         </div>
       <?php endif; ?>
+      <?php if ($groupKey === 'bibs'): ?>
+        <div class="alert alert--info">
+          Les posicions es compten en mil·límetres des de la cantonada <strong>superior esquerra</strong> del dorsal,
+          i la Y marca la línia de base del text. Deseu els canvis i premeu
+          <strong>«Veure un dorsal de prova»</strong> per comprovar com queda.
+        </div>
+      <?php endif; ?>
       <?php if ($groupKey === 'updates'): ?>
         <div class="alert alert--info">Versió instal·lada: <strong><?= e(app_version()) ?></strong> ·
           <a href="<?= e(url('/admin/actualitzacions')) ?>">Comprovar actualitzacions</a></div>
@@ -53,8 +60,14 @@ use Cros\Core\Settings;
 
       <div class="form-actions">
         <button class="btn" type="submit">Desar els canvis</button>
-        <?php if ($groupKey === 'payments'): ?>
-          <span class="spacer"></span>
+        <?php if ($groupKey === 'bibs'): ?>
+          <a class="btn btn--ghost" href="<?= e(url('/admin/inscripcions/dorsal-de-prova')) ?>" target="_blank">
+            Veure un dorsal de prova
+          </a>
+          <a class="btn btn--ghost" href="<?= e(url('/admin/inscripcions/dorsals')) ?>">Descarregar tots els dorsals</a>
+        <?php endif; ?>
+        <?php if ($groupKey === 'results'): ?>
+          <a class="btn btn--ghost" href="<?= e(url('/admin/resultats')) ?>">Anar als resultats</a>
         <?php endif; ?>
       </div>
     </div>

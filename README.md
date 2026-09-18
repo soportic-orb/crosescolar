@@ -19,7 +19,8 @@ dels tiquets de l'esmorzar popular amb Stripe.
 | Portada | `/` | Banner configurable, compte enrere, blocs destacats, recorreguts, programa, galeria, preguntes freqüents, ubicació i patrocinadors |
 | Recorreguts | `/recorreguts` | Fitxa de cada circuit amb mapa de Wikiloc i descàrrega del GPX |
 | Categories i premis | `/categories-i-premis` | Taula de categories amb horaris, distàncies i premis |
-| Tiquets de l'esmorzar | `/esmorzar` | Compra de tiquets amb pagament segur (Stripe Checkout) |
+| Esmorzar popular | `/esmorzar` | Informació i preus de l'esmorzar (opcionalment, venda en línia amb Stripe) |
+| Resultats | `/resultats` | Classificació per categories, amb descàrrega en PDF |
 | Els meus tiquets | `/els-meus-tiquets` | Consulta dels tiquets comprats amb codi QR i versió imprimible |
 | Inscripció | `/inscripcio` | Formulari d'inscripció a les curses |
 | Contacte, avís legal i privacitat | `/contacte`, `/avis-legal`, `/privacitat` | |
@@ -31,7 +32,12 @@ dels tiquets de l'esmorzar popular amb Stripe.
 - **Patrocinadors**: logotips agrupats (institucionals, principals, col·laboradors).
 - **Esmorzar**: tipus de tiquet amb preu i existències, comandes, venda manual a taquilla,
   devolucions per Stripe i **validació de tiquets amb lector de QR**.
-- **Inscripcions**: llistat, filtres, edició i exportació a CSV.
+- **Inscripcions**: llistat, filtres, edició i exportació a CSV, amb **número de dorsal**
+  automàtic i descàrrega dels dorsals en PDF.
+- **Dorsals**: maqueta en PDF pujada des del panell i col·locació del número, el nom i la
+  categoria; les famílies el reben per correu.
+- **Resultats**: registre de les arribades a meta per dorsal, classificació per categories,
+  publicació al web i exportació en PDF (per categoria o per ordre d'arribada) i CSV.
 - **Configuració**: credencials de Stripe (xifrades), correu SMTP, colors, SEO i textos legals.
 - **Sistema**: usuaris i rols, registre d'activitat, correus enviats, còpies de seguretat
   i **actualitzacions automàtiques (OTA)**.
@@ -76,7 +82,7 @@ Instruccions detallades (nginx, permisos, Stripe, correu): [`docs/instalacio.md`
 │   ├── resources.php      Definició dels continguts gestionables (CRUD genèric)
 │   ├── version.php        Versió instal·lada (la fa servir l'actualitzador OTA)
 │   ├── config.php         Generat per l'instal·lador (no es puja al repositori)
-│   ├── core/              Nucli: Db, Router, View, Auth, Mailer, Stripe, Qr, Updater…
+│   ├── core/              Nucli: Db, Router, View, Auth, Mailer, Stripe, Qr, Pdf, Updater…
 │   ├── controllers/       Controladors públics i del panell (`admin/`)
 │   ├── models/            Comandes, tiquets, inscripcions i continguts
 │   ├── migrations/        Migracions SQL numerades
@@ -97,7 +103,9 @@ Les proves funcionals aixequen l'aplicació sencera sobre SQLite, sense necessit
 ```bash
 CROS_TEST_FRESH=1 php tests/env.php             # crea la base de dades de proves
 php -S 127.0.0.1:8123 -t . tests/server.php &   # servidor local
-php tests/functional.php                        # 45 comprovacions
+php tests/functional.php                        # web i panell
+php tests/race.php                              # dorsals i resultats
+php tests/pdf.php                               # motor de PDF i maquetes
 ```
 
 Prova de l'assistent d'instal·lació contra un MySQL real (s'omet si no es configura):

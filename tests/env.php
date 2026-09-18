@@ -66,6 +66,8 @@ if ($fresh) {
         }
         Db::insert('migrations', ['name' => basename($file), 'applied_at' => date('Y-m-d H:i:s')]);
     }
+    // Migracions escrites en PHP (les .sql ja s'han aplicat traduïdes)
+    Migrator::run();
     \Cros\Core\Seeder::run();
     \Cros\Core\Settings::set('stripe_webhook_test', 'whsec_test_secret_de_prova');
     \Cros\Core\Settings::set('stripe_sk_test', 'sk_test_fals');

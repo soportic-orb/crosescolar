@@ -3,6 +3,29 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.3.0] — 2026-09-18
+
+### Afegit
+- **Dorsals dels participants**: cada inscripció rep un número enter (001, 002…) i un
+  enllaç privat per descarregar el dorsal en PDF, que s'inclou al correu de confirmació
+  (amb l'opció de baixar en un sol fitxer tots els dorsals d'una mateixa família).
+- **Disseny dels dorsals**: es puja una maqueta en PDF i es col·loquen el número, el nom
+  i la categoria indicant posició en mil·límetres, mida, color, alineació i negreta, amb
+  un botó per generar un dorsal de prova.
+- **Resultats de la cursa**: pantalla de registre d'arribades per número de dorsal que
+  assigna la posició dins de cada categoria, amb correcció manual de l'ordre.
+- **Pàgina pública de resultats** per categories (publicable amb un clic) i exportacions
+  en **PDF per categoria, PDF per ordre d'arribada i CSV**.
+- **Motor de PDF propi**, sense dependències externes, que també sap fer servir un PDF
+  existent com a fons dels dorsals.
+
+### Canviat
+- El web públic ja no ven tiquets de l'esmorzar: la pàgina passa a ser informativa amb
+  els preus. La venda en línia es pot tornar a activar des de Configuració → Esmorzar, i
+  el panell manté tota la gestió de tiquets, comandes i validació.
+- El botó destacat del menú és ara **«Inscripcions al cros»** i porta a la pàgina
+  d'inscripció.
+
 ## [1.2.0] — 2026-09-17
 
 ### Canviat

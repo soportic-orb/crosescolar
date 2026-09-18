@@ -9,6 +9,7 @@ use Cros\Controllers\Admin\CrudController;
 use Cros\Controllers\Admin\DashboardController;
 use Cros\Controllers\Admin\OrdersController;
 use Cros\Controllers\Admin\RegistrationsController;
+use Cros\Controllers\Admin\ResultsController;
 use Cros\Controllers\Admin\SettingsController;
 use Cros\Controllers\Admin\ToolsController;
 use Cros\Controllers\Admin\UpdateController;
@@ -51,6 +52,10 @@ $router->post('/stripe/webhook', [WebhookController::class, 'stripe']);
 $router->get('/inscripcio', [RegistrationController::class, 'form']);
 $router->post('/inscripcio', [RegistrationController::class, 'submit']);
 $router->get('/inscripcio/confirmada/{code}', [RegistrationController::class, 'done']);
+$router->get('/inscripcio/dorsal/{token}', [RegistrationController::class, 'bib']);
+$router->get('/inscripcio/dorsals/{token}', [RegistrationController::class, 'bibs']);
+$router->get('/resultats', [PageController::class, 'results']);
+$router->get('/resultats/pdf', [PageController::class, 'resultsPdf']);
 
 /* ---------------------------------------------------------------- Panell */
 $router->get('/admin/acces', [AuthController::class, 'showLogin']);
@@ -76,14 +81,26 @@ $router->post('/admin/comandes/{id}/reenviar', [OrdersController::class, 'resend
 $router->post('/admin/comandes/{id}/esborrar', [OrdersController::class, 'destroy']);
 $router->post('/admin/tiquets/{id}/restablir', [OrdersController::class, 'resetTicket']);
 
+$router->get('/admin/resultats', [ResultsController::class, 'index']);
+$router->post('/admin/resultats/arribada', [ResultsController::class, 'store']);
+$router->post('/admin/resultats/{id}/esborrar', [ResultsController::class, 'destroy']);
+$router->post('/admin/resultats/{id}/moure', [ResultsController::class, 'move']);
+$router->post('/admin/resultats/publicar', [ResultsController::class, 'publish']);
+$router->get('/admin/resultats/pdf', [ResultsController::class, 'pdf']);
+$router->get('/admin/resultats/csv', [ResultsController::class, 'csv']);
+
 $router->get('/admin/validacio', [ToolsController::class, 'scanner']);
 $router->post('/admin/validacio', [ToolsController::class, 'validateTicket']);
 $router->get('/validar/{code}', [ToolsController::class, 'validateLink']);
 
 $router->get('/admin/inscripcions', [RegistrationsController::class, 'index']);
 $router->get('/admin/inscripcions/exportar', [RegistrationsController::class, 'export']);
+$router->get('/admin/inscripcions/dorsals', [RegistrationsController::class, 'bibsPdf']);
+$router->get('/admin/inscripcions/dorsal-de-prova', [RegistrationsController::class, 'sampleBib']);
+$router->post('/admin/inscripcions/assignar-dorsals', [RegistrationsController::class, 'assignBibs']);
 $router->get('/admin/inscripcions/nova', [RegistrationsController::class, 'create']);
 $router->post('/admin/inscripcions/nova', [RegistrationsController::class, 'store']);
+$router->get('/admin/inscripcions/{id}/dorsal', [RegistrationsController::class, 'bibPdf']);
 $router->get('/admin/inscripcions/{id}', [RegistrationsController::class, 'edit']);
 $router->post('/admin/inscripcions/{id}', [RegistrationsController::class, 'update']);
 $router->post('/admin/inscripcions/{id}/esborrar', [RegistrationsController::class, 'destroy']);

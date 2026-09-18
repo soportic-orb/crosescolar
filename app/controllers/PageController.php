@@ -6,7 +6,9 @@ namespace Cros\Controllers;
 use Cros\Core\Controller;
 use Cros\Core\Csrf;
 use Cros\Core\Mailer;
+use Cros\Core\Settings;
 use Cros\Models\Content;
+use Cros\Models\RaceResult;
 
 /** Pàgines informatives. */
 class PageController extends Controller
@@ -53,6 +55,35 @@ class PageController extends Controller
             'categories' => $categories,
             'otherCourses' => array_values(array_filter(Content::courses(), fn ($c) => $c['id'] !== $course['id'])),
         ]);
+    }
+
+    /** Classificació de la cursa. */
+    public function results(): void
+    {
+        if (!Settings::bool('results_published')) {
+            abort(404, 'Els resultats encara no s\'han publicat.');
+        }
+        $this->view('public/results', [
+            'title' => setting('results_title', 'Resultats de la cursa'),
+            'description' => excerpt(strip_tags((string) setting('results_intro', '')), 160),
+            'groups' => RaceResult::byCategory(),
+            'total' => RaceResult::stats()['total'],
+        ]);
+    }
+
+    /** Classificació en PDF (si l'organització ho permet). */
+    public function resultsPdf(): void
+    {
+        if (!Settings::bool('results_published') || !Settings::bool('results_public_pdf')) {
+            abort(404, 'La descàrrega dels resultats no està disponible.');
+        }
+        $categoryId = (int) input('categoria', 0);
+        $pdf = RaceResult::pdf($categoryId > 0 ? $categoryId : null, input('tipus') === 'arribada');
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: attachment; filename="resultats-cros-la-granada.pdf"');
+        header('Content-Length: ' . strlen($pdf));
+        echo $pdf;
+        exit;
     }
 
     public function faqs(): void
@@ -133,6 +164,9 @@ class PageController extends Controller
     public function sitemap(): void
     {
         $urls = [url('/'), url('/categories-i-premis'), url('/recorreguts'), url('/esmorzar'), url('/inscripcio'), url('/contacte')];
+        if (Settings::bool('results_published')) {
+            $urls[] = url('/resultats');
+        }
         foreach (Content::courses() as $course) {
             $urls[] = url('/recorreguts/' . $course['slug']);
         }

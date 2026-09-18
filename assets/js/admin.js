@@ -151,6 +151,41 @@
     }
   }
 
+  /* Arribades a meta: registre ràpid sense recarregar la pàgina --------- */
+  var arrivals = document.querySelector('[data-arrivals]');
+  if (arrivals) {
+    var form = document.getElementById('arrival-form');
+    var input = document.getElementById('bib');
+    var output = document.getElementById('arrival-output');
+    var recent = document.getElementById('arrival-recent');
+
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      var value = input.value.trim();
+      if (value === '') { return; }
+      var body = new FormData();
+      body.append('_token', arrivals.getAttribute('data-token'));
+      body.append('bib', value);
+      fetch(arrivals.getAttribute('data-arrivals'), {
+        method: 'POST', body: body, headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin'
+      }).then(function (response) { return response.json(); }).then(function (result) {
+        var cls = result.status === 'ok' ? 'scan-result--ok' : (result.status === 'warning' ? 'scan-result--warning' : 'scan-result--error');
+        output.innerHTML = '<div class="scan-result ' + cls + '">' + result.message + '</div>';
+        if (result.status === 'ok' && recent) {
+          var row = document.createElement('tr');
+          row.innerHTML = '<td colspan="5">' + result.message + '</td>';
+          row.style.background = '#e3f4e4';
+          recent.insertBefore(row, recent.firstChild);
+        }
+        if (window.navigator.vibrate) { window.navigator.vibrate(result.status === 'ok' ? 60 : [50, 50, 50]); }
+      }).catch(function () {
+        output.innerHTML = '<div class="scan-result scan-result--error">Error de connexió en registrar l\'arribada.</div>';
+      });
+      input.value = '';
+      input.focus();
+    });
+  }
+
   /* Avís abans de sortir amb canvis sense desar ------------------------ */
   document.querySelectorAll('form[data-dirty-check]').forEach(function (form) {
     var dirty = false;

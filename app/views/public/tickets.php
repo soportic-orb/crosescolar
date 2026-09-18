@@ -14,7 +14,45 @@ $errors = $errors ?? [];
   <div class="container">
     <div class="prose" style="max-width:70ch"><?= setting_html('tickets_intro') ?></div>
 
-    <?php if (!$salesOpen): ?>
+    <?php if (!($saleMode ?? false)): ?>
+      <!-- Mode informatiu: el web explica l'esmorzar però no s'hi compra -->
+      <div class="split" style="margin-top:2rem">
+        <div>
+          <?php if ($types): ?>
+            <h2>Què hi haurà</h2>
+            <div class="ticket-list">
+              <?php foreach ($types as $type): ?>
+                <div class="ticket-type">
+                  <div>
+                    <h3><?= e($type['name']) ?></h3>
+                    <?php if (!empty($type['description'])): ?><p><?= e($type['description']) ?></p><?php endif; ?>
+                  </div>
+                  <div class="ticket-type__side">
+                    <span class="ticket-type__price"><?= e(money((int) $type['price_cents'], (string) setting('payments_currency', 'EUR'))) ?></span>
+                  </div>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          <?php endif; ?>
+        </div>
+        <aside>
+          <?php if (setting('tickets_info', '')): ?>
+            <div class="card">
+              <h3><?= \Cros\Core\Icons::svg('info', 'icon', 20) ?> Informació pràctica</h3>
+              <div style="font-size:.95rem;color:var(--ink-soft)"><?= setting_html('tickets_info') ?></div>
+            </div>
+          <?php endif; ?>
+          <div class="card" style="margin-top:1.2rem">
+            <h3><?= \Cros\Core\Icons::svg('run', 'icon', 20) ?> Vols córrer?</h3>
+            <p style="margin:0 0 1rem;color:var(--ink-soft);font-size:.95rem">
+              La cursa és oberta a totes les edats i la inscripció és gratuïta.
+            </p>
+            <a class="btn btn--block" href="<?= e(url('/inscripcio')) ?>">Inscripcions al cros</a>
+          </div>
+        </aside>
+      </div>
+
+    <?php elseif (!$salesOpen): ?>
       <div class="notice-box" style="margin-top:1.5rem"><?= setting_html('tickets_closed_text') ?></div>
       <p style="margin-top:1.2rem"><a class="btn btn--ghost" href="<?= e(url('/els-meus-tiquets')) ?>">Consulta els tiquets que ja has comprat</a></p>
     <?php else: ?>
@@ -129,9 +167,11 @@ $errors = $errors ?? [];
       <?php endif; ?>
     <?php endif; ?>
 
-    <p style="margin-top:2rem">
-      Ja has comprat els tiquets? <a href="<?= e(url('/els-meus-tiquets')) ?>">Consulta'ls aquí</a>.
-    </p>
+    <?php if ($saleMode ?? false): ?>
+      <p style="margin-top:2rem">
+        Ja has comprat els tiquets? <a href="<?= e(url('/els-meus-tiquets')) ?>">Consulta'ls aquí</a>.
+      </p>
+    <?php endif; ?>
   </div>
 </section>
 

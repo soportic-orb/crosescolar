@@ -73,10 +73,37 @@ El formulari també es tanca sol quan es passa la **data de tancament**; deixeu 
 buida si no en voleu posar cap. En tots dos casos, si algú prova d'enviar el formulari
 tot i estar tancat, la inscripció es rebutja.
 
-### 6. Tiquets de l'esmorzar
+### 6. Dorsals dels participants
+
+Cada inscripció rep automàticament un **número de dorsal** (001, 002, 003…) i les
+famílies el poden descarregar en PDF des del correu de confirmació.
+
+**Configuració → Dorsals** permet dissenyar-los:
+
+1. Pugeu la **maqueta en PDF** (el disseny amb els logotips, fet amb Canva, Illustrator,
+   Word…). Si el PDF té més d'una pàgina, indiqueu quina voleu.
+2. Indiqueu on van el **número**, el **nom** i la **categoria**: posició X i Y en
+   mil·límetres des de la cantonada superior esquerra, mida de lletra, color,
+   alineació i negreta. Qualsevol dels tres camps es pot amagar.
+3. Premeu **«Veure un dorsal de prova»** per comprovar com queda abans d'imprimir.
+
+Per imprimir-los tots: **Inscripcions → Dorsals en PDF** (un dorsal per pàgina, i es pot
+filtrar per categoria). Cada fitxa d'inscripció també té el seu botó de descàrrega.
+
+Si canvieu un número a mà, useu **Inscripcions → editar → Número de dorsal**. El botó
+**«Assignar dorsals»** dona número a les inscripcions que encara no en tinguin.
+
+### 7. Tiquets de l'esmorzar
 **Tipus de tiquet**: nom, descripció, preu, existències i màxim per comanda.
 Deixeu les existències en blanc per no limitar-les.
-**Configuració → Esmorzar**: obrir o tancar la venda, data límit i textos.
+**Configuració → Esmorzar** decideix què es veu al web:
+
+- **Només informació** (opció per defecte): el web explica l'esmorzar i els preus, però
+  no s'hi pot comprar. Els tiquets es venen presencialment.
+- **Informació i venda en línia**: s'activa la botiga amb pagament per targeta.
+
+En tots dos casos, el panell manté la gestió de tiquets, comandes, venda manual i
+validació amb codi QR.
 
 ## Durant la venda
 
@@ -96,6 +123,30 @@ Des de la fitxa d'una comanda podeu **reenviar el correu**, **marcar com a pagad
 Si marqueu «Marcar com a pagada» es generen els tiquets a l'instant.
 
 ## El dia de la cursa
+
+### Resultats: arribades a meta
+
+**Resultats** és la pantalla per anar registrant qui va arribant (va bé en una tauleta
+o un mòbil):
+
+1. Escriviu el **número de dorsal** i premeu Retorn. No cal cronometrar: el sistema
+   assigna la posició dins de la categoria del participant per ordre d'arribada.
+2. A la dreta hi veureu les últimes arribades; si us equivoqueu, podeu esborrar-les.
+3. A la classificació podeu **pujar o baixar** qualsevol participant amb les fletxes si
+   cal corregir l'ordre. Les posicions es recalculen soles.
+
+Quan els resultats siguin definitius, premeu **«Publicar al web»**: apareixeran a
+`/resultats`, ordenats per categoria, i al menú del web.
+
+**Exportacions** (botons de la mateixa pantalla):
+
+| Botó | Què genera |
+|---|---|
+| PDF per categories | Un llistat per categoria, de la primera a l'última posició |
+| PDF d'aquesta categoria | Només la categoria escollida |
+| PDF per ordre d'arribada | Tots els participants, del primer al últim a creuar la meta |
+| CSV | Full de càlcul amb totes les dades |
+
 
 ### Validació de tiquets
 **Validar tiquets** (funciona bé en un mòbil):

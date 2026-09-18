@@ -14,10 +14,16 @@ use Cros\Models\TicketType;
 /** Venda i consulta dels tiquets de l'esmorzar. */
 class TicketsController extends Controller
 {
+    /** El web mostra la botiga o només informació? */
+    public static function saleMode(): bool
+    {
+        return (string) setting('tickets_public_mode', 'info') === 'sale';
+    }
+
     /** La venda està oberta? */
     public static function salesOpen(): bool
     {
-        if (setting('tickets_enabled', '1') !== '1') {
+        if (!self::saleMode() || setting('tickets_enabled', '1') !== '1') {
             return false;
         }
         $deadline = (string) setting('tickets_deadline', '');
@@ -34,6 +40,7 @@ class TicketsController extends Controller
             'title' => setting('tickets_title', 'Tiquets per a l\'esmorzar'),
             'description' => excerpt(strip_tags((string) setting('tickets_intro', '')), 160),
             'types' => $types,
+            'saleMode' => self::saleMode(),
             'salesOpen' => self::salesOpen() && $types !== [],
             'stripeReady' => Stripe::configured(),
             'errors' => [],
@@ -88,6 +95,7 @@ class TicketsController extends Controller
             $this->view('public/tickets', [
                 'title' => setting('tickets_title', 'Tiquets per a l\'esmorzar'),
                 'types' => TicketType::all(),
+                'saleMode' => true,
                 'salesOpen' => true,
                 'stripeReady' => Stripe::configured(),
                 'errors' => $errors,

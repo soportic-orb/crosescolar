@@ -234,7 +234,17 @@ $unknown = req('POST', $base . '/admin/validacio', ['_token' => token($scanner['
 check('Rebutja codis inexistents', (json_decode($unknown['body'], true)['status'] ?? '') === 'error');
 
 echo "\n== Compra amb Stripe (credencials falses) ==\n";
+// El web va en mode informatiu; per provar la botiga s'activa la venda en línia.
+req('POST', $base . '/admin/configuracio/tickets', [
+    '_token' => token(req('GET', $base . '/admin/configuracio/tickets')['body']),
+    'tickets_public_mode' => 'sale',
+    'tickets_enabled' => '1',
+    'tickets_title' => 'Tiquets per a l\'esmorzar',
+    'tickets_deadline' => '2026-10-02',
+    'tickets_max_per_order' => '20',
+]);
 $shopForm = req('GET', $base . '/esmorzar');
+check('Amb la venda activada apareix la botiga', str_contains($shopForm['body'], 'name="qty['));
 $checkout = req('POST', $base . '/esmorzar', [
     '_token' => token($shopForm['body']),
     'name' => 'Núria Casals',
@@ -250,6 +260,8 @@ check('Informa l\'usuari de l\'error de pagament', str_contains($shopAfter['body
 $closeForm = req('GET', $base . '/admin/configuracio/tickets');
 req('POST', $base . '/admin/configuracio/tickets', [
     '_token' => token($closeForm['body']),
+    // Sense «tickets_enabled»: la venda queda tancada tot i ser en mode botiga.
+    'tickets_public_mode' => 'sale',
     'tickets_title' => 'Tiquets per a l\'esmorzar',
     'tickets_deadline' => '2026-10-02',
     'tickets_max_per_order' => '20',
@@ -262,11 +274,13 @@ check('Rebutja compres amb la venda tancada', $blockedCheckout['status'] === 302
 check('No crea cap comanda amb la venda tancada', str_contains(req('GET', $base . '/admin/comandes?q=x%40example.test')['body'], 'Cap comanda amb aquests filtres'));
 req('POST', $base . '/admin/configuracio/tickets', [
     '_token' => token(req('GET', $base . '/admin/configuracio/tickets')['body']),
+    'tickets_public_mode' => 'info',
     'tickets_enabled' => '1',
     'tickets_title' => 'Tiquets per a l\'esmorzar',
     'tickets_deadline' => '2026-10-02',
     'tickets_max_per_order' => '20',
 ]);
+check('El web torna al mode informatiu', !str_contains(req('GET', $base . '/esmorzar', [], ['anon' => true])['body'], 'name="qty['));
 
 echo "\n== Exportacions ==\n";
 $csv = req('GET', $base . '/admin/comandes/exportar');

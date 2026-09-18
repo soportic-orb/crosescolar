@@ -116,7 +116,7 @@ $required = str_contains((string) ($field['rules'] ?? ''), 'required');
         <input type="<?= e(in_array($type, ['email', 'url', 'tel', 'number', 'date', 'time'], true) ? $type : 'text') ?>"
                id="<?= e($id) ?>" name="<?= e($name) ?>" value="<?= e((string) $value) ?>"
                placeholder="<?= e($placeholder) ?>" <?= $required ? 'required' : '' ?>
-               <?= $type === 'number' ? 'step="1"' : '' ?>>
+               <?= $type === 'number' ? 'step="' . e((string) ($field['step'] ?? '1')) . '"' : '' ?>>
   <?php endswitch; ?>
 
   <?php if ($hint !== '' && !in_array($type, ['html', 'money'], true)): ?><span class="hint"><?= e($hint) ?></span><?php endif; ?>

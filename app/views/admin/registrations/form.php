@@ -16,6 +16,10 @@
           <input type="text" id="last_name" name="last_name" value="<?= e($row['last_name'] ?? '') ?>" required>
           <?php if (isset($errors['last_name'])): ?><span class="error"><?= e($errors['last_name']) ?></span><?php endif; ?>
         </div>
+        <div class="field"><label for="bib_number">Número de dorsal</label>
+          <input type="number" id="bib_number" name="bib_number" value="<?= e($row['bib_number'] ?? '') ?>" min="1">
+          <span class="hint">Es mostra amb <?= (int) setting('bib_digits', '3') ?> xifres (per exemple 001). Deixeu-ho buit per assignar-lo després.</span>
+        </div>
         <div class="field"><label for="birth_year">Any de naixement</label>
           <input type="number" id="birth_year" name="birth_year" value="<?= e($row['birth_year'] ?? '') ?>" min="1930" max="<?= date('Y') ?>">
         </div>
@@ -63,6 +67,11 @@
         <label class="switch"><input type="checkbox" name="consent_data" value="1" <?= (int) ($row['consent_data'] ?? 0) === 1 ? 'checked' : '' ?>> <span>Consentiment de dades</span></label>
         <label class="switch"><input type="checkbox" name="consent_image" value="1" <?= (int) ($row['consent_image'] ?? 0) === 1 ? 'checked' : '' ?>> <span>Consentiment d'imatge</span></label>
       </div>
+
+      <?php if (!$isNew && !empty($row['bib_number'])): ?>
+        <p class="mt-2"><a class="btn btn--ghost btn--sm" href="<?= e(url('/admin/inscripcions/' . $row['id'] . '/dorsal')) ?>">
+          Descarregar el dorsal en PDF</a></p>
+      <?php endif; ?>
 
       <div class="form-actions">
         <button class="btn" type="submit"><?= $isNew ? 'Crear' : 'Desar' ?></button>

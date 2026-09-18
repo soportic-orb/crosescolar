@@ -41,6 +41,10 @@ $pending = (int) \Cros\Core\Db::val('SELECT COUNT(*) FROM orders WHERE status = 
 
     <div class="sidebar__section">Participants</div>
     <a class="nav-link<?= $isActive('/admin/inscripcions') ? ' is-active' : '' ?>" href="<?= e(url('/admin/inscripcions')) ?>"><?= Icons::svg('users', 'icon', 18) ?> Inscripcions</a>
+    <a class="nav-link<?= $isActive('/admin/resultats') ? ' is-active' : '' ?>" href="<?= e(url('/admin/resultats')) ?>">
+      <?= Icons::svg('trophy', 'icon', 18) ?> Resultats
+      <?php if (\Cros\Core\Settings::bool('results_published')): ?><span class="badge badge--green">Publicats</span><?php endif; ?>
+    </a>
 
     <div class="sidebar__section">Continguts</div>
     <?php foreach ($resources as $key => $resource): ?>

@@ -142,6 +142,8 @@ $currency = (string) setting('payments_currency', 'EUR');
     <a class="btn btn--ghost" href="<?= e(url('/admin/contingut/patrocinadors/nou')) ?>"><?= Icons::svg('heart', 'icon', 16) ?> Afegir patrocinador</a>
     <a class="btn btn--ghost" href="<?= e(url('/admin/contingut/recorreguts/nou')) ?>"><?= Icons::svg('map', 'icon', 16) ?> Afegir recorregut</a>
     <a class="btn btn--ghost" href="<?= e(url('/admin/comandes/nova')) ?>"><?= Icons::svg('plus', 'icon', 16) ?> Venda manual</a>
+    <a class="btn btn--ghost" href="<?= e(url('/admin/resultats')) ?>"><?= Icons::svg('trophy', 'icon', 16) ?> Resultats de la cursa</a>
+    <a class="btn btn--ghost" href="<?= e(url('/admin/inscripcions/dorsals')) ?>"><?= Icons::svg('flag', 'icon', 16) ?> Dorsals en PDF</a>
     <a class="btn btn--ghost" href="<?= e(url('/admin/validacio')) ?>"><?= Icons::svg('qr', 'icon', 16) ?> Validar tiquets</a>
   </div>
 </div>
