@@ -14,6 +14,13 @@ i el versionatge semàntic.
   El codi val 15 minuts, només serveix un cop i a la base de dades només se'n desa el
   resum. L'apartat es pot desactivar des de Configuració → Inscripcions.
 
+- **Orientació del dorsal**: a Configuració → Dorsals es pot dir si el dorsal és
+  vertical o horitzontal. Amb «la mateixa que la maqueta» surt amb la mida del PDF
+  pujat; si en marqueu una altra, la maqueta es gira per omplir la pàgina (per als
+  dissenys apaïsats desats en un PDF vertical). Hi ha també un **gir de la maqueta**
+  (90°, 180°, 270°) per quan surt de costat o del revés, i el panell indica quina mida
+  té la maqueta i quina tindrà el dorsal.
+
 ### Canviat
 - Al formulari d'inscripció, el **gènere** només ofereix femení i masculí, i el **curs**
   es tria d'una llista amb els nou cursos de l'escola (Infantil 1er–3r i Primària

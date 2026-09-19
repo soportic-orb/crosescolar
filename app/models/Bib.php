@@ -39,7 +39,10 @@ class Bib
     {
         $pdf = new Pdf(['title' => 'Dorsals · ' . setting('site_name', 'Cros Escolar La Granada')]);
         $template = null;
-        $size = self::pageSize();
+        $layout = self::layout();
+        $size = $layout['size'];
+        $rotate = $layout['rotate'];
+        $placement = null;
 
         $templateFile = self::templateFile();
         if ($templateFile !== null) {
@@ -48,13 +51,17 @@ class Bib
                 $page = max(1, (int) setting('bib_template_page', '1'));
                 $page = min($page, $import->pageCount());
                 $dimensions = $import->pageSize($page);
-                $size = [$dimensions['width'], $dimensions['height']];
+                $layout = self::layout([$dimensions['width'], $dimensions['height']]);
+                $size = $layout['size'];
+                $rotate = $layout['rotate'];
+                $placement = self::fit($layout['template'], $size);
                 // La maqueta s'importa una sola vegada i es reutilitza a cada pàgina.
                 $pdf->addPage($size);
                 $template = $import->page($pdf, $page);
             } catch (\Throwable $e) {
                 log_line('bibs', 'No s\'ha pogut llegir la maqueta', ['error' => $e->getMessage()]);
                 $template = null;
+                $size = self::pageSize();
             }
         }
 
@@ -65,8 +72,8 @@ class Bib
             } else {
                 $pdf->addPage($size);
             }
-            if ($template !== null) {
-                $pdf->useTemplate($template);
+            if ($template !== null && $placement !== null) {
+                $pdf->useTemplate($template, $placement[0], $placement[1], $placement[2], $placement[3], $rotate);
             }
             self::drawFields($pdf, $registration, $size[0]);
         }
@@ -87,11 +94,95 @@ class Bib
         ]]);
     }
 
-    /** Mida de pàgina quan no hi ha maqueta. */
+    /**
+     * Mida de la pàgina i gir que cal aplicar a la maqueta.
+     *
+     * Amb «automàtic» el dorsal surt amb la mida de la maqueta. Si es demana una
+     * orientació que la maqueta no té (un disseny apaïsat desat en un PDF vertical,
+     * per exemple), la maqueta es gira 90° perquè ompli la pàgina.
+     *
+     * @param array{0:float,1:float}|null $template mida de la maqueta en mm
+     * @return array{size:array,rotate:int,template:array}
+     */
+    public static function layout(?array $template = null): array
+    {
+        $rotate = self::templateRotation();
+        if ($template === null) {
+            return ['size' => self::pageSize(), 'rotate' => $rotate, 'template' => self::pageSize()];
+        }
+        $natural = in_array($rotate, [90, 270], true)
+            ? [(float) $template[1], (float) $template[0]]
+            : [(float) $template[0], (float) $template[1]];
+        if (self::orient($natural) !== $natural) {
+            $rotate = ($rotate + 90) % 360;
+            $natural = [$natural[1], $natural[0]];
+        }
+        return ['size' => $natural, 'rotate' => $rotate, 'template' => $natural];
+    }
+
+    /**
+     * Resum per al panell: mida de la maqueta i mida que tindrà el dorsal.
+     * @return array{template:?array,page:array,rotate:int,error:string}
+     */
+    public static function describe(): array
+    {
+        $file = self::templateFile();
+        if ($file === null) {
+            $layout = self::layout();
+            return ['template' => null, 'page' => $layout['size'], 'rotate' => 0, 'error' => ''];
+        }
+        try {
+            $import = new PdfImport($file);
+            $page = min(max(1, (int) setting('bib_template_page', '1')), $import->pageCount());
+            $dimensions = $import->pageSize($page);
+            $template = [$dimensions['width'], $dimensions['height']];
+            $layout = self::layout($template);
+            return ['template' => $template, 'page' => $layout['size'], 'rotate' => $layout['rotate'], 'error' => ''];
+        } catch (\Throwable $e) {
+            $layout = self::layout();
+            return ['template' => null, 'page' => $layout['size'], 'rotate' => 0, 'error' => $e->getMessage()];
+        }
+    }
+
+    /** Mida de pàgina quan no hi ha maqueta, amb l'orientació configurada. */
     private static function pageSize(): array
     {
         $key = strtolower((string) setting('bib_page_size', 'a5'));
-        return Pdf::SIZES[$key] ?? Pdf::SIZES['a5'];
+        return self::orient(Pdf::SIZES[$key] ?? Pdf::SIZES['a5']);
+    }
+
+    /** Gir que cal aplicar a la maqueta (0, 90, 180 o 270 graus). */
+    private static function templateRotation(): int
+    {
+        $rotate = (int) setting('bib_template_rotate', '0');
+        return in_array($rotate, [90, 180, 270], true) ? $rotate : 0;
+    }
+
+    /**
+     * Aplica l'orientació triada al panell a una mida [amplada, alçada].
+     * Amb «auto» la mida es manté tal com ve de la maqueta.
+     */
+    private static function orient(array $size): array
+    {
+        $orientation = (string) setting('bib_orientation', 'auto');
+        [$width, $height] = [(float) $size[0], (float) $size[1]];
+        return match ($orientation) {
+            'portrait' => [min($width, $height), max($width, $height)],
+            'landscape' => [max($width, $height), min($width, $height)],
+            default => [$width, $height],
+        };
+    }
+
+    /**
+     * Situa la maqueta dins de la pàgina sense deformar-la (centrada si sobra espai).
+     * @return array{0:float,1:float,2:float,3:float} x, y, amplada i alçada en mm
+     */
+    private static function fit(array $template, array $page): array
+    {
+        $scale = min($page[0] / max(0.01, $template[0]), $page[1] / max(0.01, $template[1]));
+        $width = $template[0] * $scale;
+        $height = $template[1] * $scale;
+        return [($page[0] - $width) / 2, ($page[1] - $height) / 2, $width, $height];
     }
 
     private static function drawFields(Pdf $pdf, array $registration, float $pageWidth): void

@@ -98,10 +98,17 @@ famílies el poden descarregar en PDF des del correu de confirmació.
 
 1. Pugeu la **maqueta en PDF** (el disseny amb els logotips, fet amb Canva, Illustrator,
    Word…). Si el PDF té més d'una pàgina, indiqueu quina voleu.
-2. Indiqueu on van el **número**, el **nom** i la **categoria**: posició X i Y en
+2. Digueu si el dorsal és **vertical o horitzontal**. Amb «la mateixa que la maqueta»
+   surt amb la mida i l'orientació del PDF que heu pujat, que és el més habitual. Si en
+   marqueu una altra, la maqueta es gira per omplir la pàgina: serveix per als dissenys
+   apaïsats que el programa de disseny ha desat en un PDF vertical. Si la maqueta surt
+   de costat o del revés, corregiu-ho amb **Gir de la maqueta**. A dalt del formulari hi
+   diu quina mida té la maqueta i quina tindrà el dorsal.
+3. Indiqueu on van el **número**, el **nom** i la **categoria**: posició X i Y en
    mil·límetres des de la cantonada superior esquerra, mida de lletra, color,
-   alineació i negreta. Qualsevol dels tres camps es pot amagar.
-3. Premeu **«Veure un dorsal de prova»** per comprovar com queda abans d'imprimir.
+   alineació i negreta. Qualsevol dels tres camps es pot amagar. Si canvieu
+   l'orientació, reviseu aquestes posicions: el dorsal ja no té la mateixa forma.
+4. Premeu **«Veure un dorsal de prova»** per comprovar com queda abans d'imprimir.
 
 Per imprimir-los tots: **Inscripcions → Dorsals en PDF** (un dorsal per pàgina, i es pot
 filtrar per categoria). Cada fitxa d'inscripció també té el seu botó de descàrrega.

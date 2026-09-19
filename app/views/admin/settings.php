@@ -34,10 +34,25 @@ use Cros\Core\Settings;
         </div>
       <?php endif; ?>
       <?php if ($groupKey === 'bibs'): ?>
+        <?php
+          $bib = \Cros\Models\Bib::describe();
+          $shape = fn (array $size) => sprintf('%.0f×%.0f mm (%s)', $size[0], $size[1],
+              $size[0] > $size[1] ? 'horitzontal' : 'vertical');
+        ?>
         <div class="alert alert--info">
           Les posicions es compten en mil·límetres des de la cantonada <strong>superior esquerra</strong> del dorsal,
           i la Y marca la línia de base del text. Deseu els canvis i premeu
           <strong>«Veure un dorsal de prova»</strong> per comprovar com queda.
+          <br>
+          <?php if ($bib['template'] !== null): ?>
+            La maqueta que hi ha pujada és de <strong><?= e($shape($bib['template'])) ?></strong>
+            i el dorsal sortirà de <strong><?= e($shape($bib['page'])) ?></strong><?php
+              ?><?= $bib['rotate'] ? ', amb la maqueta girada ' . (int) $bib['rotate'] . '°' : '' ?>.
+          <?php elseif ($bib['error'] !== ''): ?>
+            No s'ha pogut llegir la maqueta: <?= e($bib['error']) ?>
+          <?php else: ?>
+            Sense maqueta, el dorsal sortirà de <strong><?= e($shape($bib['page'])) ?></strong>.
+          <?php endif; ?>
         </div>
       <?php endif; ?>
       <?php if ($groupKey === 'updates'): ?>

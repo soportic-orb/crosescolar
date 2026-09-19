@@ -262,22 +262,43 @@ class Pdf
 
     /**
      * Dibuixa una plantilla importada (vegeu PdfImport::page()).
-     * Si no s'indiquen mides, s'utilitzen les de la plantilla.
+     * Si no s'indiquen mides, s'utilitzen les de la plantilla. Amb $rotate (0, 90,
+     * 180 o 270 graus en sentit antihorari) la plantilla es gira per omplir
+     * l'espai indicat, que ja ha de tenir les mides de la plantilla girada.
      */
-    public function useTemplate(array $template, float $x = 0, float $y = 0, ?float $width = null, ?float $height = null): void
+    public function useTemplate(array $template, float $x = 0, float $y = 0, ?float $width = null, ?float $height = null, int $rotate = 0): void
     {
-        $width = $width ?? $template['width'];
-        $height = $height ?? $template['height'];
-        $scaleX = $width / max(0.01, $template['width']);
-        $scaleY = $height / max(0.01, $template['height']);
+        $rotate = ((int) round($rotate / 90) * 90 % 360 + 360) % 360;
+        $turned = in_array($rotate, [90, 270], true);
+        $width = $width ?? ($turned ? $template['height'] : $template['width']);
+        $height = $height ?? ($turned ? $template['width'] : $template['height']);
+
+        // Mides de la plantilla i de l'espai de destí, en punts.
+        $u = max(0.01, (float) $template['width']) * self::MM;
+        $v = max(0.01, (float) $template['height']) * self::MM;
+        $w = $width * self::MM;
+        $h = $height * self::MM;
+        $left = $x * self::MM;
+        $bottom = ($this->pageHeight() - $y - $height) * self::MM;
+
+        // Matriu que situa la plantilla dins de l'espai indicat amb el gir demanat.
+        $matrix = match ($rotate) {
+            90 => [0, $h / $u, -$w / $v, 0, $left + $w, $bottom],
+            180 => [-$w / $u, 0, 0, -$h / $v, $left + $w, $bottom + $h],
+            270 => [0, -$h / $u, $w / $v, 0, $left, $bottom + $h],
+            default => [$w / $u, 0, 0, $h / $v, $left, $bottom],
+        };
+
         $name = 'T' . $template['object'];
         $this->pages[$this->current]['xobjects'][$name] = $template['object'];
         $this->write(sprintf(
-            "q %.4F 0 0 %.4F %.2F %.2F cm /%s Do Q\n",
-            $scaleX,
-            $scaleY,
-            $x * self::MM,
-            ($this->pageHeight() - $y - $height) * self::MM,
+            "q %.4F %.4F %.4F %.4F %.2F %.2F cm /%s Do Q\n",
+            $matrix[0],
+            $matrix[1],
+            $matrix[2],
+            $matrix[3],
+            $matrix[4],
+            $matrix[5],
             $name
         ));
     }

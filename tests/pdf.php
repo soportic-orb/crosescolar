@@ -38,6 +38,15 @@ function pdf_text(string $pdf): ?string
     return $output;
 }
 
+/** Mida en mil·límetres de la primera pàgina d'un PDF generat. */
+function pdf_page_size(string $pdf): array
+{
+    if (!preg_match('#/MediaBox \[0 0 ([0-9.]+) ([0-9.]+)\]#', $pdf, $m)) {
+        return [0.0, 0.0];
+    }
+    return [round((float) $m[1] / Pdf::MM, 1), round((float) $m[2] / Pdf::MM, 1)];
+}
+
 echo "\n== Generació de PDF ==\n";
 $pdf = new Pdf(['title' => 'Prova']);
 $pdf->addPage('a4');
@@ -126,8 +135,53 @@ $document = Bib::sample();
 $text = pdf_text($document);
 check('El dorsal es dibuixa sobre la maqueta', $text === null || str_contains($text, 'CROS ESCOLAR LA GRANADA'),
     $text === null ? '' : trim(str_replace("\n", ' ', $text)));
+echo "\n== Orientació del dorsal ==\n";
+// La maqueta de prova és A5 vertical (148×210 mm).
+Settings::set('bib_orientation', 'auto');
+Settings::set('bib_template_rotate', '0');
+$size = pdf_page_size(Bib::sample());
+check('Per defecte el dorsal té la mida de la maqueta', $size === [148.0, 210.0], implode('×', $size));
+
+Settings::set('bib_orientation', 'landscape');
+$document = Bib::sample();
+$size = pdf_page_size($document);
+$text = pdf_text($document);
+check('Marcant horitzontal, el dorsal surt apaïsat', $size === [210.0, 148.0], implode('×', $size));
+$layout = Bib::layout([148.0, 210.0]);
+check('La maqueta vertical es gira per omplir el dorsal apaïsat',
+    $layout['rotate'] === 90 && $layout['size'] === [210.0, 148.0], json_encode($layout));
+check('La maqueta continua sortint al dorsal apaïsat',
+    $text === null || str_contains($text, 'CROS ESCOLAR LA GRANADA'),
+    $text === null ? '' : trim(str_replace("\n", ' ', $text)));
+
+Settings::set('bib_orientation', 'portrait');
+check('Marcant vertical, el dorsal surt dret', pdf_page_size(Bib::sample()) === [148.0, 210.0]);
+check('Una maqueta que ja és vertical no es gira', Bib::layout([148.0, 210.0])['rotate'] === 0);
+check('Una maqueta apaïsada es gira per fer-la vertical', Bib::layout([210.0, 148.0])['rotate'] === 90);
+
+Settings::set('bib_orientation', 'auto');
+Settings::set('bib_template_rotate', '90');
+$document = Bib::sample();
+check('Girar la maqueta 90° també gira la pàgina', pdf_page_size($document) === [210.0, 148.0],
+    implode('×', pdf_page_size($document)));
+$text = pdf_text($document);
+check('La maqueta girada conserva el contingut',
+    $text === null || str_contains($text, 'CROS ESCOLAR LA GRANADA'));
+Settings::set('bib_orientation', 'landscape');
+Settings::set('bib_template_rotate', '180');
+check('El gir de 180° es combina amb l\'orientació', Bib::layout([148.0, 210.0])['rotate'] === 270,
+    (string) Bib::layout([148.0, 210.0])['rotate']);
+Settings::set('bib_orientation', 'auto');
+Settings::set('bib_template_rotate', '0');
+
 Settings::set('bib_template', '');
 @unlink($templatePath);
+
+Settings::set('bib_orientation', 'landscape');
+check('Sense maqueta també es pot fer apaïsat', pdf_page_size(Bib::sample()) === [210.0, 148.0],
+    implode('×', pdf_page_size(Bib::sample())));
+Settings::set('bib_orientation', 'auto');
+check('Sense maqueta i en automàtic, la mida configurada', pdf_page_size(Bib::sample()) === [148.0, 210.0]);
 
 echo "\n== Resultat ==\n  $passed proves correctes, $failed errors\n\n";
 exit($failed === 0 ? 0 : 1);
