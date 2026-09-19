@@ -13,7 +13,7 @@ $navItems = [
     '/' => 'Inici',
     '/recorreguts' => 'Recorreguts',
     '/categories-i-premis' => 'Categories i premis',
-    '/inscripcio' => 'Inscripció',
+    // La inscripció no surt a la llista: el botó destacat del menú ja hi porta.
     '/contacte' => 'Contacte',
 ];
 if (\Cros\Core\Settings::bool('results_published')) {
