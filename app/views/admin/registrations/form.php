@@ -23,10 +23,18 @@
         <div class="field"><label for="birth_year">Any de naixement</label>
           <input type="number" id="birth_year" name="birth_year" value="<?= e($row['birth_year'] ?? '') ?>" min="1930" max="<?= date('Y') ?>">
         </div>
+        <?php
+          $genders = ['' => '—'] + \Cros\Models\Registration::GENDERS;
+          // Si una inscripció antiga porta un altre valor, es manté per no perdre'l en desar.
+          $gender = (string) ($row['gender'] ?? '');
+          if ($gender !== '' && !isset($genders[$gender])) {
+              $genders[$gender] = ucfirst($gender);
+          }
+        ?>
         <div class="field"><label for="gender">Gènere</label>
           <select id="gender" name="gender">
-            <?php foreach (['' => '—', 'femeni' => 'Femení', 'masculi' => 'Masculí', 'altre' => 'Altre'] as $value => $label): ?>
-              <option value="<?= e($value) ?>" <?= (string) ($row['gender'] ?? '') === $value ? 'selected' : '' ?>><?= e($label) ?></option>
+            <?php foreach ($genders as $value => $label): ?>
+              <option value="<?= e($value) ?>" <?= $gender === (string) $value ? 'selected' : '' ?>><?= e($label) ?></option>
             <?php endforeach; ?>
           </select>
         </div>
@@ -47,8 +55,21 @@
         </div>
         <div class="field"><label for="school">Escola o club</label>
           <input type="text" id="school" name="school" value="<?= e($row['school'] ?? '') ?>"></div>
+        <?php
+          $courses = \Cros\Models\Registration::COURSES;
+          $course = (string) ($row['class_group'] ?? '');
+          if ($course !== '' && !in_array($course, $courses, true)) {
+              $courses[] = $course;
+          }
+        ?>
         <div class="field"><label for="class_group">Curs</label>
-          <input type="text" id="class_group" name="class_group" value="<?= e($row['class_group'] ?? '') ?>"></div>
+          <select id="class_group" name="class_group">
+            <option value="">—</option>
+            <?php foreach ($courses as $value): ?>
+              <option value="<?= e($value) ?>" <?= $course === $value ? 'selected' : '' ?>><?= e($value) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
         <div class="field"><label for="shirt_size">Talla</label>
           <input type="text" id="shirt_size" name="shirt_size" value="<?= e($row['shirt_size'] ?? '') ?>"></div>
         <div class="field"><label for="tutor_name">Persona de contacte</label>

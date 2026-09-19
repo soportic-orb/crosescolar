@@ -60,6 +60,14 @@ class RegistrationController extends Controller
             'consent_image' => input_bool('consent_image'),
         ];
 
+        // Gènere i curs només poden portar una de les opcions del formulari.
+        if (!isset(Registration::GENDERS[$data['gender']])) {
+            $data['gender'] = '';
+        }
+        if (!in_array($data['class_group'], Registration::COURSES, true)) {
+            $data['class_group'] = '';
+        }
+
         $errors = $this->validate([
             'first_name' => 'required|max:100',
             'last_name' => 'required|max:150',

@@ -66,10 +66,10 @@ $externalLink = (bool) preg_match('#^https?://#i', $linkUrl);
             <div class="field">
               <label for="gender">Gènere</label>
               <select id="gender" name="gender">
-                <option value="">Prefereixo no dir-ho</option>
-                <option value="femeni" <?= old('gender') === 'femeni' ? 'selected' : '' ?>>Femení</option>
-                <option value="masculi" <?= old('gender') === 'masculi' ? 'selected' : '' ?>>Masculí</option>
-                <option value="altre" <?= old('gender') === 'altre' ? 'selected' : '' ?>>Altre</option>
+                <option value="">—</option>
+                <?php foreach (\Cros\Models\Registration::GENDERS as $value => $label): ?>
+                  <option value="<?= e($value) ?>" <?= old('gender') === $value ? 'selected' : '' ?>><?= e($label) ?></option>
+                <?php endforeach; ?>
               </select>
             </div>
             <div class="field">
@@ -91,7 +91,12 @@ $externalLink = (bool) preg_match('#^https?://#i', $linkUrl);
             </div>
             <div class="field">
               <label for="class_group">Curs</label>
-              <input type="text" id="class_group" name="class_group" value="<?= e(old('class_group')) ?>" placeholder="3r de primària">
+              <select id="class_group" name="class_group">
+                <option value="">—</option>
+                <?php foreach (\Cros\Models\Registration::COURSES as $course): ?>
+                  <option value="<?= e($course) ?>" <?= old('class_group') === $course ? 'selected' : '' ?>><?= e($course) ?></option>
+                <?php endforeach; ?>
+              </select>
             </div>
             <div class="field">
               <label for="shirt_size">Talla de samarreta</label>

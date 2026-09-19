@@ -3,6 +3,19 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.3.1] — 2026-09-19
+
+### Canviat
+- Al formulari d'inscripció, el **gènere** només ofereix femení i masculí, i el **curs**
+  es tria d'una llista amb els nou cursos de l'escola (Infantil 1er–3r i Primària
+  1er–6è) en comptes d'escriure'l a mà. El panell fa servir les mateixes opcions i, si
+  una inscripció antiga en porta una altra, la manté per no perdre-la en desar.
+- El menú ja no repeteix l'enllaç **«Inscripció»**: el botó destacat del menú hi porta.
+
+### Corregit
+- La integració contínua no tenia poppler instal·lat i les comprovacions que llegeixen
+  el text dels PDF generats se saltaven en silenci.
+
 ## [1.3.0] — 2026-09-18
 
 ### Afegit

@@ -9,6 +9,22 @@ use Cros\Core\Mailer;
 /** Inscripcions a les curses. */
 class Registration
 {
+    /** Opcions de gènere admeses als formularis. */
+    public const GENDERS = ['femeni' => 'Femení', 'masculi' => 'Masculí'];
+
+    /** Cursos de l'escola, en l'ordre en què es mostren als formularis. */
+    public const COURSES = [
+        'Infantil 1er',
+        'Infantil 2on',
+        'Infantil 3r',
+        'Primària 1er',
+        'Primària 2on',
+        'Primària 3r',
+        'Primària 4rt',
+        'Primària 5è',
+        'Primària 6è',
+    ];
+
     public static function create(array $data): array
     {
         $code = self::generateCode();

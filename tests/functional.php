@@ -92,6 +92,16 @@ check('Pàgina de tiquets', $tickets['status'] === 200 && str_contains($tickets[
 echo "\n== Inscripció pública ==\n";
 $form = req('GET', $base . '/inscripcio');
 $csrf = token($form['body']);
+preg_match('#<select id="gender".*?</select>#s', $form['body'], $genderField);
+check('El gènere només ofereix femení i masculí',
+    substr_count($genderField[0] ?? '', '<option') === 3
+    && str_contains($genderField[0] ?? '', 'Femení') && str_contains($genderField[0] ?? '', 'Masculí')
+    && !str_contains($genderField[0] ?? '', 'Altre'), $genderField[0] ?? 'sense camp');
+preg_match('#<select id="class_group".*?</select>#s', $form['body'], $courseField);
+check('El curs es tria d\'una llista amb els nou cursos de l\'escola',
+    substr_count($courseField[0] ?? '', '<option') === 10
+    && str_contains($courseField[0] ?? '', 'Infantil 1er')
+    && str_contains($courseField[0] ?? '', 'Primària 6è'), $courseField[0] ?? 'sense camp');
 $registration = req('POST', $base . '/inscripcio', [
     '_token' => $csrf,
     'first_name' => 'Laia',
@@ -100,7 +110,7 @@ $registration = req('POST', $base . '/inscripcio', [
     'gender' => 'femeni',
     'category_id' => '',
     'school' => 'Escola La Granada',
-    'class_group' => '4t',
+    'class_group' => 'Primària 4rt',
     'tutor_name' => 'Marc Ferrer',
     'tutor_email' => 'families@example.test',
     'tutor_phone' => '600000000',
@@ -118,6 +128,14 @@ $duplicate = req('POST', $base . '/inscripcio', [
     'tutor_name' => 'Marc Ferrer', 'tutor_email' => 'families@example.test', 'consent_data' => '1',
 ]);
 check('Evita inscripcions duplicades', $duplicate['status'] === 302 && !str_contains($duplicate['headers'], 'confirmada'));
+
+// Un enviament fabricat a mà no pot desar valors que no són al formulari.
+req('POST', $base . '/inscripcio', [
+    '_token' => token(req('GET', $base . '/inscripcio')['body']),
+    'first_name' => 'Nil', 'last_name' => 'Fora ' . $unique, 'birth_year' => (string) ((int) date('Y') - 10),
+    'gender' => 'altre', 'class_group' => 'Batxillerat',
+    'tutor_name' => 'Marc Ferrer', 'tutor_email' => 'families@example.test', 'consent_data' => '1',
+]);
 
 echo "\n== Seguretat ==\n";
 $noCsrf = req('POST', $base . '/inscripcio', ['first_name' => 'X', 'last_name' => 'Y']);
@@ -287,6 +305,10 @@ $csv = req('GET', $base . '/admin/comandes/exportar');
 check('Exportació CSV de comandes', $csv['status'] === 200 && str_contains($csv['headers'], 'text/csv'));
 $csv2 = req('GET', $base . '/admin/inscripcions/exportar');
 check('Exportació CSV d\'inscripcions', $csv2['status'] === 200 && str_contains($csv2['body'], 'Ferrer'));
+check('El curs triat es desa', str_contains($csv2['body'], 'Primària 4rt'));
+check('Descarta el gènere i el curs que no són del formulari',
+    str_contains($csv2['body'], 'Fora ' . $unique)   // la inscripció sí que s'ha desat
+    && !str_contains($csv2['body'], 'Batxillerat') && !str_contains($csv2['body'], 'altre'));
 
 echo "\n== Inscripcions sense formulari en línia ==\n";
 $regForm = req('GET', $base . '/admin/configuracio/registrations');
