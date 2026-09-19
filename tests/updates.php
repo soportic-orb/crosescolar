@@ -80,9 +80,13 @@ try {
     if (getenv('CROS_TEST_ONLINE') === '1') {
         echo "\n== API real de GitHub ==\n";
         $result = checkUrl('https://api.github.com/repos/soportic-orb/crosescolar/releases/latest');
-        check('Un dipòsit sense versions publicades no dona error',
-            $result['error'] === '' && str_contains((string) $result['notice'], 'cap versió publicada'),
-            $result['error'] ?: $result['notice']);
+        check('Llegeix la darrera versió publicada del dipòsit real',
+            $result['error'] === '' && preg_match('/^\d+\.\d+\.\d+$/', (string) $result['latest']) === 1,
+            $result['error'] ?: $result['latest']);
+        check('El paquet real porta adreça i resum SHA-256',
+            str_ends_with((string) $result['zip_url'], '.zip')
+            && preg_match('/^[0-9a-f]{64}$/', (string) $result['sha256']) === 1,
+            $result['zip_url'] . ' / ' . $result['sha256']);
 
         $result = checkUrl('https://api.github.com/repos/soportic-orb/no-existeix-mai/releases/latest');
         check('Un dipòsit inaccessible dona un missatge útil i no ofereix cap versió',
