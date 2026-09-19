@@ -112,6 +112,11 @@ return [
             'categories_notes' => ['label' => 'Notes finals', 'type' => 'html', 'rows' => 4, 'default' => '<p>Totes les persones participants rebran un obsequi de record. Cal ser al lloc de sortida 10 minuts abans de l\'hora indicada.</p>'],
             'prizes_title' => ['label' => 'Títol dels premis', 'type' => 'text', 'default' => 'Premis'],
             'prizes_intro' => ['label' => 'Introducció dels premis', 'type' => 'textarea', 'rows' => 3, 'default' => 'El lliurament de premis es farà a l\'escenari de la zona esportiva en acabar l\'última cursa.'],
+            'prizes_medals' => ['label' => 'Marcar els guanyadors amb medalla als resultats', 'type' => 'bool', 'default' => '1',
+                'help' => 'A la pàgina de resultats, les primeres posicions de cada categoria surten destacades amb una medalla.'],
+            'prizes_winners' => ['label' => 'Quants guanyadors per categoria', 'type' => 'number', 'default' => '3', 'min' => '1', 'max' => '20',
+                'show_if' => 'prizes_medals',
+                'help' => 'Amb 3, es destaquen els tres primers; amb 5, els cinc primers. Les tres primeres posicions porten els colors d\'or, plata i bronze, i la resta, el verd de la cursa.'],
         ],
     ],
 

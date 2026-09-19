@@ -3,6 +3,17 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.7.0] — 2026-09-19
+
+### Afegit
+- **Medalles dels guanyadors**: a Configuració → Categories i premis es pot activar o
+  desactivar que les primeres posicions de cada categoria surtin marcades amb una
+  medalla a la classificació, i indicar **quants guanyadors** n'hi ha (els tres
+  primers, els quatre primers…). Les tres primeres porten els colors d'or, plata i
+  bronze; de la quarta en endavant, el verd de la cursa.
+- Els formularis del panell admeten camps que només apareixen quan n'hi ha un altre
+  d'activat, com el nombre de guanyadors.
+
 ## [1.6.1] — 2026-09-19
 
 ### Canviat

@@ -13,7 +13,7 @@ $hint = $field['help'] ?? '';
 $placeholder = $field['placeholder'] ?? '';
 $required = str_contains((string) ($field['rules'] ?? ''), 'required');
 ?>
-<div class="field">
+<div class="field"<?= isset($field['show_if']) ? ' data-show-if="' . e($field['show_if']) . '"' : '' ?>>
   <?php if ($type === 'bool'): ?>
     <label class="switch" for="<?= e($id) ?>">
       <input type="checkbox" id="<?= e($id) ?>" name="<?= e($name) ?>" value="1" <?= (string) $value === '1' ? 'checked' : '' ?>>
@@ -116,7 +116,9 @@ $required = str_contains((string) ($field['rules'] ?? ''), 'required');
         <input type="<?= e(in_array($type, ['email', 'url', 'tel', 'number', 'date', 'time'], true) ? $type : 'text') ?>"
                id="<?= e($id) ?>" name="<?= e($name) ?>" value="<?= e((string) $value) ?>"
                placeholder="<?= e($placeholder) ?>" <?= $required ? 'required' : '' ?>
-               <?= $type === 'number' ? 'step="' . e((string) ($field['step'] ?? '1')) . '"' : '' ?>>
+               <?= $type === 'number' ? 'step="' . e((string) ($field['step'] ?? '1')) . '"' : '' ?>
+               <?= isset($field['min']) ? 'min="' . e((string) $field['min']) . '"' : '' ?>
+               <?= isset($field['max']) ? 'max="' . e((string) $field['max']) . '"' : '' ?>>
   <?php endswitch; ?>
 
   <?php if ($hint !== '' && !in_array($type, ['html', 'money'], true)): ?><span class="hint"><?= e($hint) ?></span><?php endif; ?>

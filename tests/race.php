@@ -63,6 +63,53 @@ function isPdf(string $body): bool
     return str_starts_with($body, '%PDF-');
 }
 
+/**
+ * Llegeix tots els camps d'un formulari del panell perquè, en desar-lo, no
+ * s'esborri el que no es toca (els botons desactivats no s'envien).
+ */
+function formData(string $html): array
+{
+    $data = [];
+    preg_match_all('/<input[^>]*>/i', $html, $inputs);
+    foreach ($inputs[0] as $tag) {
+        if (!preg_match('/name="([^"]+)"/', $tag, $name)) {
+            continue;
+        }
+        if (preg_match('/type="(checkbox|file|radio)"/i', $tag, $type)) {
+            if (strtolower($type[1]) === 'checkbox' && str_contains($tag, 'checked')) {
+                $data[$name[1]] = '1';
+            }
+            continue;
+        }
+        preg_match('/value="([^"]*)"/', $tag, $value);
+        $data[$name[1]] = html_entity_decode($value[1] ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    }
+    preg_match_all('#<textarea[^>]*name="([^"]+)"[^>]*>(.*?)</textarea>#s', $html, $areas, PREG_SET_ORDER);
+    foreach ($areas as $area) {
+        $data[$area[1]] = html_entity_decode($area[2], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    }
+    preg_match_all('#<select[^>]*name="([^"]+)"[^>]*>(.*?)</select>#s', $html, $selects, PREG_SET_ORDER);
+    foreach ($selects as $select) {
+        if (preg_match('/<option value="([^"]*)"[^>]*selected/', $select[2], $option)) {
+            $data[$select[1]] = html_entity_decode($option[1], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        }
+    }
+    return $data;
+}
+
+/** Desa la configuració d'un grup canviant només el que s'indica. */
+function saveSettings(string $base, string $group, array $changes): array
+{
+    $form = req('GET', $base . '/admin/configuracio/' . $group);
+    return req('POST', $base . '/admin/configuracio/' . $group, array_merge(formData($form['body']), $changes));
+}
+
+/** Quantes medalles hi ha a la classificació pública. */
+function medals(string $html): int
+{
+    return substr_count($html, '<circle cx="12" cy="15" r="5"/>');
+}
+
 /** Inscriu un participant i retorna [codi, dorsal, enllaç privat]. */
 function register(string $base, string $first, string $last, int $year): array
 {
@@ -178,6 +225,29 @@ check('Els resultats surten ordenats per posició',
 check('Els resultats s\'agrupen per categoria', substr_count($public['body'], '<table class="data">') >= 2);
 check('Es mostra el número de dorsal', str_contains($public['body'], $bib1));
 check('El menú mostra els resultats', str_contains(req('GET', $base . '/', [], ['anon' => true])['body'], '/resultats"'));
+
+echo "\n== Medalles dels guanyadors ==\n";
+check('Hi ha l\'opció de medalles a la configuració de categories',
+    str_contains(text(req('GET', $base . '/admin/configuracio/categories')['body']), 'Marcar els guanyadors amb medalla'));
+// Hi ha dos classificats a una categoria i un a l'altra.
+check('Per defecte els tres primers porten medalla', medals($public['body']) === 3, (string) medals($public['body']));
+
+saveSettings($base, 'categories', ['prizes_medals' => '1', 'prizes_winners' => '1']);
+$oneWinner = req('GET', $base . '/resultats', [], ['anon' => true]);
+check('Amb un sol guanyador només en porta el primer de cada categoria',
+    medals($oneWinner['body']) === 2, (string) medals($oneWinner['body']));
+check('Els altres continuen sortint amb la posició', str_contains($oneWinner['body'], '<strong>2</strong>'));
+
+$without = saveSettings($base, 'categories', ['prizes_medals' => '0', 'prizes_winners' => '3']);
+check('Es poden desactivar les medalles', $without['status'] === 302);
+check('Sense medalles no en surt cap', medals(req('GET', $base . '/resultats', [], ['anon' => true])['body']) === 0);
+
+saveSettings($base, 'categories', ['prizes_medals' => '1', 'prizes_winners' => '5']);
+check('Amb cinc guanyadors, tots els classificats en porten',
+    medals(req('GET', $base . '/resultats', [], ['anon' => true])['body']) === 3);
+check('Els textos de la pàgina de categories no s\'han perdut',
+    str_contains(req('GET', $base . '/categories-i-premis', [], ['anon' => true])['body'], 'Benjamí'));
+saveSettings($base, 'categories', ['prizes_medals' => '1', 'prizes_winners' => '3']);
 
 echo "\n== Exportacions ==\n";
 $byCategory = req('GET', $base . '/admin/resultats/pdf');

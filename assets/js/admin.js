@@ -195,4 +195,17 @@
       if (dirty) { event.preventDefault(); event.returnValue = ''; }
     });
   });
+
+  /* Camps que només tenen sentit si n'hi ha un altre d'activat (data-show-if). */
+  document.querySelectorAll('[data-show-if]').forEach(function (field) {
+    var master = document.querySelector('[name="' + field.getAttribute('data-show-if') + '"]');
+    if (!master) { return; }
+    // S'amaga la cel·la sencera perquè no quedi un forat a la graella.
+    var cell = field.parentElement && field.parentElement.parentElement
+      && field.parentElement.parentElement.classList.contains('form-grid')
+      ? field.parentElement : field;
+    var update = function () { cell.style.display = master.checked ? '' : 'none'; };
+    master.addEventListener('change', update);
+    update();
+  });
 })();

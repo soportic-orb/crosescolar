@@ -4,7 +4,9 @@ use Cros\Core\Icons;
 use Cros\Models\Bib;
 $showBib = setting('results_show_bib', '1') === '1';
 $publicPdf = setting('results_public_pdf', '1') === '1';
+// Guanyadors destacats amb medalla: or, plata, bronze i, a partir del quart, el verd de la cursa.
 $medals = ['#c9a227', '#9aa6ad', '#b06a3b'];
+$winners = setting('prizes_medals', '1') === '1' ? max(0, min(50, (int) setting('prizes_winners', '3'))) : 0;
 ?>
 <?= \Cros\Core\View::partial('partials/page-header', [
     'title' => setting('results_title', 'Resultats de la cursa'),
@@ -56,8 +58,9 @@ $medals = ['#c9a227', '#9aa6ad', '#b06a3b'];
                 <?php $position = (int) $row['position']; ?>
                 <tr>
                   <td>
-                    <?php if ($position <= 3): ?>
-                      <span class="chip" style="background:<?= e($medals[$position - 1]) ?>22;color:<?= e($medals[$position - 1]) ?>">
+                    <?php if ($position <= $winners): ?>
+                      <?php $color = $medals[$position - 1] ?? '#3c7f49'; ?>
+                      <span class="chip" style="background:<?= e($color) ?>22;color:<?= e($color) ?>">
                         <?= Icons::svg('medal', 'icon', 15) ?> <?= $position ?>
                       </span>
                     <?php else: ?>
