@@ -41,6 +41,14 @@
   </p>
 <?php endif; ?>
 
+<?php if (\Cros\Controllers\AccountController::enabled()): ?>
+  <p style="margin:18px 0 0;font-size:14px">
+    Podeu revisar i modificar les dades del participant a
+    <a href="<?= e(url('/les-meves-inscripcions')) ?>" style="color:<?= e(setting('color_primary', '#2f6b3c')) ?>">Les meves inscripcions</a>:
+    s'hi entra amb un codi que us enviem a aquesta mateixa adreça.
+  </p>
+<?php endif; ?>
+
 <p style="margin:18px 0 0;font-size:14px">
   El dia de la cursa, passeu per la carpa de l'AFA 15 minuts abans de la vostra sortida.
   Si voleu quedar-vos a l'esmorzar popular, en trobareu tota la informació

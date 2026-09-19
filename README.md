@@ -23,6 +23,7 @@ dels tiquets de l'esmorzar popular amb Stripe.
 | Resultats | `/resultats` | Classificació per categories, amb descàrrega en PDF |
 | Els meus tiquets | `/els-meus-tiquets` | Consulta dels tiquets comprats amb codi QR i versió imprimible |
 | Inscripció | `/inscripcio` | Formulari d'inscripció a les curses |
+| Les meves inscripcions | `/les-meves-inscripcions` | Les famílies hi entren amb un codi d'un sol ús que reben per correu i poden revisar i modificar les dades dels seus participants |
 | Contacte, avís legal i privacitat | `/contacte`, `/avis-legal`, `/privacitat` | |
 
 ### Panell d'administració (`/admin`)
@@ -105,6 +106,7 @@ CROS_TEST_FRESH=1 php tests/env.php             # crea la base de dades de prove
 php -S 127.0.0.1:8123 -t . tests/server.php &   # servidor local
 php tests/functional.php                        # web i panell
 php tests/race.php                              # dorsals i resultats
+php tests/account.php                           # «Les meves inscripcions»
 php tests/pdf.php                               # motor de PDF i maquetes
 ```
 

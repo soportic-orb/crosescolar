@@ -131,6 +131,8 @@ return [
             'registrations_closed_link_url' => ['label' => 'Botó opcional: enllaç', 'type' => 'text', 'default' => '', 'placeholder' => 'https://…  o  /esmorzar',
                 'help' => 'Si ompliu els dos camps, sota el text hi apareixerà un botó (per exemple cap a un PDF o a un formulari extern).'],
             'registrations_success_text' => ['label' => 'Text de confirmació', 'type' => 'html', 'rows' => 3, 'default' => '<p>Inscripció rebuda! Us hem enviat un correu de confirmació amb les dades. Ens veiem el dia de la cursa.</p>'],
+            'registrations_selfservice' => ['label' => '«Les meves inscripcions» actiu', 'type' => 'bool', 'default' => '1',
+                'help' => 'Permet que les famílies entrin amb un codi que reben per correu per revisar i modificar les dades dels seus participants. Si ho desactiveu, la pàgina deixa d\'existir.'],
             'registrations_notify' => ['label' => 'Avisar per correu de cada inscripció', 'type' => 'bool', 'default' => '1'],
             'registrations_consent' => ['label' => 'Text del consentiment de dades', 'type' => 'textarea', 'rows' => 3, 'default' => 'Accepto que les dades facilitades s\'utilitzin únicament per gestionar la participació al Cros Escolar La Granada.'],
             'registrations_image_consent' => ['label' => 'Text del consentiment d\'imatge', 'type' => 'textarea', 'rows' => 3, 'default' => 'Autoritzo la publicació d\'imatges de l\'esdeveniment als canals de l\'AFA i de l\'escola.'],

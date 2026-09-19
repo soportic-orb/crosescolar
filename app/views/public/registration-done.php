@@ -42,6 +42,9 @@
     </div>
     <div class="flex" style="margin-top:1.5rem">
       <a class="btn" href="<?= e(url('/inscripcio')) ?>">Inscriure un altre participant</a>
+      <?php if (\Cros\Controllers\AccountController::enabled()): ?>
+        <a class="btn btn--ghost" href="<?= e(url('/les-meves-inscripcions')) ?>">Les meves inscripcions</a>
+      <?php endif; ?>
       <a class="btn btn--ghost" href="<?= e(url('/esmorzar')) ?>">Informació de l'esmorzar</a>
     </div>
   </div>

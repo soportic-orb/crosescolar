@@ -342,6 +342,7 @@ req('POST', $base . '/admin/configuracio/registrations', [
     '_token' => token(req('GET', $base . '/admin/configuracio/registrations')['body']),
     'registrations_enabled' => '1',
     'registrations_notify' => '1',
+    'registrations_selfservice' => '1',
     'registrations_closed_link_label' => '',
     'registrations_closed_link_url' => '',
 ]);

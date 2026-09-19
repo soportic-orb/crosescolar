@@ -141,6 +141,9 @@ if (\Cros\Core\Settings::bool('results_published')) {
           <li><a href="<?= e(url('/categories-i-premis')) ?>">Categories i premis</a></li>
           <li><a href="<?= e(url('/inscripcio')) ?>">Inscripció</a></li>
           <li><a href="<?= e(url('/esmorzar')) ?>">Esmorzar popular</a></li>
+          <?php if (\Cros\Controllers\AccountController::enabled()): ?>
+            <li><a href="<?= e(url('/les-meves-inscripcions')) ?>">Les meves inscripcions</a></li>
+          <?php endif; ?>
           <?php if (\Cros\Controllers\TicketsController::saleMode()): ?>
             <li><a href="<?= e(url('/els-meus-tiquets')) ?>">Els meus tiquets</a></li>
           <?php endif; ?>

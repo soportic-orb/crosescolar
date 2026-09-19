@@ -122,6 +122,60 @@ class Registration
         );
     }
 
+    /** Inscripció concreta d'una adreça de contacte (per a «Les meves inscripcions»). */
+    public static function findForEmail(int $id, string $email): ?array
+    {
+        $email = mb_strtolower(trim($email));
+        if ($email === '') {
+            return null;
+        }
+        return Db::one(
+            'SELECT r.*, c.name AS category_name FROM registrations r
+             LEFT JOIN categories c ON c.id = r.category_id
+             WHERE r.id = :id AND LOWER(r.tutor_email) = :email',
+            ['id' => $id, 'email' => $email]
+        );
+    }
+
+    /** Camps que la família pot canviar des del web. */
+    public const EDITABLE = [
+        'first_name', 'last_name', 'birth_year', 'gender', 'school', 'class_group',
+        'shirt_size', 'tutor_name', 'tutor_phone', 'notes', 'consent_image',
+    ];
+
+    /**
+     * Desa els canvis que la família fa des de «Les meves inscripcions».
+     * Només toca els camps de self::EDITABLE i només si la inscripció és seva.
+     */
+    public static function updateForEmail(int $id, string $email, array $data): ?array
+    {
+        $current = self::findForEmail($id, $email);
+        if (!$current) {
+            return null;
+        }
+        $changes = [
+            'first_name' => $data['first_name'],
+            'last_name' => $data['last_name'],
+            'birth_year' => $data['birth_year'] !== '' ? (int) $data['birth_year'] : null,
+            'gender' => $data['gender'] ?: null,
+            'school' => $data['school'] ?: null,
+            'class_group' => $data['class_group'] ?: null,
+            'shirt_size' => $data['shirt_size'] ?: null,
+            'tutor_name' => $data['tutor_name'] ?: null,
+            'tutor_phone' => $data['tutor_phone'] ?: null,
+            'notes' => $data['notes'] ?: null,
+            'consent_image' => (int) ($data['consent_image'] ?? 0),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ];
+        // Si canvia l'any de naixement, la categoria es torna a calcular.
+        if ((int) $current['birth_year'] !== (int) $changes['birth_year'] && $changes['birth_year'] !== null) {
+            $category = self::categoryForYear((int) $changes['birth_year']);
+            $changes['category_id'] = $category['id'] ?? null;
+        }
+        Db::update('registrations', $changes, 'id = :id', ['id' => $id]);
+        return self::find($id);
+    }
+
     public static function find(int $id): ?array
     {
         return Db::one(

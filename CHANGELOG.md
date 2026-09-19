@@ -3,7 +3,16 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
-## [1.3.1] — 2026-09-19
+## [1.4.0] — 2026-09-19
+
+### Afegit
+- **«Les meves inscripcions»**: les famílies hi entren escrivint la seva adreça
+  electrònica i el **codi de sis xifres** que hi reben, sense cap contrasenya. Hi veuen
+  tots els participants que han inscrit amb aquella adreça, en poden **modificar les
+  dades** (nom, any de naixement —que recalcula la categoria—, gènere, escola, curs,
+  talla, contacte, observacions i consentiment d'imatge) i descarregar-ne els dorsals.
+  El codi val 15 minuts, només serveix un cop i a la base de dades només se'n desa el
+  resum. L'apartat es pot desactivar des de Configuració → Inscripcions.
 
 ### Canviat
 - Al formulari d'inscripció, el **gènere** només ofereix femení i masculí, i el **curs**

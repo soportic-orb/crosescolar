@@ -73,6 +73,22 @@ El formulari també es tanca sol quan es passa la **data de tancament**; deixeu 
 buida si no en voleu posar cap. En tots dos casos, si algú prova d'enviar el formulari
 tot i estar tancat, la inscripció es rebutja.
 
+### 5.1. «Les meves inscripcions»
+
+Les famílies poden revisar i corregir les dades que van posar sense haver d'escriure-us.
+A **Les meves inscripcions** del web escriuen la seva adreça electrònica, reben un
+**codi de sis xifres** i, un cop escrit, veuen tots els participants que han inscrit amb
+aquella adreça. De cadascun poden canviar el nom, l'any de naixement (la categoria es
+torna a calcular sola), el gènere, l'escola, el curs, la talla, el contacte, les
+observacions i el consentiment d'imatge, i descarregar-ne el dorsal.
+
+El codi val 15 minuts i només serveix un cop. **No** es poden canviar des del web
+l'adreça de contacte, el número de dorsal ni l'estat de la inscripció: aquestes coses
+les feu vosaltres des del panell.
+
+Si preferiu que ningú no pugui tocar les seves dades, desactiveu
+**Configuració → Inscripcions → «Les meves inscripcions» actiu** i la pàgina desapareix.
+
 ### 6. Dorsals dels participants
 
 Cada inscripció rep automàticament un **número de dorsal** (001, 002, 003…) i les

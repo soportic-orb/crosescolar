@@ -29,6 +29,15 @@ class Crypto
         return substr($raw, 0, 32);
     }
 
+    /**
+     * Resum amb clau d'un valor curt (codis d'un sol ús, etc.).
+     * Serveix per no desar el valor en clar sense haver de guardar cap altra clau.
+     */
+    public static function hmac(string $value): string
+    {
+        return hash_hmac('sha256', $value, self::key());
+    }
+
     public static function encrypt(?string $plain): string
     {
         if ($plain === null || $plain === '') {
