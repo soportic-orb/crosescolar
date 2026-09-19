@@ -57,7 +57,7 @@ Deseu i CloudPanel recarregarà nginx automàticament.
 
 > Si no podeu tocar la configuració d'nginx, entreu al panell i desactiveu
 > **Configuració → Dades de la cursa → URLs amigables**: el web funcionarà igualment
-> amb adreces del tipus `/index.php/esmorzar`.
+> amb adreces del tipus `/index.php/punt-de-recarrega`.
 
 ## 5. Executar l'instal·lador
 

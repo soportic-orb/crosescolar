@@ -155,7 +155,7 @@ $externalLink = (bool) preg_match('#^https?://#i', $linkUrl);
           <li>Cal omplir un formulari per cada participant.</li>
           <li>Els dorsals es recullen el mateix dia a la zona esportiva.</li>
           <li>Arribeu 15 minuts abans de la vostra sortida.</li>
-          <li>L'esmorzar té tiquet a part: <a href="<?= e(url('/esmorzar')) ?>">compra'l aquí</a>.</li>
+          <li>El punt de recàrrega té tiquet a part: <a href="<?= e(url('/punt-de-recarrega')) ?>">mira-ho aquí</a>.</li>
         </ul>
       </div>
       <div class="card" style="margin-top:1.2rem">

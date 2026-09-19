@@ -1,6 +1,6 @@
 # Configuració de Stripe
 
-El web cobra els tiquets de l'esmorzar amb **Stripe Checkout**: el pagament es fa a
+El web cobra els tiquets del punt de recàrrega amb **Stripe Checkout**: el pagament es fa a
 la pàgina segura de Stripe i el web no desa mai cap dada de la targeta.
 
 ## 1. Crear el compte

@@ -51,6 +51,6 @@
 
 <p style="margin:18px 0 0;font-size:14px">
   El dia de la cursa, passeu per la carpa de l'AFA 15 minuts abans de la vostra sortida.
-  Si voleu quedar-vos a l'esmorzar popular, en trobareu tota la informació
-  <a href="<?= e(url('/esmorzar')) ?>" style="color:<?= e(setting('color_primary', '#2f6b3c')) ?>">en aquesta pàgina</a>.
+  Si voleu recuperar forces al punt de recàrrega, en trobareu tota la informació
+  <a href="<?= e(url('/punt-de-recarrega')) ?>" style="color:<?= e(setting('color_primary', '#2f6b3c')) ?>">en aquesta pàgina</a>.
 </p>

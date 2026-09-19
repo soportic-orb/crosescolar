@@ -1,7 +1,7 @@
 <?php /** Consulta de tiquets comprats. */ ?>
 <?= \Cros\Core\View::partial('partials/page-header', [
     'title' => 'Els meus tiquets',
-    'subtitle' => 'Consulta els tiquets de l\'esmorzar que ja has comprat.',
+    'subtitle' => 'Consulta els tiquets del punt de recàrrega que ja has comprat.',
     'breadcrumb' => ['Els meus tiquets' => ''],
 ]) ?>
 <section class="section">

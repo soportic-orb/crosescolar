@@ -151,7 +151,7 @@ try {
     check('No es pot tornar a executar', str_contains($again, 'ja està instal·lat'));
 
     echo "\n== El web funciona després d'instal·lar ==\n";
-    foreach (['/' => 'portada', '/index.php?_p=/esmorzar' => 'tiquets', '/index.php?_p=/admin/acces' => 'accés al panell'] as $path => $label) {
+    foreach (['/' => 'portada', '/index.php?_p=/punt-de-recarrega' => 'tiquets', '/index.php?_p=/admin/acces' => 'accés al panell'] as $path => $label) {
         $page = (string) @file_get_contents($base . $path);
         check('Carrega la ' . $label, $page !== '' && !str_contains($page, 'Error 500'));
     }

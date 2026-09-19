@@ -1,13 +1,13 @@
 <?php
-/** Compra de tiquets de l'esmorzar. */
+/** Punt de recàrrega: informació i, si escau, compra de tiquets. */
 $currency = (string) setting('payments_currency', 'EUR');
 $quantities = $quantities ?? [];
 $errors = $errors ?? [];
 ?>
 <?= \Cros\Core\View::partial('partials/page-header', [
-    'title' => setting('tickets_title', 'Tiquets per a l\'esmorzar'),
-    'subtitle' => setting('event_date', '') ? 'Esmorzar popular del ' . ca_date(setting('event_date')) : '',
-    'breadcrumb' => ['Esmorzar' => ''],
+    'title' => setting('tickets_title', 'Tiquets del punt de recàrrega'),
+    'subtitle' => setting('event_date', '') ? 'Punt de recàrrega del ' . ca_date(setting('event_date')) : '',
+    'breadcrumb' => ['Punt de recàrrega' => ''],
 ]) ?>
 
 <section class="section">
@@ -15,7 +15,7 @@ $errors = $errors ?? [];
     <div class="prose" style="max-width:70ch"><?= setting_html('tickets_intro') ?></div>
 
     <?php if (!($saleMode ?? false)): ?>
-      <!-- Mode informatiu: el web explica l'esmorzar però no s'hi compra -->
+      <!-- Mode informatiu: el web explica el punt de recàrrega però no s'hi compra -->
       <div class="split" style="margin-top:2rem">
         <div>
           <?php if ($types): ?>
@@ -66,7 +66,7 @@ $errors = $errors ?? [];
         <div class="alert alert--error" style="margin-top:1.5rem"><?= e($errors['qty']) ?></div>
       <?php endif; ?>
 
-      <form method="post" action="<?= e(url('/esmorzar')) ?>" data-order-form data-currency="€" style="margin-top:2rem">
+      <form method="post" action="<?= e(url('/punt-de-recarrega')) ?>" data-order-form data-currency="€" style="margin-top:2rem">
         <?= csrf_field() ?>
         <div class="honeypot"><label>No omplir<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
 

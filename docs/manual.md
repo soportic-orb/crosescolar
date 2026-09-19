@@ -116,12 +116,13 @@ filtrar per categoria). Cada fitxa d'inscripció també té el seu botó de desc
 Si canvieu un número a mà, useu **Inscripcions → editar → Número de dorsal**. El botó
 **«Assignar dorsals»** dona número a les inscripcions que encara no en tinguin.
 
-### 7. Tiquets de l'esmorzar
+### 7. Punt de recàrrega (tiquets)
 **Tipus de tiquet**: nom, descripció, preu, existències i màxim per comanda.
 Deixeu les existències en blanc per no limitar-les.
-**Configuració → Esmorzar** decideix què es veu al web:
+El **punt de recàrrega** és el servei de bar de la cursa: on els participants recuperen
+l'energia gastada corrent. **Configuració → Punt de recàrrega** decideix què es veu al web:
 
-- **Només informació** (opció per defecte): el web explica l'esmorzar i els preus, però
+- **Només informació** (opció per defecte): el web explica el punt de recàrrega i els preus, però
   no s'hi pot comprar. Els tiquets es venen presencialment.
 - **Informació i venda en línia**: s'activa la botiga amb pagament per targeta.
 
@@ -189,7 +190,7 @@ Si us equivoqueu, des de la fitxa de la comanda podeu **restablir** un tiquet.
 ## Després de la cursa
 
 - **Galeria**: pugeu les fotografies de la jornada.
-- **Configuració → Esmorzar**: tanqueu la venda de tiquets.
+- **Configuració → Punt de recàrrega**: tanqueu la venda de tiquets.
 - **Sistema → Actualitzacions**: feu una còpia de seguretat per arxivar l'edició.
 
 ## Consells

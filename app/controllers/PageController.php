@@ -163,7 +163,7 @@ class PageController extends Controller
 
     public function sitemap(): void
     {
-        $urls = [url('/'), url('/categories-i-premis'), url('/recorreguts'), url('/esmorzar'), url('/inscripcio'), url('/contacte')];
+        $urls = [url('/'), url('/categories-i-premis'), url('/recorreguts'), url('/punt-de-recarrega'), url('/inscripcio'), url('/contacte')];
         if (Settings::bool('results_published')) {
             $urls[] = url('/resultats');
         }

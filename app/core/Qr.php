@@ -5,7 +5,7 @@ namespace Cros\Core;
 
 /**
  * Generador de codis QR en PHP pur (mode byte, versions 1-10).
- * S'utilitza per als tiquets de l'esmorzar; no requereix cap llibreria externa.
+ * S'utilitza per als tiquets del punt de recàrrega; no requereix cap llibreria externa.
  */
 class Qr
 {

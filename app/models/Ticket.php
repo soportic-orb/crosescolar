@@ -6,7 +6,7 @@ namespace Cros\Models;
 use Cros\Core\Auth;
 use Cros\Core\Db;
 
-/** Tiquets individuals de l'esmorzar. */
+/** Tiquets individuals del punt de recàrrega. */
 class Ticket
 {
     public static function findByCode(string $code): ?array
@@ -23,7 +23,7 @@ class Ticket
     }
 
     /**
-     * Valida un tiquet a l'entrada de l'esmorzar.
+     * Valida un tiquet a l'entrada del punt de recàrrega.
      * @return array{status:string,message:string,ticket:?array}
      */
     public static function validate(string $code, bool $markUsed = true): array
@@ -55,7 +55,7 @@ class Ticket
             $ticket['used_at'] = date('Y-m-d H:i:s');
             Auth::logActivity('ticket_validate', 'ticket', (int) $ticket['id'], ['code' => $ticket['code']]);
         }
-        return ['status' => 'ok', 'message' => 'Tiquet vàlid: ' . ($ticket['type_name'] ?? 'Esmorzar'), 'ticket' => $ticket];
+        return ['status' => 'ok', 'message' => 'Tiquet vàlid: ' . ($ticket['type_name'] ?? 'Tiquet'), 'ticket' => $ticket];
     }
 
     /** Torna a activar un tiquet ja validat. */

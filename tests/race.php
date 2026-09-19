@@ -1,6 +1,6 @@
 <?php
 /**
- * Proves del circuit de cursa: esmorzar informatiu, dorsals i resultats.
+ * Proves del circuit de cursa: punt de recàrrega informatiu, dorsals i resultats.
  *
  * Ús:  php -S 127.0.0.1:8123 -t . tests/server.php &   i després   php tests/race.php
  */
@@ -93,9 +93,9 @@ req('POST', $base . '/admin/acces', [
     'password' => 'provaprova',
 ]);
 
-echo "\n== L'esmorzar només informa ==\n";
-$shop = req('GET', $base . '/esmorzar', [], ['anon' => true]);
-check('La pàgina de l\'esmorzar carrega', $shop['status'] === 200);
+echo "\n== El punt de recàrrega només informa ==\n";
+$shop = req('GET', $base . '/punt-de-recarrega', [], ['anon' => true]);
+check('La pàgina del punt de recàrrega carrega', $shop['status'] === 200);
 check('Mostra els tiquets i el preu', str_contains($shop['body'], 'Esmorzar complet') && str_contains($shop['body'], '6,00'));
 check('No hi ha formulari de compra', !str_contains($shop['body'], 'name="qty['));
 check('No hi ha botó de pagament', !str_contains($shop['body'], 'Pagar amb targeta'));
@@ -103,9 +103,9 @@ check('Convida a inscriure\'s a la cursa', str_contains(text($shop['body']), 'In
 
 $home = req('GET', $base . '/', [], ['anon' => true]);
 check('El botó destacat del menú porta a les inscripcions',
-    str_contains(text($home['body']), 'Inscripcions al cros') && str_contains($home['body'], '/inscripcio"'));
+    str_contains(text($home['body']), 'Inscriu-te!') && str_contains($home['body'], '/inscripcio"'));
 
-$blocked = req('POST', $base . '/esmorzar', [
+$blocked = req('POST', $base . '/punt-de-recarrega', [
     '_token' => token(req('GET', $base . '/els-meus-tiquets', [], ['anon' => true])['body']),
     'name' => 'Prova ' . $unique, 'email' => 'prova@example.test', 'terms' => '1', 'qty' => [1 => 1],
 ], ['anon' => true]);

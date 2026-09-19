@@ -7,7 +7,7 @@ use Cros\Core\Auth;
 use Cros\Core\Db;
 use Cros\Core\Mailer;
 
-/** Comandes de tiquets de l'esmorzar. */
+/** Comandes de tiquets del punt de recàrrega. */
 class Order
 {
     public static function find(int $id): ?array

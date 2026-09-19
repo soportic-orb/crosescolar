@@ -39,7 +39,7 @@ $statusLabels = ['valid' => 'Vàlid', 'used' => 'Validat', 'void' => 'Anul·lat'
               <div class="ticket-card<?= $ticket['status'] !== 'valid' ? ' ticket-card--used' : '' ?>">
                 <img class="ticket-card__qr" src="<?= e(url('/qr/' . $ticket['code'])) ?>" alt="Codi QR del tiquet <?= e($ticket['code']) ?>" loading="lazy">
                 <div>
-                  <strong><?= e($ticket['type_name'] ?? 'Tiquet esmorzar') ?></strong>
+                  <strong><?= e($ticket['type_name'] ?? 'Tiquet') ?></strong>
                   <div class="ticket-card__code"><?= e($ticket['code']) ?></div>
                   <div style="margin-top:.4rem">
                     <span class="ticket-status ticket-status--<?= e($ticket['status']) ?>">

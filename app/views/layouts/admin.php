@@ -31,7 +31,7 @@ $pending = (int) \Cros\Core\Db::val('SELECT COUNT(*) FROM orders WHERE status = 
     <a class="nav-link<?= $path === '/admin' ? ' is-active' : '' ?>" href="<?= e(url('/admin')) ?>"><?= Icons::svg('chart', 'icon', 18) ?> Tauler</a>
     <a class="nav-link<?= $isActive('/') && false ? ' is-active' : '' ?>" href="<?= e(url('/')) ?>" target="_blank"><?= Icons::svg('eye', 'icon', 18) ?> Veure el web</a>
 
-    <div class="sidebar__section">Esmorzar</div>
+    <div class="sidebar__section">Punt de recàrrega</div>
     <a class="nav-link<?= $isActive('/admin/comandes') ? ' is-active' : '' ?>" href="<?= e(url('/admin/comandes')) ?>">
       <?= Icons::svg('euro', 'icon', 18) ?> Comandes
       <?php if ($pending > 0): ?><span class="badge badge--amber"><?= $pending ?></span><?php endif; ?>

@@ -3,6 +3,18 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.5.0] — 2026-09-19
+
+### Canviat
+- L'**esmorzar popular** passa a dir-se **punt de recàrrega**: és el servei de bar on
+  els participants recuperen l'energia gastada durant la cursa. Canvien els textos del
+  web, del panell i dels correus, i la pàgina passa a ser `/punt-de-recarrega`;
+  l'adreça antiga `/esmorzar` hi redirigeix perquè els enllaços ja publicats continuïn
+  funcionant. Els textos que l'organització ja hagi redactat es respecten: només es
+  reescriuen els que encara tenien el valor per defecte.
+- Al menú principal, el botó destacat ara diu **«Inscriu-te!»**, s'hi afegeix
+  **«Les meves inscripcions»** i **«Contacte»** queda només al peu de pàgina.
+
 ## [1.4.0] — 2026-09-19
 
 ### Afegit

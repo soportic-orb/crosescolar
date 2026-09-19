@@ -70,6 +70,9 @@ jobs:
       - name: Proves de «Les meves inscripcions»
         run: php tests/account.php
 
+      - name: Proves de les migracions
+        run: php tests/migrations.php
+
       - name: Eines per comprovar els PDF
         run: sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils
 

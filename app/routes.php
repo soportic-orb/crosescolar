@@ -37,11 +37,24 @@ $router->post('/contacte', [PageController::class, 'contactSubmit']);
 $router->get('/sitemap.xml', [PageController::class, 'sitemap']);
 $router->get('/robots.txt', [PageController::class, 'robots']);
 
-/* --------------------------------------------------------------- Tiquets */
-$router->get('/esmorzar', [TicketsController::class, 'index']);
-$router->post('/esmorzar', [TicketsController::class, 'checkout']);
-$router->get('/esmorzar/pagament-correcte', [TicketsController::class, 'success']);
-$router->get('/esmorzar/pagament-cancellat', [TicketsController::class, 'cancelled']);
+/* ------------------------------------------------- Punt de recàrrega i tiquets */
+$router->get('/punt-de-recarrega', [TicketsController::class, 'index']);
+$router->post('/punt-de-recarrega', [TicketsController::class, 'checkout']);
+$router->get('/punt-de-recarrega/pagament-correcte', [TicketsController::class, 'success']);
+$router->get('/punt-de-recarrega/pagament-cancellat', [TicketsController::class, 'cancelled']);
+// Adreces antigues de l'esmorzar: es mantenen perquè els enllaços ja publicats
+// (i els pagaments de Stripe en curs) continuïn funcionant.
+$antiga = static fn (string $desti, int $codi = 301): callable => static function () use ($desti, $codi): void {
+    $query = [];
+    parse_str((string) ($_SERVER['QUERY_STRING'] ?? ''), $query);
+    unset($query['_p']); // paràmetre intern de l'encaminador sense URLs amigables
+    redirect(url($desti, $query), $codi);
+};
+$router->get('/esmorzar', $antiga('/punt-de-recarrega'));
+// 307 per no perdre les dades d'un formulari de compra obert abans del canvi.
+$router->post('/esmorzar', $antiga('/punt-de-recarrega', 307));
+$router->get('/esmorzar/pagament-correcte', $antiga('/punt-de-recarrega/pagament-correcte'));
+$router->get('/esmorzar/pagament-cancellat', $antiga('/punt-de-recarrega/pagament-cancellat'));
 $router->get('/els-meus-tiquets', [TicketsController::class, 'lookup']);
 $router->post('/els-meus-tiquets', [TicketsController::class, 'lookupSubmit']);
 $router->get('/tiquets/{token}', [TicketsController::class, 'show']);

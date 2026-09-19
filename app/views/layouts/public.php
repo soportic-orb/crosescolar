@@ -14,8 +14,11 @@ $navItems = [
     '/recorreguts' => 'Recorreguts',
     '/categories-i-premis' => 'Categories i premis',
     // La inscripció no surt a la llista: el botó destacat del menú ja hi porta.
-    '/contacte' => 'Contacte',
+    // El contacte tampoc: és al peu de pàgina.
 ];
+if (\Cros\Controllers\AccountController::enabled()) {
+    $navItems['/les-meves-inscripcions'] = 'Les meves inscripcions';
+}
 if (\Cros\Core\Settings::bool('results_published')) {
     // Un cop publicats, els resultats passen a ser el primer que busca la gent.
     $navItems = ['/' => 'Inici', '/resultats' => 'Resultats'] + $navItems;
@@ -91,7 +94,7 @@ if (\Cros\Core\Settings::bool('results_published')) {
         <a href="<?= e(url($href)) ?>"<?= $path === $href ? ' class="is-active"' : '' ?>><?= e($label) ?></a>
       <?php endforeach; ?>
       <a class="btn btn--accent btn--sm" href="<?= e(url('/inscripcio')) ?>">
-        <?= \Cros\Core\Icons::svg('run', 'icon', 18) ?> Inscripcions al cros
+        <?= \Cros\Core\Icons::svg('run', 'icon', 18) ?> Inscriu-te!
       </a>
     </nav>
   </div>
@@ -140,7 +143,7 @@ if (\Cros\Core\Settings::bool('results_published')) {
           <li><a href="<?= e(url('/recorreguts')) ?>">Recorreguts</a></li>
           <li><a href="<?= e(url('/categories-i-premis')) ?>">Categories i premis</a></li>
           <li><a href="<?= e(url('/inscripcio')) ?>">Inscripció</a></li>
-          <li><a href="<?= e(url('/esmorzar')) ?>">Esmorzar popular</a></li>
+          <li><a href="<?= e(url('/punt-de-recarrega')) ?>">Punt de recàrrega</a></li>
           <?php if (\Cros\Controllers\AccountController::enabled()): ?>
             <li><a href="<?= e(url('/les-meves-inscripcions')) ?>">Les meves inscripcions</a></li>
           <?php endif; ?>

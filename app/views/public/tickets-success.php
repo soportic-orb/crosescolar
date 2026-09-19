@@ -1,7 +1,7 @@
 <?php /** Retorn correcte del pagament. */ ?>
 <?= \Cros\Core\View::partial('partials/page-header', [
     'title' => $paid ? 'Compra confirmada!' : 'Estem confirmant el pagament',
-    'breadcrumb' => ['Esmorzar' => '/esmorzar', 'Confirmació' => ''],
+    'breadcrumb' => ['Punt de recàrrega' => '/punt-de-recarrega', 'Confirmació' => ''],
 ]) ?>
 <section class="section">
   <div class="container-narrow">

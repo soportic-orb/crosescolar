@@ -5,7 +5,7 @@ namespace Cros\Models;
 
 use Cros\Core\Db;
 
-/** Tipus de tiquet de l'esmorzar. */
+/** Tipus de tiquet del punt de recàrrega. */
 class TicketType
 {
     /** Minuts que es reserven les unitats d'una comanda pendent de pagament. */

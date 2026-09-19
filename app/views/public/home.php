@@ -37,7 +37,7 @@ $salesOpen = \Cros\Controllers\TicketsController::salesOpen();
 
     <div class="hero__actions">
       <?php if (setting('hero_cta_label', '')): ?>
-        <a class="btn btn--accent" href="<?= e(url(setting('hero_cta_url', '/esmorzar'))) ?>">
+        <a class="btn btn--accent" href="<?= e(url(setting('hero_cta_url', '/inscripcio'))) ?>">
           <?= e(setting('hero_cta_label')) ?> <?= \Cros\Core\Icons::svg('arrow', 'icon', 18) ?>
         </a>
       <?php endif; ?>
@@ -190,22 +190,22 @@ $salesOpen = \Cros\Controllers\TicketsController::salesOpen();
 </section>
 <?php endif; ?>
 
-<section class="section section--dark" id="esmorzar">
+<section class="section section--dark" id="punt-de-recarrega">
   <div class="container">
     <div class="split">
       <div>
-        <span class="eyebrow"><?= \Cros\Core\Icons::svg('coffee', 'icon', 16) ?> Esmorzar popular</span>
-        <h2><?= e(setting('tickets_title', 'Tiquets per a l\'esmorzar')) ?></h2>
+        <span class="eyebrow"><?= \Cros\Core\Icons::svg('coffee', 'icon', 16) ?> Punt de recàrrega</span>
+        <h2><?= e(setting('tickets_title', 'Tiquets del punt de recàrrega')) ?></h2>
         <div class="prose" style="color:rgba(255,255,255,.85)"><?= setting_html('tickets_intro') ?></div>
         <div class="flex" style="margin-top:1.4rem">
           <?php if ($salesOpen): ?>
-            <a class="btn btn--accent" href="<?= e(url('/esmorzar')) ?>">
+            <a class="btn btn--accent" href="<?= e(url('/punt-de-recarrega')) ?>">
               <?= \Cros\Core\Icons::svg('ticket', 'icon', 18) ?> Comprar tiquets
             </a>
             <a class="btn btn--light" href="<?= e(url('/els-meus-tiquets')) ?>">Els meus tiquets</a>
           <?php else: ?>
-            <a class="btn btn--light" href="<?= e(url('/esmorzar')) ?>">
-              <?= \Cros\Core\Icons::svg('info', 'icon', 18) ?> Informació de l'esmorzar
+            <a class="btn btn--light" href="<?= e(url('/punt-de-recarrega')) ?>">
+              <?= \Cros\Core\Icons::svg('info', 'icon', 18) ?> Informació del punt de recàrrega
             </a>
           <?php endif; ?>
         </div>

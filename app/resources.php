@@ -194,7 +194,7 @@ return [
         'title' => 'Tipus de tiquet',
         'singular' => 'tipus de tiquet',
         'icon' => 'ticket',
-        'description' => 'Productes de l\'esmorzar que es posen a la venda.',
+        'description' => 'Productes del punt de recàrrega que es posen a la venda.',
         'order' => 'sort_order ASC, id ASC',
         'search' => ['name'],
         'columns' => ['name' => 'Tiquet', 'price_cents' => 'Preu', 'stock' => 'Existències', 'sold' => 'Venuts', 'active' => 'A la venda'],

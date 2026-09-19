@@ -45,7 +45,7 @@
       <?php if (\Cros\Controllers\AccountController::enabled()): ?>
         <a class="btn btn--ghost" href="<?= e(url('/les-meves-inscripcions')) ?>">Les meves inscripcions</a>
       <?php endif; ?>
-      <a class="btn btn--ghost" href="<?= e(url('/esmorzar')) ?>">Informació de l'esmorzar</a>
+      <a class="btn btn--ghost" href="<?= e(url('/punt-de-recarrega')) ?>">Punt de recàrrega</a>
     </div>
   </div>
 </section>

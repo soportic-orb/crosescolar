@@ -2,7 +2,7 @@
 
 Web oficial del **Cros Escolar de La Granada** (Alt Penedès): informació de la cursa,
 recorreguts amb mapes de Wikiloc, categories i premis, inscripcions i venda en línia
-dels tiquets de l'esmorzar popular amb Stripe.
+dels tiquets del punt de recàrrega amb Stripe.
 
 - **Domini:** https://cros.afalagranada.cat
 - **Idioma:** català
@@ -19,7 +19,7 @@ dels tiquets de l'esmorzar popular amb Stripe.
 | Portada | `/` | Banner configurable, compte enrere, blocs destacats, recorreguts, programa, galeria, preguntes freqüents, ubicació i patrocinadors |
 | Recorreguts | `/recorreguts` | Fitxa de cada circuit amb mapa de Wikiloc i descàrrega del GPX |
 | Categories i premis | `/categories-i-premis` | Taula de categories amb horaris, distàncies i premis |
-| Esmorzar popular | `/esmorzar` | Informació i preus de l'esmorzar (opcionalment, venda en línia amb Stripe) |
+| Punt de recàrrega | `/punt-de-recarrega` | El servei de bar de la cursa: informació i preus (opcionalment, venda en línia amb Stripe). L'adreça antiga `/esmorzar` hi redirigeix |
 | Resultats | `/resultats` | Classificació per categories, amb descàrrega en PDF |
 | Els meus tiquets | `/els-meus-tiquets` | Consulta dels tiquets comprats amb codi QR i versió imprimible |
 | Inscripció | `/inscripcio` | Formulari d'inscripció a les curses |
@@ -31,7 +31,7 @@ dels tiquets de l'esmorzar popular amb Stripe.
 - **Continguts**: banner i textos de totes les pàgines, blocs destacats, recorreguts
   (Wikiloc i GPX), categories, premis, programa, preguntes freqüents, galeria i documents.
 - **Patrocinadors**: logotips agrupats (institucionals, principals, col·laboradors).
-- **Esmorzar**: tipus de tiquet amb preu i existències, comandes, venda manual a taquilla,
+- **Punt de recàrrega**: tipus de tiquet amb preu i existències, comandes, venda manual a taquilla,
   devolucions per Stripe i **validació de tiquets amb lector de QR**.
 - **Inscripcions**: llistat, filtres, edició i exportació a CSV, amb **número de dorsal**
   automàtic i descàrrega dels dorsals en PDF.
@@ -107,6 +107,7 @@ php -S 127.0.0.1:8123 -t . tests/server.php &   # servidor local
 php tests/functional.php                        # web i panell
 php tests/race.php                              # dorsals i resultats
 php tests/account.php                           # «Les meves inscripcions»
+php tests/migrations.php                        # migracions de continguts
 php tests/pdf.php                               # motor de PDF i maquetes
 ```
 

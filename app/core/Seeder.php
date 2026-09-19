@@ -99,7 +99,7 @@ class Seeder
             ['09:45', 'Primera sortida', 'Categoria prebenjamí (P3-P5).'],
             ['11:40', 'Cursa popular i famílies', 'Oberta a totes les edats.'],
             ['12:15', 'Lliurament de premis', 'A l\'escenari de la zona esportiva.'],
-            ['12:30', 'Esmorzar popular', 'Amb tiquet. Botifarra, entrepans i beguda.'],
+            ['12:30', 'Punt de recàrrega', 'Amb tiquet. Botifarra, entrepans i beguda per recuperar forces.'],
         ];
         $order = 1;
         foreach ($items as [$time, $title, $description]) {
@@ -120,9 +120,9 @@ class Seeder
         }
         $blocks = [
             ['run', 'Per a totes les edats', '<p>Des de P3 fins a la cursa popular de famílies: sis curses adaptades a cada edat.</p>'],
-            ['ticket', 'Inscripció gratuïta', '<p>La participació és gratuïta. Els tiquets de l\'esmorzar es compren a part i ajuden a finançar les activitats de l\'AFA.</p>'],
+            ['ticket', 'Inscripció gratuïta', '<p>La participació és gratuïta. Els tiquets del punt de recàrrega es compren a part i ajuden a finançar les activitats de l\'AFA.</p>'],
             ['parking', 'Aparcament i accessos', '<p>Aparcament gratuït a la zona esportiva i estació de Rodalies (R4) a 10 minuts a peu.</p>'],
-            ['coffee', 'Esmorzar popular', '<p>En acabar les curses: entrepans, beguda i fruita a la carpa de l\'AFA.</p>'],
+            ['coffee', 'Punt de recàrrega', '<p>En acabar les curses, a recuperar l\'energia: entrepans, beguda i fruita a la carpa de l\'AFA.</p>'],
         ];
         $order = 1;
         foreach ($blocks as [$icon, $title, $body]) {
@@ -154,7 +154,7 @@ class Seeder
         }
         $faqs = [
             ['Cal inscriure\'s per avançat?', '<p>És recomanable per agilitzar la recollida de dorsals, però el mateix dia hi haurà inscripcions presencials fins a 30 minuts abans de cada sortida.</p>'],
-            ['Quant costa participar-hi?', '<p>La cursa és gratuïta. Només es paguen els tiquets de l\'esmorzar popular, que es poden comprar en línia des d\'aquest web.</p>'],
+            ['Quant costa participar-hi?', '<p>La cursa és gratuïta. Només es paguen els tiquets del punt de recàrrega, que es poden comprar en línia des d\'aquest web.</p>'],
             ['On es recullen els dorsals?', '<p>A la carpa de l\'AFA, a la zona esportiva, a partir de les 8.45 h.</p>'],
             ['Què passa si plou?', '<p>La cursa se celebra igualment si la pluja és feble. En cas d\'alerta meteorològica s\'anunciarà la suspensió en aquest web i a les xarxes de l\'AFA, i es retornarà l\'import dels tiquets.</p>'],
             ['Puc córrer amb el meu gos o cotxet?', '<p>A la cursa popular sí, sempre que us situeu al final de la graella per seguretat.</p>'],

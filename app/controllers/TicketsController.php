@@ -11,7 +11,7 @@ use Cros\Models\Order;
 use Cros\Models\Ticket;
 use Cros\Models\TicketType;
 
-/** Venda i consulta dels tiquets de l'esmorzar. */
+/** Punt de recàrrega: informació, venda i consulta dels tiquets. */
 class TicketsController extends Controller
 {
     /** El web mostra la botiga o només informació? */
@@ -37,7 +37,7 @@ class TicketsController extends Controller
     {
         $types = TicketType::all();
         $this->view('public/tickets', [
-            'title' => setting('tickets_title', 'Tiquets per a l\'esmorzar'),
+            'title' => setting('tickets_title', 'Tiquets del punt de recàrrega'),
             'description' => excerpt(strip_tags((string) setting('tickets_intro', '')), 160),
             'types' => $types,
             'saleMode' => self::saleMode(),
@@ -55,10 +55,10 @@ class TicketsController extends Controller
 
         if (!self::salesOpen()) {
             flash('error', 'La venda de tiquets està tancada.');
-            redirect('/esmorzar');
+            redirect('/punt-de-recarrega');
         }
         if (trim((string) input('website')) !== '') { // trampa per a robots
-            redirect('/esmorzar');
+            redirect('/punt-de-recarrega');
         }
 
         $buyer = [
@@ -93,7 +93,7 @@ class TicketsController extends Controller
         if ($errors) {
             set_old(array_merge($buyer, ['qty' => $quantities]));
             $this->view('public/tickets', [
-                'title' => setting('tickets_title', 'Tiquets per a l\'esmorzar'),
+                'title' => setting('tickets_title', 'Tiquets del punt de recàrrega'),
                 'types' => TicketType::all(),
                 'saleMode' => true,
                 'salesOpen' => true,
@@ -109,7 +109,7 @@ class TicketsController extends Controller
             $order = Order::create($buyer, $quantities);
         } catch (\RuntimeException $e) {
             flash('error', $e->getMessage());
-            redirect('/esmorzar');
+            redirect('/punt-de-recarrega');
             return;
         }
 
@@ -120,7 +120,7 @@ class TicketsController extends Controller
 
         if (!Stripe::configured()) {
             flash('error', 'El pagament en línia no està disponible en aquest moment. Contacteu amb l\'organització.');
-            redirect('/esmorzar');
+            redirect('/punt-de-recarrega');
         }
 
         try {
@@ -137,14 +137,14 @@ class TicketsController extends Controller
             }
             $session = Stripe::createCheckoutSession([
                 'mode' => 'payment',
-                'success_url' => url('/esmorzar/pagament-correcte') . (str_contains(url('/esmorzar/pagament-correcte'), '?') ? '&' : '?') . 'session_id={CHECKOUT_SESSION_ID}',
-                'cancel_url' => url('/esmorzar/pagament-cancellat') . (str_contains(url('/esmorzar/pagament-cancellat'), '?') ? '&' : '?') . 'comanda=' . $order['code'],
+                'success_url' => url('/punt-de-recarrega/pagament-correcte') . (str_contains(url('/punt-de-recarrega/pagament-correcte'), '?') ? '&' : '?') . 'session_id={CHECKOUT_SESSION_ID}',
+                'cancel_url' => url('/punt-de-recarrega/pagament-cancellat') . (str_contains(url('/punt-de-recarrega/pagament-cancellat'), '?') ? '&' : '?') . 'comanda=' . $order['code'],
                 'customer_email' => $order['email'],
                 'client_reference_id' => $order['code'],
                 'line_items' => $lineItems,
                 'metadata' => ['order_id' => (string) $order['id'], 'order_code' => $order['code']],
                 'payment_intent_data' => [
-                    'description' => 'Tiquets esmorzar ' . setting('site_name', 'Cros Escolar'),
+                    'description' => 'Tiquets del punt de recàrrega · ' . setting('site_name', 'Cros Escolar'),
                     'metadata' => ['order_code' => $order['code']],
                 ],
                 'expires_at' => time() + 3600,
@@ -152,7 +152,7 @@ class TicketsController extends Controller
         } catch (\Throwable $e) {
             log_line('stripe', 'Error creant la sessió de pagament', ['order' => $order['code'], 'error' => $e->getMessage()]);
             flash('error', 'No s\'ha pogut iniciar el pagament: ' . $e->getMessage());
-            redirect('/esmorzar');
+            redirect('/punt-de-recarrega');
             return;
         }
 
@@ -161,7 +161,7 @@ class TicketsController extends Controller
             'updated_at' => date('Y-m-d H:i:s'),
         ], 'id = :id', ['id' => $order['id']]);
 
-        redirect((string) ($session['url'] ?? url('/esmorzar')));
+        redirect((string) ($session['url'] ?? url('/punt-de-recarrega')));
     }
 
     /** Retorn des de Stripe després del pagament. */

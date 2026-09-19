@@ -86,10 +86,10 @@
 <section class="section">
   <div class="container" style="text-align:center">
     <h2>Ja ho tens clar?</h2>
-    <p class="lead" style="margin-inline:auto">Inscriu-te a la cursa i compra els tiquets de l'esmorzar per no fer cua el mateix dia.</p>
+    <p class="lead" style="margin-inline:auto">Inscriu-te a la cursa i mira què trobaràs al punt de recàrrega en acabar.</p>
     <div class="flex" style="justify-content:center;margin-top:1.2rem">
       <a class="btn" href="<?= e(url('/inscripcio')) ?>">Inscripció</a>
-      <a class="btn btn--accent" href="<?= e(url('/esmorzar')) ?>">Tiquets de l'esmorzar</a>
+      <a class="btn btn--accent" href="<?= e(url('/punt-de-recarrega')) ?>">Punt de recàrrega</a>
     </div>
   </div>
 </section>

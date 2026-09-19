@@ -26,7 +26,7 @@
   <?php foreach ($tickets as $ticket): ?>
     <tr>
       <td style="padding:8px 10px;border:1px solid #e3eade;border-radius:8px">
-        <strong><?= e($ticket['type_name'] ?? 'Tiquet esmorzar') ?></strong><br>
+        <strong><?= e($ticket['type_name'] ?? 'Tiquet') ?></strong><br>
         <span style="font-family:Consolas,monospace;letter-spacing:.1em;font-size:16px"><?= e($ticket['code']) ?></span>
       </td>
     </tr>

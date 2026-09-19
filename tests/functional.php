@@ -86,8 +86,22 @@ $categories = req('GET', $base . '/categories-i-premis');
 check('Categories i premis', $categories['status'] === 200 && str_contains($categories['body'], 'Benjamí'));
 check('Premis visibles', str_contains($categories['body'], 'Trofeus per categoria'));
 
-$tickets = req('GET', $base . '/esmorzar');
-check('Pàgina de tiquets', $tickets['status'] === 200 && str_contains($tickets['body'], 'Esmorzar complet'));
+$tickets = req('GET', $base . '/punt-de-recarrega');
+check('Pàgina del punt de recàrrega', $tickets['status'] === 200 && str_contains($tickets['body'], 'Esmorzar complet'));
+check('La pàgina es diu «punt de recàrrega»', str_contains(text($tickets['body']), 'Punt de recàrrega'));
+$vella = req('GET', $base . '/esmorzar');
+check('L\'adreça antiga redirigeix a la nova',
+    $vella['status'] === 301 && str_contains($vella['headers'], '/punt-de-recarrega'), 'estat ' . $vella['status']);
+
+echo "\n== Menú principal ==\n";
+$menu = req('GET', $base . '/', [], ['anon' => true]);
+preg_match('#<nav class="nav".*?</nav>#s', $menu['body'], $nav);
+$nav = text($nav[0] ?? '');
+check('El botó del menú diu «Inscriu-te!»', str_contains($nav, 'Inscriu-te!') && str_contains($nav, '/inscripcio"'), $nav);
+check('El menú porta a «Les meves inscripcions»', str_contains($nav, 'Les meves inscripcions'));
+check('El menú porta al punt de recàrrega des del peu', str_contains(text($menu['body']), 'Punt de recàrrega'));
+check('El contacte ja no surt al menú', !str_contains($nav, 'Contacte'), $nav);
+check('...però sí al peu de pàgina', str_contains(text($menu['body']), 'Formulari de contacte'));
 
 echo "\n== Inscripció pública ==\n";
 $form = req('GET', $base . '/inscripcio');
@@ -257,13 +271,13 @@ req('POST', $base . '/admin/configuracio/tickets', [
     '_token' => token(req('GET', $base . '/admin/configuracio/tickets')['body']),
     'tickets_public_mode' => 'sale',
     'tickets_enabled' => '1',
-    'tickets_title' => 'Tiquets per a l\'esmorzar',
+    'tickets_title' => 'Tiquets del punt de recàrrega',
     'tickets_deadline' => '2026-10-02',
     'tickets_max_per_order' => '20',
 ]);
-$shopForm = req('GET', $base . '/esmorzar');
+$shopForm = req('GET', $base . '/punt-de-recarrega');
 check('Amb la venda activada apareix la botiga', str_contains($shopForm['body'], 'name="qty['));
-$checkout = req('POST', $base . '/esmorzar', [
+$checkout = req('POST', $base . '/punt-de-recarrega', [
     '_token' => token($shopForm['body']),
     'name' => 'Núria Casals',
     'email' => 'nuria@example.test',
@@ -271,8 +285,8 @@ $checkout = req('POST', $base . '/esmorzar', [
     'terms' => '1',
     'qty' => [1 => 1],
 ]);
-check('La compra no peta amb credencials invàlides', $checkout['status'] === 302 && str_contains($checkout['headers'], '/esmorzar'), 'estat ' . $checkout['status']);
-$shopAfter = req('GET', $base . '/esmorzar');
+check('La compra no peta amb credencials invàlides', $checkout['status'] === 302 && str_contains($checkout['headers'], '/punt-de-recarrega'), 'estat ' . $checkout['status']);
+$shopAfter = req('GET', $base . '/punt-de-recarrega');
 check('Informa l\'usuari de l\'error de pagament', str_contains($shopAfter['body'], 'alert--error'));
 
 $closeForm = req('GET', $base . '/admin/configuracio/tickets');
@@ -280,25 +294,25 @@ req('POST', $base . '/admin/configuracio/tickets', [
     '_token' => token($closeForm['body']),
     // Sense «tickets_enabled»: la venda queda tancada tot i ser en mode botiga.
     'tickets_public_mode' => 'sale',
-    'tickets_title' => 'Tiquets per a l\'esmorzar',
+    'tickets_title' => 'Tiquets del punt de recàrrega',
     'tickets_deadline' => '2026-10-02',
     'tickets_max_per_order' => '20',
 ]);
-$closedShop = req('GET', $base . '/esmorzar');
+$closedShop = req('GET', $base . '/punt-de-recarrega');
 check('Tanca la venda si es desactiva', str_contains($closedShop['body'], 'venda anticipada de tiquets ja està tancada') || str_contains($closedShop['body'], 'notice-box'));
 $validToken = token(req('GET', $base . '/els-meus-tiquets')['body']); // token vàlid d'un altre formulari
-$blockedCheckout = req('POST', $base . '/esmorzar', ['_token' => $validToken, 'name' => 'X', 'email' => 'x@example.test', 'terms' => '1', 'qty' => [1 => 1]]);
-check('Rebutja compres amb la venda tancada', $blockedCheckout['status'] === 302 && str_contains($blockedCheckout['headers'], '/esmorzar'), 'estat ' . $blockedCheckout['status']);
+$blockedCheckout = req('POST', $base . '/punt-de-recarrega', ['_token' => $validToken, 'name' => 'X', 'email' => 'x@example.test', 'terms' => '1', 'qty' => [1 => 1]]);
+check('Rebutja compres amb la venda tancada', $blockedCheckout['status'] === 302 && str_contains($blockedCheckout['headers'], '/punt-de-recarrega'), 'estat ' . $blockedCheckout['status']);
 check('No crea cap comanda amb la venda tancada', str_contains(req('GET', $base . '/admin/comandes?q=x%40example.test')['body'], 'Cap comanda amb aquests filtres'));
 req('POST', $base . '/admin/configuracio/tickets', [
     '_token' => token(req('GET', $base . '/admin/configuracio/tickets')['body']),
     'tickets_public_mode' => 'info',
     'tickets_enabled' => '1',
-    'tickets_title' => 'Tiquets per a l\'esmorzar',
+    'tickets_title' => 'Tiquets del punt de recàrrega',
     'tickets_deadline' => '2026-10-02',
     'tickets_max_per_order' => '20',
 ]);
-check('El web torna al mode informatiu', !str_contains(req('GET', $base . '/esmorzar', [], ['anon' => true])['body'], 'name="qty['));
+check('El web torna al mode informatiu', !str_contains(req('GET', $base . '/punt-de-recarrega', [], ['anon' => true])['body'], 'name="qty['));
 
 echo "\n== Exportacions ==\n";
 $csv = req('GET', $base . '/admin/comandes/exportar');
@@ -365,7 +379,7 @@ $anonHome = req('GET', $base . '/', [], ['anon' => true]);
 check('El visitant veu l\'avís a la portada', str_contains($anonHome['body'], 'Aviat publicarem el web'), 'estat ' . $anonHome['status']);
 check('El visitant no veu el contingut del web', !str_contains($anonHome['body'], 'Programa de la jornada'));
 check('L\'avís no s\'indexa', str_contains($anonHome['body'], 'noindex'));
-check('El visitant no veu la botiga de tiquets', !str_contains(req('GET', $base . '/esmorzar', [], ['anon' => true])['body'], 'Tria els teus tiquets'));
+check('El visitant no veu la botiga de tiquets', !str_contains(req('GET', $base . '/punt-de-recarrega', [], ['anon' => true])['body'], 'Tria els teus tiquets'));
 check('El visitant no veu les categories', !str_contains(req('GET', $base . '/categories-i-premis', [], ['anon' => true])['body'], 'Benjamí'));
 check('robots.txt bloqueja la indexació', str_contains(req('GET', $base . '/robots.txt', [], ['anon' => true])['body'], 'Disallow: /'));
 check('L\'accés al panell continua disponible', str_contains(req('GET', $base . '/admin/acces', [], ['anon' => true])['body'], 'Accés al panell'));
