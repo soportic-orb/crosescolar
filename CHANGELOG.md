@@ -3,6 +3,12 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.6.1] — 2026-09-19
+
+### Canviat
+- Nova **icona del cros**: el corredor amb les línies de velocitat que es veu al
+  distintiu de la capçalera, al botó d'inscripció, al panell i a la pàgina d'avís.
+
 ## [1.6.0] — 2026-09-19
 
 ### Canviat

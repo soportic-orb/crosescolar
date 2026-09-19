@@ -26,7 +26,7 @@ class Icons
         'card' => '<rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19M6 15h4"/>',
         'mail' => '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 7 8.5 6 8.5-6"/>',
         'star' => '<path d="m12 4 2.4 5 5.6.8-4 3.9 1 5.5-5-2.7-5 2.7 1-5.5-4-3.9 5.6-.8z"/>',
-        'run' => '<circle cx="15.5" cy="5" r="1.8"/><path d="m8 21 3-5-2.5-3 1-5 3.5 2 2.5 2.5 3 1"/><path d="m6.5 12 2-1M13 21l-1.5-4"/>',
+        'run' => '<circle cx="16" cy="5" r="2"/><path d="M7 17l5 1l.75-1.5"/><path d="M18 21v-4l-4-3l1-6"/><path d="M10 12v-3l5-1l3 3l3 1"/><path d="M10 5h-4"/><path d="M6 10h-4"/>',
         'coffee' => '<path d="M4 8h13v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"/><path d="M17 9.5h1.5a2.5 2.5 0 0 1 0 5H17"/><path d="M7 3.5v2M11 3.5v2"/>',
         'food' => '<path d="M5 3v7a2.5 2.5 0 0 0 5 0V3M7.5 10v11"/><path d="M17 3c-1.5 1.5-2 3.5-2 5.5s.7 3.5 2 3.5 2-1.5 2-3.5S18.5 4.5 17 3zM17 12v9"/>',
         'parking' => '<rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M9.5 17V7h3.2a2.9 2.9 0 0 1 0 5.8H9.5"/>',
