@@ -162,11 +162,13 @@ o un mòbil):
 Quan els resultats siguin definitius, premeu **«Publicar al web»**: apareixeran a
 `/resultats`, ordenats per categoria, i al menú del web.
 
-A **Configuració → Categories i premis** podeu decidir si els guanyadors surten
-**marcats amb una medalla** a la classificació i **quants n'hi ha per categoria** (els
-tres primers, els quatre primers…). Les tres primeres posicions porten els colors d'or,
-plata i bronze, i de la quarta en endavant, el verd de la cursa. Si desactiveu les
-medalles, totes les posicions surten igual.
+Les medalles es decideixen **a cada categoria**, no en general: a **Categories →
+editar** hi ha l'interruptor **«Marcar els guanyadors amb medalla»** i, si l'activeu, el
+camp **«Participants premiats»** (els tres primers, els quatre primers…). Així podeu
+premiar tres corredors a les categories petites i cinc a les grans, o no posar medalles
+a la cursa de famílies. Les tres primeres posicions porten els colors d'or, plata i
+bronze, i de la quarta en endavant, el verd de la cursa. Al llistat de categories hi ha
+una columna **Premiats** que ho resumeix.
 
 **Exportacions** (botons de la mateixa pantalla):
 

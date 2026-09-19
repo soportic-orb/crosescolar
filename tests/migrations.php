@@ -75,5 +75,36 @@ foreach ($before as $key => $value) {
     Settings::set($key, $value);
 }
 
+echo "\n== 0007: les medalles passen a ser de cada categoria ==\n";
+
+$columns = array_keys(Db::one('SELECT * FROM categories LIMIT 1') ?? []);
+check('Les categories tenen els camps de medalles',
+    in_array('medals', $columns, true) && in_array('winners', $columns, true), implode(', ', $columns));
+
+// Una instal·lació que tenia l'opció general a «quatre primers».
+Settings::set('prizes_medals', '1');
+Settings::set('prizes_winners', '4');
+Db::conn()->exec('UPDATE categories SET medals = 1, winners = 3');
+
+$migration = require CROS_APP . '/migrations/0007_medalles_per_categoria.php';
+$migration(Db::conn());
+
+$row = Db::one('SELECT medals, winners FROM categories ORDER BY id ASC');
+check('Els valors generals es copien a cada categoria',
+    (int) ($row['winners'] ?? 0) === 4 && (int) ($row['medals'] ?? 0) === 1, json_encode($row));
+check('Totes les categories queden igual',
+    (int) Db::val('SELECT COUNT(*) FROM categories WHERE winners <> 4', [], 0) === 0);
+
+// I una que les tenia desactivades.
+Settings::set('prizes_medals', '0');
+$migration(Db::conn());
+check('Si estaven desactivades, també es respecta',
+    (int) Db::val('SELECT COUNT(*) FROM categories WHERE medals <> 0', [], 0) === 0);
+
+// Deixa les categories com estaven.
+Db::conn()->exec('UPDATE categories SET medals = 1, winners = 3');
+Settings::set('prizes_medals', '1');
+Settings::set('prizes_winners', '3');
+
 echo "\n== Resultat ==\n  $passed proves correctes, $failed errors\n\n";
 exit($failed === 0 ? 0 : 1);

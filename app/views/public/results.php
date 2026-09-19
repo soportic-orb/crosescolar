@@ -5,8 +5,8 @@ use Cros\Models\Bib;
 $showBib = setting('results_show_bib', '1') === '1';
 $publicPdf = setting('results_public_pdf', '1') === '1';
 // Guanyadors destacats amb medalla: or, plata, bronze i, a partir del quart, el verd de la cursa.
+// Cada categoria decideix si en mostra i a quants participants.
 $medals = ['#c9a227', '#9aa6ad', '#b06a3b'];
-$winners = setting('prizes_medals', '1') === '1' ? max(0, min(50, (int) setting('prizes_winners', '3'))) : 0;
 ?>
 <?= \Cros\Core\View::partial('partials/page-header', [
     'title' => setting('results_title', 'Resultats de la cursa'),
@@ -34,6 +34,7 @@ $winners = setting('prizes_medals', '1') === '1' ? max(0, min(50, (int) setting(
     <?php endif; ?>
 
     <?php foreach ($groups as $group): ?>
+      <?php $winners = !empty($group['medals']) ? (int) ($group['winners'] ?? 0) : 0; ?>
       <div style="margin-bottom:2.6rem">
         <div class="flex-between" style="margin-bottom:.8rem">
           <h2 style="margin:0"><?= e($group['name']) ?></h2>

@@ -136,7 +136,8 @@ class RaceResult
     private static function baseQuery(): string
     {
         return 'SELECT res.*, r.first_name, r.last_name, r.bib_number, r.school, r.class_group, r.birth_year,
-                       c.name AS category_name, c.sort_order AS category_order
+                       c.name AS category_name, c.sort_order AS category_order,
+                       c.medals AS category_medals, c.winners AS category_winners
                 FROM results res
                 JOIN registrations r ON r.id = res.registration_id
                 LEFT JOIN categories c ON c.id = res.category_id';
@@ -171,6 +172,9 @@ class RaceResult
                 $grouped[$key] = [
                     'id' => $key,
                     'name' => $row['category_name'] ?? 'Sense categoria',
+                    // Medalles: cada categoria decideix si en mostra i a quants.
+                    'medals' => (int) ($row['category_medals'] ?? 1) === 1,
+                    'winners' => max(0, min(50, (int) ($row['category_winners'] ?? 3))),
                     'rows' => [],
                 ];
             }

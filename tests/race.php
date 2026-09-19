@@ -104,6 +104,26 @@ function saveSettings(string $base, string $group, array $changes): array
     return req('POST', $base . '/admin/configuracio/' . $group, array_merge(formData($form['body']), $changes));
 }
 
+/** Identificador d'una categoria a partir del seu nom. */
+function categoryId(string $base, string $name): int
+{
+    $list = req('GET', $base . '/admin/contingut/categories');
+    preg_match_all('#<tr[^>]*data-id="(\d+)"(.*?)</tr>#s', $list['body'], $rows, PREG_SET_ORDER);
+    foreach ($rows as $row) {
+        if (str_contains(text($row[2]), $name)) {
+            return (int) $row[1];
+        }
+    }
+    return 0;
+}
+
+/** Desa una categoria canviant només el que s'indica. */
+function saveCategory(string $base, int $id, array $changes): array
+{
+    $form = req('GET', $base . '/admin/contingut/categories/' . $id);
+    return req('POST', $base . '/admin/contingut/categories/' . $id, array_merge(formData($form['body']), $changes));
+}
+
 /** Quantes medalles hi ha a la classificació pública. */
 function medals(string $html): int
 {
@@ -226,28 +246,40 @@ check('Els resultats s\'agrupen per categoria', substr_count($public['body'], '<
 check('Es mostra el número de dorsal', str_contains($public['body'], $bib1));
 check('El menú mostra els resultats', str_contains(req('GET', $base . '/', [], ['anon' => true])['body'], '/resultats"'));
 
-echo "\n== Medalles dels guanyadors ==\n";
-check('Hi ha l\'opció de medalles a la configuració de categories',
-    str_contains(text(req('GET', $base . '/admin/configuracio/categories')['body']), 'Marcar els guanyadors amb medalla'));
-// Hi ha dos classificats a una categoria i un a l'altra.
+echo "\n== Medalles per categoria ==\n";
+$alevi = categoryId($base, 'Aleví');
+$infantil = categoryId($base, 'Infantil');
+check('Es troben les categories al panell', $alevi > 0 && $infantil > 0, $alevi . '/' . $infantil);
+check('La fitxa de la categoria porta l\'opció de medalles',
+    str_contains(text(req('GET', $base . '/admin/contingut/categories/' . $alevi)['body']), 'Marcar els guanyadors amb medalla'));
+check('El llistat de categories mostra els premiats',
+    str_contains(text(req('GET', $base . '/admin/contingut/categories')['body']), 'Premiats'));
+// Hi ha dos classificats a la categoria aleví i un a la infantil.
 check('Per defecte els tres primers porten medalla', medals($public['body']) === 3, (string) medals($public['body']));
 
-saveSettings($base, 'categories', ['prizes_medals' => '1', 'prizes_winners' => '1']);
-$oneWinner = req('GET', $base . '/resultats', [], ['anon' => true]);
-check('Amb un sol guanyador només en porta el primer de cada categoria',
-    medals($oneWinner['body']) === 2, (string) medals($oneWinner['body']));
-check('Els altres continuen sortint amb la posició', str_contains($oneWinner['body'], '<strong>2</strong>'));
+saveCategory($base, $alevi, ['medals' => '1', 'winners' => '1']);
+$one = req('GET', $base . '/resultats', [], ['anon' => true]);
+check('Amb un sol premiat, la categoria només en marca un', medals($one['body']) === 2, (string) medals($one['body']));
+check('El segon continua sortint amb la posició', str_contains($one['body'], '<strong>2</strong>'));
 
-$without = saveSettings($base, 'categories', ['prizes_medals' => '0', 'prizes_winners' => '3']);
-check('Es poden desactivar les medalles', $without['status'] === 302);
-check('Sense medalles no en surt cap', medals(req('GET', $base . '/resultats', [], ['anon' => true])['body']) === 0);
+saveCategory($base, $alevi, ['medals' => '0', 'winners' => '3']);
+$off = req('GET', $base . '/resultats', [], ['anon' => true]);
+check('Es poden treure les medalles d\'una categoria', medals($off['body']) === 1, (string) medals($off['body']));
+check('Les altres categories no queden afectades', medals($off['body']) === 1);
+check('Al llistat hi diu que no en té',
+    str_contains(text(req('GET', $base . '/admin/contingut/categories')['body']), 'Sense medalles'));
 
-saveSettings($base, 'categories', ['prizes_medals' => '1', 'prizes_winners' => '5']);
-check('Amb cinc guanyadors, tots els classificats en porten',
+saveCategory($base, $infantil, ['medals' => '0', 'winners' => '3']);
+check('Sense cap categoria amb medalles no en surt cap',
+    medals(req('GET', $base . '/resultats', [], ['anon' => true])['body']) === 0);
+
+saveCategory($base, $alevi, ['medals' => '1', 'winners' => '5']);
+saveCategory($base, $infantil, ['medals' => '1', 'winners' => '3']);
+check('En tornar-les a activar, tots els classificats en porten',
     medals(req('GET', $base . '/resultats', [], ['anon' => true])['body']) === 3);
-check('Els textos de la pàgina de categories no s\'han perdut',
-    str_contains(req('GET', $base . '/categories-i-premis', [], ['anon' => true])['body'], 'Benjamí'));
-saveSettings($base, 'categories', ['prizes_medals' => '1', 'prizes_winners' => '3']);
+check('Els altres camps de la categoria no s\'han perdut',
+    str_contains(req('GET', $base . '/categories-i-premis', [], ['anon' => true])['body'], '1.000 m'));
+saveCategory($base, $alevi, ['medals' => '1', 'winners' => '3']);
 
 echo "\n== Exportacions ==\n";
 $byCategory = req('GET', $base . '/admin/resultats/pdf');

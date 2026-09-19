@@ -54,6 +54,11 @@ $currency = (string) setting('payments_currency', 'EUR');
                         echo $row['year_from'] && $row['year_to']
                             ? e(min((int) $row['year_from'], (int) $row['year_to']) . '–' . max((int) $row['year_from'], (int) $row['year_to']))
                             : '<span class="text-soft">—</span>';
+                    } elseif ($column === 'winners') {
+                        // Els premiats només tenen sentit si la categoria mostra medalles.
+                        echo (int) ($row['medals'] ?? 1) === 1
+                            ? e((string) (int) $value)
+                            : '<span class="text-soft">Sense medalles</span>';
                     } elseif ($column === 'sold') {
                         echo (int) ($row['sold'] ?? 0);
                     } elseif ($fieldType === 'image' || ($column === 'logo' || $column === 'file')) {

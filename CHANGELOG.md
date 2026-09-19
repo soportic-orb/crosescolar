@@ -3,6 +3,16 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.8.0] — 2026-09-19
+
+### Canviat
+- Les **medalles dels guanyadors** es configuren ara **a cada categoria** i no en
+  general: a Categories → editar hi ha l'interruptor de medalles i el nombre de
+  **participants premiats**. Així es poden premiar tres corredors a unes categories i
+  cinc a unes altres, o no posar-ne a cap. En actualitzar, totes les categories reben
+  els valors que hi havia a la configuració general, de manera que el web es veu igual.
+- El llistat de categories del panell mostra una columna **Premiats**.
+
 ## [1.7.0] — 2026-09-19
 
 ### Afegit
