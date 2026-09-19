@@ -3,6 +3,18 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.6.0] — 2026-09-19
+
+### Canviat
+- **Motius de vinya**: les ratlles i rodones que decoraven la franja inferior de la
+  portada i les capçaleres interiors són ara **fulles de parra i carrassos de raïm**,
+  dibuixats a mida. S'hi afegeix un separador de fulles entre seccions de la portada i
+  dues icones noves (`leaf` i `grape`) que es poden triar als blocs de la portada.
+- **Tipografies noves**: titulars amb **Cabin Sketch** i textos amb **DM Sans**. Els
+  fitxers s'inclouen al web i se serveixen des del mateix servidor: no es fa cap
+  petició a Google i el web funciona igual sense connexió a internet. El panell manté
+  la tipografia de text, però no la dels titulars, per llegir-s'hi millor.
+
 ## [1.5.0] — 2026-09-19
 
 ### Canviat

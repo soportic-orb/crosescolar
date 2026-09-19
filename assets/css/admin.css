@@ -20,7 +20,7 @@
 * { box-sizing: border-box; }
 body.admin {
   margin: 0; background: var(--a-bg); color: var(--a-ink);
-  font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif; font-size: 15px; line-height: 1.6;
+  font-family: 'Google Sans', 'DM Sans', "Segoe UI", system-ui, -apple-system, Arial, sans-serif; font-size: 15px; line-height: 1.6;
 }
 a { color: var(--a-green); }
 h1, h2, h3 { margin: 0 0 .5em; line-height: 1.2; color: var(--a-green-dark); }

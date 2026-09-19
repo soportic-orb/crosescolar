@@ -54,6 +54,9 @@ class Icons
         'gift' => '<rect x="3.5" y="8" width="17" height="12" rx="2"/><path d="M3.5 12.5h17M12 8v12"/><path d="M12 8S10.5 4 8.5 4a2 2 0 0 0 0 4M12 8s1.5-4 3.5-4a2 2 0 0 1 0 4"/>',
         'flag' => '<path d="M6 21V4M6 4h11l-2 3.5L17 11H6"/>',
         'vine' => '<path d="M12 3v7"/><circle cx="9" cy="12" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="12" cy="16" r="2"/><circle cx="12" cy="20" r="1.5"/><path d="M12 5c2 0 3-1 3-2"/>',
+        // Carràs de raïm i fulla de parra: els motius de la vinya del Penedès.
+        'grape' => '<path d="M13 3a14.5 14.5 0 0 0-1 6"/><path d="M12 8.9s-2.77.52-4.1-.8s-.8-4-.8-4s2.57-.53 3.88.8s1.02 4 1.02 4"/><circle cx="12" cy="19" r="2"/><circle cx="14" cy="15" r="2"/><circle cx="10" cy="15" r="2"/><circle cx="12" cy="11" r="2"/><circle cx="16" cy="11" r="2"/><circle cx="8" cy="11" r="2"/>',
+        'leaf' => '<path d="M12 21v-4"/><path d="M12 3.5 13.5 8l3.2-1.8 2.8 2.6-3.3 3 2.6 1.7-1.6 3.6-4.2-.6L12 18l-1-1.5-4.2.6L5.2 13.5l2.6-1.7-3.3-3 2.8-2.6L10.5 8z"/><path d="M12 17V8M12 12l3.5-2.5M12 12 8.5 9.5"/>',
         'mountain' => '<path d="m3 19 6-10 4 6 2-3 6 7z"/>',
         'phone' => '<path d="M7 3.5h3l1.5 4-2 1.5a12 12 0 0 0 5.5 5.5l1.5-2 4 1.5v3a2 2 0 0 1-2.2 2C11 18.5 5.5 13 4.7 5.7A2 2 0 0 1 7 3.5z"/>',
         'instagram' => '<rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="3.8"/><circle cx="17" cy="7" r="1"/>',

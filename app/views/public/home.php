@@ -262,6 +262,8 @@ $salesOpen = \Cros\Controllers\TicketsController::salesOpen();
 </section>
 <?php endif; ?>
 
+<?= \Cros\Core\View::partial('partials/divider') ?>
+
 <section class="section section--tint" id="on-som">
   <div class="container split">
     <div>

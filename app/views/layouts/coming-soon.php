@@ -16,6 +16,7 @@ $background = (string) (setting('coming_soon_image', '') ?: setting('hero_image'
 <?php if ($favicon !== ''): ?>
 <link rel="icon" href="<?= e(upload_url($favicon)) ?>">
 <?php endif; ?>
+<link rel="stylesheet" href="<?= e(asset('css/fonts.css')) ?>">
 <link rel="stylesheet" href="<?= e(asset('css/site.css')) ?>">
 <style>
 :root{

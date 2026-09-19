@@ -103,6 +103,18 @@ check('El menú porta al punt de recàrrega des del peu', str_contains(text($men
 check('El contacte ja no surt al menú', !str_contains($nav, 'Contacte'), $nav);
 check('...però sí al peu de pàgina', str_contains(text($menu['body']), 'Formulari de contacte'));
 
+echo "\n== Imatge del web ==\n";
+check('Les tipografies se serveixen des del mateix servidor',
+    str_contains($menu['body'], 'css/fonts.css') && !str_contains($menu['body'], 'fonts.googleapis.com'));
+check('Els fitxers de lletra hi són',
+    is_file(__DIR__ . '/../assets/fonts/cabin-sketch-700-latin.woff2')
+    && is_file(__DIR__ . '/../assets/fonts/dm-sans-latin.woff2'));
+check('La portada porta motius de vinya', substr_count($menu['body'], 'hero__motifs') === 1
+    && substr_count($menu['body'], '<circle') > 5, 'motius a la franja inferior');
+check('Hi ha el separador de fulles', str_contains($menu['body'], 'divider-vines'));
+$header = req('GET', $base . '/categories-i-premis', [], ['anon' => true]);
+check('Les capçaleres interiors també en porten', str_contains($header['body'], 'page-header__vines'));
+
 echo "\n== Inscripció pública ==\n";
 $form = req('GET', $base . '/inscripcio');
 $csrf = token($form['body']);

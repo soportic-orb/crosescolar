@@ -1,0 +1,25 @@
+Tipografies del web
+===================
+
+Cabin Sketch (titulars)
+  Copyright (c) 2011, Pablo Impallari, Rodrigo Fuenzalida, Igino Marini.
+  https://fonts.google.com/specimen/Cabin+Sketch
+
+DM Sans (textos)
+  Copyright (c) 2014-2023, Colophon Foundry, Jonny Pinhorn, Indian Type Foundry.
+  https://fonts.google.com/specimen/DM+Sans
+
+Totes dues es distribueixen amb la SIL Open Font License, Version 1.1
+(text complet a OFL-Cabin-Sketch.txt i OFL-DM-Sans.txt), que permet fer-les
+servir, incrustar-les i redistribuir-les lliurement.
+
+S'inclouen dins del web (carpeta assets/fonts) i no es demanen a cap servidor
+extern: així el web no envia les adreces IP dels visitants a Google i funciona
+igualment sense connexió a internet.
+
+Nota: la petició original demanava «Google Sans» per als textos. Aquesta
+tipografia és la marca corporativa de Google i no es distribueix (a Google Fonts
+només hi ha «Google Sans Code», que és monoespaiada i pensada per a codi). La
+família que s'hi ha posat és DM Sans, la més semblant de les que sí que es poden
+fer servir lliurement. Al full d'estils, la variable --font demana primer
+'Google Sans' per si algun dia la teniu instal·lada o llicenciada.

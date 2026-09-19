@@ -136,7 +136,23 @@ php tools/build-release.php --version=1.1.0 --url=https://cros.afalagranada.cat/
 
 ---
 
+## Imatge del web
+
+- **Color**: verds del Penedès amb un accent càlid (`--green-*` i `--accent` a
+  `assets/css/site.css`).
+- **Tipografies**: titulars amb **Cabin Sketch** i textos amb **DM Sans**, servides des
+  del mateix servidor (`assets/fonts`, `assets/css/fonts.css`). No es fa cap petició a
+  Google, de manera que no s'envien les adreces IP dels visitants a tercers. Vegeu
+  `assets/fonts/LLICENCIA.txt`.
+- **Motius de vinya**: la fulla de parra i el carràs de raïm es dibuixen amb
+  `Cros\Core\Vines` i decoren la franja inferior de la portada, les capçaleres
+  interiors i els separadors. Les versions de traç són a `Cros\Core\Icons`
+  (`leaf` i `grape`) i es poden triar als blocs de la portada des del panell.
+
+---
+
 ## Llicència i crèdits
 
 Desenvolupat per a l'AFA de l'Escola La Granada. Tots els textos i imatges pujats
-són propietat de l'entitat organitzadora.
+són propietat de l'entitat organitzadora. Les tipografies incloses (Cabin Sketch i
+DM Sans) es distribueixen amb la SIL Open Font License 1.1.
