@@ -8,6 +8,7 @@ use Cros\Core\Controller;
 use Cros\Core\Db;
 use Cros\Core\Html;
 use Cros\Core\Uploader;
+use Cros\Models\Content;
 
 /**
  * Gestió genèrica dels continguts definits a app/resources.php
@@ -98,6 +99,7 @@ class CrudController extends Controller
             $data['created_at'] = date('Y-m-d H:i:s');
         }
         $id = Db::insert($resource['table'], $data);
+        $this->saveRelations($resource, $id);
         Auth::logActivity('create', $resource['table'], $id);
         flash('success', ucfirst($resource['singular']) . ' afegit correctament.');
         redirect('/admin/contingut/' . $resource['key']);
@@ -107,7 +109,7 @@ class CrudController extends Controller
     {
         Auth::requireLogin();
         $resource = $this->resource((string) $params['resource']);
-        $row = $this->findRow($resource, (int) $params['id']);
+        $row = $this->withRelations($resource, $this->findRow($resource, (int) $params['id']));
         $this->adminView('crud/form', [
             'title' => 'Editar ' . $resource['singular'],
             'resource' => $resource,
@@ -138,6 +140,7 @@ class CrudController extends Controller
         }
 
         Db::update($resource['table'], $data, 'id = :id', ['id' => $row['id']]);
+        $this->saveRelations($resource, (int) $row['id']);
         Auth::logActivity('update', $resource['table'], (int) $row['id']);
         flash('success', 'Canvis desats.');
         redirect('/admin/contingut/' . $resource['key'] . '/' . $row['id']);
@@ -183,9 +186,52 @@ class CrudController extends Controller
         if ($this->hasColumn($resource, 'created_at')) {
             $row['created_at'] = date('Y-m-d H:i:s');
         }
+        $original = (int) ($params['id'] ?? 0);
         $id = Db::insert($resource['table'], $row);
+        $this->copyRelations($resource, $original, $id);
         flash('success', 'S\'ha creat una còpia.');
         redirect('/admin/contingut/' . $resource['key'] . '/' . $id);
+    }
+
+    /** Afegeix a la fila els recorreguts desats, per dibuixar el formulari. */
+    private function withRelations(array $resource, array $row): array
+    {
+        foreach ($resource['fields'] as $name => $field) {
+            if (($field['type'] ?? '') === 'course_laps') {
+                $row[$name] = Content::categoryCourses((int) $row['id'])[(int) $row['id']] ?? [];
+            }
+        }
+        return $row;
+    }
+
+    /** Desa els recorreguts i les voltes que ha enviat el formulari. */
+    private function saveRelations(array $resource, int $id): void
+    {
+        foreach ($resource['fields'] as $name => $field) {
+            if (($field['type'] ?? '') === 'course_laps') {
+                Content::saveCategoryCourses(
+                    $id,
+                    (array) ($_POST[$name] ?? []),
+                    (array) ($_POST[$name . '_laps'] ?? [])
+                );
+            }
+        }
+    }
+
+    /** En duplicar, la còpia es queda els mateixos recorreguts. */
+    private function copyRelations(array $resource, int $from, int $to): void
+    {
+        foreach ($resource['fields'] as $name => $field) {
+            if (($field['type'] ?? '') !== 'course_laps' || $from <= 0) {
+                continue;
+            }
+            $courses = Content::categoryCourses($from)[$from] ?? [];
+            Content::saveCategoryCourses(
+                $to,
+                array_column($courses, 'course_id'),
+                array_column($courses, 'laps')
+            );
+        }
     }
 
     /** Desa l'ordre dels elements (arrossegar i deixar anar). */
@@ -283,6 +329,11 @@ class CrudController extends Controller
                 } elseif (str_contains($rules, 'required') && $current === '' && !isset($data[$name])) {
                     $errors[$name] = 'Cal pujar un fitxer.';
                 }
+                continue;
+            }
+
+            if ($type === 'course_laps') {
+                // No és cap columna: es desa a part, un cop es coneix l'identificador.
                 continue;
             }
 

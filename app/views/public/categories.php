@@ -40,10 +40,26 @@
                   <?php endif; ?>
                 </td>
                 <td><strong><?= e($category['start_time']) ?></strong></td>
-                <td><?= e($category['distance_label']) ?></td>
                 <td>
-                  <?php if (!empty($category['course_slug'])): ?>
-                    <a href="<?= e(url('/recorreguts/' . $category['course_slug'])) ?>"><?= e($category['course_name']) ?></a>
+                  <?php if (trim((string) $category['distance_label']) !== ''): ?>
+                    <?= e($category['distance_label']) ?>
+                  <?php elseif (!empty($category['distance_total'])): ?>
+                    <?= e(number_format((int) $category['distance_total'], 0, ',', '.')) ?> m
+                  <?php else: ?>
+                    <span class="text-soft">—</span>
+                  <?php endif; ?>
+                </td>
+                <td>
+                  <?php if (!empty($category['courses'])): ?>
+                    <?php foreach ($category['courses'] as $index => $course): ?>
+                      <?php if ($index > 0): ?><span class="text-soft"> + </span><?php endif; ?>
+                      <span style="white-space:nowrap">
+                        <?php if ((int) $course['laps'] > 1 || count($category['courses']) > 1): ?>
+                          <strong><?= (int) $course['laps'] ?> <?= (int) $course['laps'] === 1 ? 'volta' : 'voltes' ?></strong> a
+                        <?php endif; ?>
+                        <a href="<?= e(url('/recorreguts/' . $course['slug'])) ?>"><?= e($course['name']) ?></a>
+                      </span>
+                    <?php endforeach; ?>
                   <?php else: ?>
                     <span class="text-soft">—</span>
                   <?php endif; ?>

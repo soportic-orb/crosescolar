@@ -182,3 +182,12 @@ input[type="color"] { width: 64px; height: 40px; padding: 2px; }
 .mb-0 { margin-bottom: 0; } .mb-2 { margin-bottom: 1rem; }
 .flex { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; }
 .flex-between { display: flex; gap: 1rem; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+
+/* Recorreguts i voltes d'una categoria */
+.laps { display: grid; gap: .5rem; justify-items: start; }
+.laps__row { display: flex; gap: .6rem; align-items: center; width: 100%; flex-wrap: wrap; }
+.laps__row select { flex: 1 1 14rem; }
+.laps__laps { display: flex; align-items: center; gap: .4rem; font-size: .9rem; color: #5a6b60; }
+.laps__laps input { width: 5rem; }
+.laps__actions { display: flex; gap: .25rem; }
+.laps__actions .btn { padding: .3rem .55rem; line-height: 1; }

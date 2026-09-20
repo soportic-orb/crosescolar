@@ -72,7 +72,7 @@ class Seeder
         ];
         $order = 1;
         foreach ($categories as [$name, $code, $from, $to, $time, $distance, $courseId, $prizes]) {
-            Db::insert('categories', [
+            $categoryId = Db::insert('categories', [
                 'name' => $name,
                 'code' => $code,
                 'year_from' => $from,
@@ -85,6 +85,14 @@ class Seeder
                 'sort_order' => $order++,
                 'active' => 1,
             ]);
+            if ($courseId) {
+                Db::insert('category_courses', [
+                    'category_id' => $categoryId,
+                    'course_id' => $courseId,
+                    'laps' => 1,
+                    'sort_order' => 0,
+                ]);
+            }
         }
     }
 

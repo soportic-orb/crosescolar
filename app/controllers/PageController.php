@@ -44,9 +44,10 @@ class PageController extends Controller
         if (!$course) {
             abort(404, 'No hem trobat aquest recorregut.');
         }
+        // Hi surten totes les categories que hi facin alguna volta.
         $categories = array_values(array_filter(
             Content::categories(),
-            fn ($category) => (int) ($category['course_id'] ?? 0) === (int) $course['id']
+            fn ($category) => in_array((int) $course['id'], array_column($category['courses'] ?? [], 'course_id'), true)
         ));
         $this->view('public/course', [
             'title' => $course['name'],

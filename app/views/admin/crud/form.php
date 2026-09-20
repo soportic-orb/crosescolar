@@ -10,7 +10,7 @@
     <div class="panel__body">
       <div class="form-grid form-grid--2">
         <?php foreach ($resource['fields'] as $name => $field): ?>
-          <?php $fullWidth = in_array($field['type'] ?? 'text', ['html', 'textarea'], true); ?>
+          <?php $fullWidth = !empty($field['full']) || in_array($field['type'] ?? 'text', ['html', 'textarea'], true); ?>
           <div style="<?= $fullWidth ? 'grid-column:1/-1' : '' ?>">
             <?= \Cros\Core\View::partial('admin/partials/field', [
                 'name' => $name,

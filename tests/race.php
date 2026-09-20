@@ -79,6 +79,9 @@ function formData(string $html): array
         if (!preg_match('/name="([^"]+)"/', $tag, $name)) {
             continue;
         }
+        if (str_ends_with($name[1], '[]')) {
+            continue; // llistes (recorreguts i voltes): les posa qui crida la funció
+        }
         if (preg_match('/type="(checkbox|file|radio)"/i', $tag, $type)) {
             if (strtolower($type[1]) === 'checkbox' && str_contains($tag, 'checked')) {
                 $data[$name[1]] = '1';
@@ -94,6 +97,9 @@ function formData(string $html): array
     }
     preg_match_all('#<select[^>]*name="([^"]+)"[^>]*>(.*?)</select>#s', $html, $selects, PREG_SET_ORDER);
     foreach ($selects as $select) {
+        if (str_ends_with($select[1], '[]')) {
+            continue;
+        }
         if (preg_match('/<option value="([^"]*)"[^>]*selected/', $select[2], $option)) {
             $data[$select[1]] = html_entity_decode($option[1], ENT_QUOTES | ENT_HTML5, 'UTF-8');
         }
@@ -253,6 +259,54 @@ $emptied = req('POST', $base . '/admin/inscripcions/' . $manualId,
 check('Si es buida el camp, se n\'hi posa un de nou', $emptied['status'] === 302
     && preg_match('#name="bib_number" value="(\d+)"#', req('GET', $base . '/admin/inscripcions/' . $manualId)['body'], $after) === 1
     && (int) $after[1] > 0, 'ha de tenir dorsal igualment');
+
+echo "\n== Recorreguts i voltes ==\n";
+$categoria = categoryId($base, 'Aleví');
+$fitxaCat = req('GET', $base . '/admin/contingut/categories/' . $categoria);
+check('La fitxa de la categoria té el camp de recorreguts i voltes',
+    str_contains($fitxaCat['body'], 'data-laps') && str_contains($fitxaCat['body'], 'courses_laps[]'));
+check('Hi surt el recorregut que ja tenia', substr_count($fitxaCat['body'], 'selected') >= 1);
+
+$courseIds = [];
+preg_match_all('#<select[^>]*name="courses\[\]".*?</select>#s', $fitxaCat['body'], $selects);
+preg_match_all('#<option value="(\d+)"#', $selects[0][0] ?? '', $options);
+$courseIds = array_map('intval', $options[1] ?? []);
+check('Hi ha més d\'un recorregut per triar', count($courseIds) >= 2, implode(',', $courseIds));
+
+$saved = req('POST', $base . '/admin/contingut/categories/' . $categoria, array_merge(
+    formData($fitxaCat['body']),
+    ['courses' => [$courseIds[0], $courseIds[1]], 'courses_laps' => ['1', '2']]
+));
+check('Es poden desar dos recorreguts', $saved['status'] === 302, 'estat ' . $saved['status']);
+
+$public = req('GET', $base . '/categories-i-premis', [], ['anon' => true]);
+check('El web mostra els dos recorreguts en ordre',
+    preg_match('#2 voltes#', $public['body']) === 1 && substr_count($public['body'], ' + ') >= 1,
+    'composició del recorregut');
+
+$reopened = req('GET', $base . '/admin/contingut/categories/' . $categoria);
+preg_match_all('#<select[^>]*name="courses\[\]".*?</select>#s', $reopened['body'], $rows);
+check('Es tornen a carregar les dues files', count($rows[0]) === 3, count($rows[0]) . ' files (2 + la buida)');
+check('Les voltes es conserven', preg_match('#name="courses_laps\[\]" value="2"#', $reopened['body']) === 1);
+
+// L'ordre és el que s'envia: es giren i s'ha de veure girat.
+req('POST', $base . '/admin/contingut/categories/' . $categoria, array_merge(
+    formData($reopened['body']),
+    ['courses' => [$courseIds[1], $courseIds[0]], 'courses_laps' => ['2', '1']]
+));
+$afterSwap = req('GET', $base . '/admin/contingut/categories/' . $categoria);
+preg_match_all('#<select[^>]*name="courses\[\]".*?</select>#s', $afterSwap['body'], $swapped);
+preg_match('#<option value="(\d+)" selected#', $swapped[0][0] ?? '', $firstNow);
+check('Es pot canviar l\'ordre dels recorreguts', (int) ($firstNow[1] ?? 0) === $courseIds[1],
+    'primer ara: ' . ($firstNow[1] ?? '—'));
+
+// Deixa la categoria amb un sol recorregut, com estava.
+req('POST', $base . '/admin/contingut/categories/' . $categoria, array_merge(
+    formData($afterSwap['body']),
+    ['courses' => [$courseIds[1]], 'courses_laps' => ['1']]
+));
+check('Es pot tornar a deixar amb un de sol',
+    substr_count(req('GET', $base . '/admin/contingut/categories/' . $categoria)['body'], 'name="courses[]"') === 2);
 
 echo "\n== Resultats de la cursa ==\n";
 check('Els resultats no són públics fins que es publiquen', req('GET', $base . '/resultats', [], ['anon' => true])['status'] === 404);

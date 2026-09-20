@@ -3,6 +3,18 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.9.0] — 2026-09-20
+
+### Afegit
+- **Diversos recorreguts per categoria, amb voltes**: una cursa pot ser, per exemple,
+  1 volta al circuit A i 2 voltes al circuit B. A Categories → editar s'hi afegeixen els
+  recorreguts que calgui, s'hi indiquen les voltes de cadascun i s'ordenen amb les
+  fletxes. El web en mostra la composició i la fitxa de cada recorregut llista totes les
+  categories que hi passen. En actualitzar, cada categoria manté el recorregut que tenia
+  amb una volta.
+- Si la **distància** d'una categoria es deixa en blanc, al web s'hi calcula la suma dels
+  recorreguts per les seves voltes.
+
 ## [1.8.1] — 2026-09-20
 
 ### Corregit

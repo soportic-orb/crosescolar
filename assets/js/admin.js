@@ -208,4 +208,42 @@
     master.addEventListener('change', update);
     update();
   });
+
+  /* Recorreguts d'una categoria: afegir, treure i ordenar files. */
+  document.querySelectorAll('[data-laps]').forEach(function (box) {
+    var addButton = box.querySelector('[data-laps-add]');
+    var rows = function () { return Array.prototype.slice.call(box.querySelectorAll('[data-laps-row]')); };
+
+    var clean = function (row) {
+      row.querySelector('select').value = '';
+      var laps = row.querySelector('input[type="number"]');
+      if (laps) { laps.value = '1'; }
+      return row;
+    };
+
+    if (addButton) {
+      addButton.addEventListener('click', function () {
+        var list = rows();
+        var copy = clean(list[list.length - 1].cloneNode(true));
+        box.insertBefore(copy, addButton);
+        copy.querySelector('select').focus();
+      });
+    }
+
+    box.addEventListener('click', function (event) {
+      var button = event.target.closest('button');
+      if (!button) { return; }
+      var row = button.closest('[data-laps-row]');
+      if (!row) { return; }
+      if (button.hasAttribute('data-laps-remove')) {
+        // Sempre hi ha d'haver una fila per poder afegir-ne.
+        rows().length > 1 ? row.remove() : clean(row);
+      } else if (button.hasAttribute('data-laps-up') && row.previousElementSibling) {
+        box.insertBefore(row, row.previousElementSibling);
+      } else if (button.hasAttribute('data-laps-down')) {
+        var next = row.nextElementSibling;
+        if (next && next.hasAttribute('data-laps-row')) { box.insertBefore(next, row); }
+      }
+    });
+  });
 })();

@@ -89,6 +89,20 @@ les feu vosaltres des del panell.
 Si preferiu que ningú no pugui tocar les seves dades, desactiveu
 **Configuració → Inscripcions → «Les meves inscripcions» actiu** i la pàgina desapareix.
 
+### 5.2. Recorreguts i voltes de cada categoria
+
+Una cursa pot fer més d'un recorregut: per exemple, **1 volta al circuit A i 2 voltes al
+circuit B**. A **Categories → editar → Recorreguts i voltes** s'hi afegeixen tants
+recorreguts com calgui amb el botó **«+ Afegir un recorregut»**, s'hi posen les voltes
+de cadascun i s'ordenen amb les fletxes ↑ ↓ (la primera fila és el primer tram). El
+botó **×** el treu.
+
+Al web, la columna **Recorregut** de la pàgina de categories mostra la composició
+(«1 volta a Circuit mitjà + 2 voltes a Circuit llarg») i cada recorregut enllaça amb la
+seva fitxa, on ara hi surten totes les categories que hi passen. Si deixeu la
+**distància** de la categoria en blanc, al web s'hi calcula la suma dels recorreguts per
+les voltes.
+
 ### 6. Dorsals dels participants
 
 Cada inscripció rep automàticament un **número de dorsal** (001, 002, 003…) i les

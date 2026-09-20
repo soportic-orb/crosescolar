@@ -106,5 +106,28 @@ Db::conn()->exec('UPDATE categories SET medals = 1, winners = 3');
 Settings::set('prizes_medals', '1');
 Settings::set('prizes_winners', '3');
 
+echo "\n== 0008: una categoria pot fer diversos recorreguts ==\n";
+
+check('Hi ha la taula de recorreguts per categoria', Db::tableExists('category_courses'));
+
+// Una instal·lació anterior: cada categoria tenia un sol recorregut a categories.course_id.
+Db::conn()->exec('DELETE FROM category_courses');
+$sql = (string) file_get_contents(CROS_APP . '/migrations/0008_recorreguts_per_categoria.sql');
+foreach (\Cros\Core\Migrator::statements(cros_test_translate($sql)) as $statement) {
+    if (str_starts_with(strtoupper(trim($statement)), 'INSERT')) {
+        Db::conn()->exec($statement);
+    }
+}
+
+$withCourse = (int) Db::val('SELECT COUNT(*) FROM categories WHERE course_id IS NOT NULL', [], 0);
+check('Cada categoria conserva el recorregut que tenia',
+    (int) Db::val('SELECT COUNT(*) FROM category_courses', [], 0) === $withCourse,
+    $withCourse . ' categories amb recorregut');
+check('I hi fa una volta',
+    (int) Db::val('SELECT COUNT(*) FROM category_courses WHERE laps <> 1', [], 0) === 0);
+$sample = Db::one('SELECT c.id, c.course_id, cc.course_id AS relacio FROM categories c
+                   JOIN category_courses cc ON cc.category_id = c.id WHERE c.course_id IS NOT NULL');
+check('El recorregut és el mateix', (int) ($sample['course_id'] ?? 0) === (int) ($sample['relacio'] ?? -1), json_encode($sample));
+
 echo "\n== Resultat ==\n  $passed proves correctes, $failed errors\n\n";
 exit($failed === 0 ? 0 : 1);
