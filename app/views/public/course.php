@@ -33,7 +33,23 @@
           <table class="data" style="min-width:0">
             <tbody>
               <?php foreach ($categories as $category): ?>
-                <tr><th><?= e($category['name']) ?></th><td><?= e($category['start_time']) ?></td></tr>
+                <?php
+                  // Voltes que fa aquesta categoria en aquest recorregut.
+                  $laps = 0;
+                  foreach ($category['courses'] ?? [] as $leg) {
+                      if ((int) $leg['course_id'] === (int) $course['id']) {
+                          $laps = (int) $leg['laps'];
+                          break;
+                      }
+                  }
+                ?>
+                <tr>
+                  <th><?= e($category['name']) ?></th>
+                  <td>
+                    <?php if ($laps > 0): ?><?= $laps ?> <?= $laps === 1 ? 'volta' : 'voltes' ?> · <?php endif; ?>
+                    <?= e($category['start_time']) ?>
+                  </td>
+                </tr>
               <?php endforeach; ?>
             </tbody>
           </table>

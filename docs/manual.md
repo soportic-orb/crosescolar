@@ -99,7 +99,8 @@ botó **×** el treu.
 
 Al web, la columna **Recorregut** de la pàgina de categories mostra la composició
 («1 volta a Circuit mitjà + 2 voltes a Circuit llarg») i cada recorregut enllaça amb la
-seva fitxa, on ara hi surten totes les categories que hi passen. Si deixeu la
+seva fitxa, on ara hi surten totes les categories que hi passen amb les voltes que hi
+fan. Les voltes sempre s'hi indiquen, també quan només n'hi ha una. Si deixeu la
 **distància** de la categoria en blanc, al web s'hi calcula la suma dels recorreguts per
 les voltes.
 

@@ -3,6 +3,13 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.9.1] — 2026-09-20
+
+### Canviat
+- A la pàgina de categories, les **voltes sempre s'indiquen**, també quan només n'hi ha
+  una: «1 volta a Circuit petit». Abans, amb un sol recorregut, només hi sortia el nom.
+- La fitxa d'un recorregut diu, a cada categoria que hi corre, quantes voltes hi fa.
+
 ## [1.9.0] — 2026-09-20
 
 ### Afegit

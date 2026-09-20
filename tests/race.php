@@ -283,6 +283,7 @@ $public = req('GET', $base . '/categories-i-premis', [], ['anon' => true]);
 check('El web mostra els dos recorreguts en ordre',
     preg_match('#2 voltes#', $public['body']) === 1 && substr_count($public['body'], ' + ') >= 1,
     'composició del recorregut');
+check('Amb una sola volta també ho diu', str_contains($public['body'], '1 volta'), 'ha de dir «1 volta»');
 
 $reopened = req('GET', $base . '/admin/contingut/categories/' . $categoria);
 preg_match_all('#<select[^>]*name="courses\[\]".*?</select>#s', $reopened['body'], $rows);

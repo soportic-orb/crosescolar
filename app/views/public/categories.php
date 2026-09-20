@@ -54,9 +54,7 @@
                     <?php foreach ($category['courses'] as $index => $course): ?>
                       <?php if ($index > 0): ?><span class="text-soft"> + </span><?php endif; ?>
                       <span style="white-space:nowrap">
-                        <?php if ((int) $course['laps'] > 1 || count($category['courses']) > 1): ?>
-                          <strong><?= (int) $course['laps'] ?> <?= (int) $course['laps'] === 1 ? 'volta' : 'voltes' ?></strong> a
-                        <?php endif; ?>
+                        <strong><?= (int) $course['laps'] ?> <?= (int) $course['laps'] === 1 ? 'volta' : 'voltes' ?></strong> a
                         <a href="<?= e(url('/recorreguts/' . $course['slug'])) ?>"><?= e($course['name']) ?></a>
                       </span>
                     <?php endforeach; ?>
