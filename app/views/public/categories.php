@@ -27,7 +27,7 @@
               <tr>
                 <td>
                   <strong><?= e($category['name']) ?></strong>
-                  <?php if (!empty($category['code'])): ?><div class="text-soft" style="font-size:.85rem"><?= e($category['code']) ?></div><?php endif; ?>
+                  <?php // El codi de la categoria és intern: només surt al panell. ?>
                   <?php if (($category['gender'] ?? 'mixt') !== 'mixt'): ?>
                     <span class="chip chip--muted"><?= $category['gender'] === 'femeni' ? 'Femenina' : 'Masculina' ?></span>
                   <?php endif; ?>

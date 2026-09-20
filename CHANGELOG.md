@@ -3,6 +3,12 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.9.2] — 2026-09-20
+
+### Canviat
+- El **codi de la categoria** (BEN, ALE…) ja no surt a la pàgina pública de categories:
+  és una referència interna i es continua veient al panell.
+
 ## [1.9.1] — 2026-09-20
 
 ### Canviat

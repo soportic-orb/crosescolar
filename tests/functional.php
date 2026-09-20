@@ -85,6 +85,8 @@ check('Mostra el programa', str_contains($home['body'], 'Lliurament de premis'))
 $categories = req('GET', $base . '/categories-i-premis');
 check('Categories i premis', $categories['status'] === 200 && str_contains($categories['body'], 'Benjamí'));
 check('Premis visibles', str_contains($categories['body'], 'Trofeus per categoria'));
+check('El codi intern de la categoria no es publica',
+    !preg_match('#<div class="text-soft" style="font-size:.85rem">(BEN|ALE|INF)</div>#', $categories['body']));
 
 $tickets = req('GET', $base . '/punt-de-recarrega');
 check('Pàgina del punt de recàrrega', $tickets['status'] === 200 && str_contains($tickets['body'], 'Esmorzar complet'));
