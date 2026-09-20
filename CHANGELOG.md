@@ -3,6 +3,16 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.8.1] — 2026-09-20
+
+### Corregit
+- Les inscripcions fetes **des del panell** no rebien número de dorsal ni enllaç privat
+  per descarregar-lo: calia assignar-los després. Ara el número s'assigna sol, com a
+  les inscripcions del web, agafant el següent lliure.
+- Escriure a mà un dorsal que ja tenia un altre participant donava un error del
+  servidor. Ara el formulari avisa («El dorsal 007 ja és d'un altre participant») i no
+  desa res. Si es buida el camp, se n'hi posa un de nou.
+
 ## [1.8.0] — 2026-09-19
 
 ### Canviat

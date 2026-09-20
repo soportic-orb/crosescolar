@@ -113,8 +113,16 @@ famílies el poden descarregar en PDF des del correu de confirmació.
 Per imprimir-los tots: **Inscripcions → Dorsals en PDF** (un dorsal per pàgina, i es pot
 filtrar per categoria). Cada fitxa d'inscripció també té el seu botó de descàrrega.
 
-Si canvieu un número a mà, useu **Inscripcions → editar → Número de dorsal**. El botó
-**«Assignar dorsals»** dona número a les inscripcions que encara no en tinguin.
+El número s'assigna **sol** en inscriure's, tant si ho fa la família pel web com si el
+feu vosaltres des de **Inscripcions → Nova**: el sistema agafa el següent lliure (001,
+002, 003…). Al formulari del panell hi diu quin tocarà; si hi escriviu un número, es
+respecta.
+
+Per canviar-ne un, **Inscripcions → editar → Número de dorsal**: s'admet qualsevol
+número que no tingui cap altre participant; si ja és d'algú, el formulari avisa i no
+desa res. Si buideu el camp, se n'hi posa un de nou automàticament. El botó
+**«Assignar dorsals»** dona número a les inscripcions antigues que encara no en
+tinguin.
 
 ### 7. Punt de recàrrega (tiquets)
 **Tipus de tiquet**: nom, descripció, preu, existències i màxim per comanda.

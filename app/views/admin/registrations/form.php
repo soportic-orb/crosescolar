@@ -17,8 +17,18 @@
           <?php if (isset($errors['last_name'])): ?><span class="error"><?= e($errors['last_name']) ?></span><?php endif; ?>
         </div>
         <div class="field"><label for="bib_number">Número de dorsal</label>
-          <input type="number" id="bib_number" name="bib_number" value="<?= e($row['bib_number'] ?? '') ?>" min="1">
-          <span class="hint">Es mostra amb <?= (int) setting('bib_digits', '3') ?> xifres (per exemple 001). Deixeu-ho buit per assignar-lo després.</span>
+          <input type="number" id="bib_number" name="bib_number" value="<?= e($row['bib_number'] ?? '') ?>" min="1"
+                 placeholder="<?= e(\Cros\Models\Bib::number(\Cros\Models\Registration::nextBib())) ?>">
+          <span class="hint">
+            <?php if ($isNew): ?>
+              Si ho deixeu buit, s'assigna sol el següent lliure
+              (<?= e(\Cros\Models\Bib::number(\Cros\Models\Registration::nextBib())) ?>).
+            <?php else: ?>
+              El podeu canviar per qualsevol número que no tingui cap altre participant.
+            <?php endif; ?>
+            Es mostra amb <?= (int) setting('bib_digits', '3') ?> xifres (per exemple 001).
+          </span>
+          <?php if (isset($errors['bib_number'])): ?><span class="error"><?= e($errors['bib_number']) ?></span><?php endif; ?>
         </div>
         <div class="field"><label for="birth_year">Any de naixement</label>
           <input type="number" id="birth_year" name="birth_year" value="<?= e($row['birth_year'] ?? '') ?>" min="1930" max="<?= date('Y') ?>">

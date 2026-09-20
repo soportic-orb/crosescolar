@@ -2,7 +2,11 @@
 /**
  * Proves del circuit de cursa: punt de recàrrega informatiu, dorsals i resultats.
  *
- * Ús:  php -S 127.0.0.1:8123 -t . tests/server.php &   i després   php tests/race.php
+ * Ús:  CROS_TEST_FRESH=1 php tests/env.php
+ *      php -S 127.0.0.1:8123 -t . tests/server.php &   i després   php tests/race.php
+ *
+ * Cal la base de dades acabada de crear: la bateria compta arribades i medalles,
+ * i les d'una execució anterior falsejarien els recomptes.
  */
 declare(strict_types=1);
 
@@ -205,6 +209,50 @@ $assign = req('POST', $base . '/admin/inscripcions/assignar-dorsals', ['_token' 
 check('L\'assignació de dorsals pendents funciona', $assign['status'] === 302);
 check('La configuració dels dorsals existeix',
     str_contains(text(req('GET', $base . '/admin/configuracio/bibs')['body']), 'Maqueta del dorsal'));
+
+echo "\n== Dorsals des del panell ==\n";
+$newForm = req('GET', $base . '/admin/inscripcions/nova');
+check('El formulari diu quin dorsal tocarà', str_contains($newForm['body'], 'assigna sol el següent lliure'));
+
+$expected = (int) $bib3 + 1;
+$manual = req('POST', $base . '/admin/inscripcions/nova', [
+    '_token' => token($newForm['body']),
+    // Sense número de dorsal: l'ha d'assignar el sistema.
+    'first_name' => 'Ona' . $unique, 'last_name' => 'Ferrer', 'birth_year' => '2016',
+    'tutor_name' => 'Marta Ferrer', 'tutor_email' => 'ona' . strtolower($unique) . '@example.test',
+    'status' => 'confirmed', 'consent_data' => '1',
+]);
+preg_match('#/admin/inscripcions/(\d+)#', $manual['headers'], $m);
+$manualId = (int) ($m[1] ?? 0);
+check('Es pot inscriure algú des del panell', $manual['status'] === 302 && $manualId > 0, $manual['headers']);
+
+$fitxa = req('GET', $base . '/admin/inscripcions/' . $manualId);
+check('El panell li assigna el dorsal següent',
+    preg_match('#name="bib_number" value="' . $expected . '"#', $fitxa['body']) === 1,
+    'esperat ' . $expected);
+check('També li dona l\'enllaç privat del dorsal',
+    req('GET', $base . '/admin/inscripcions/' . $manualId . '/dorsal')['status'] === 200);
+
+$taken = req('POST', $base . '/admin/inscripcions/' . $manualId, array_merge(formData($fitxa['body']), ['bib_number' => $bib1]));
+check('No deixa repetir un dorsal', $taken['status'] === 200 && str_contains(text($taken['body']), 'ja és d\'un altre participant'),
+    'estat ' . $taken['status']);
+check('I el dorsal no canvia',
+    preg_match('#name="bib_number" value="' . $expected . '"#', req('GET', $base . '/admin/inscripcions/' . $manualId)['body']) === 1);
+
+$free = $expected + 500;
+$changed = req('POST', $base . '/admin/inscripcions/' . $manualId, array_merge(formData($fitxa['body']), ['bib_number' => (string) $free]));
+check('Es pot canviar a un número lliure', $changed['status'] === 302);
+check('El número nou queda desat',
+    preg_match('#name="bib_number" value="' . $free . '"#', req('GET', $base . '/admin/inscripcions/' . $manualId)['body']) === 1);
+
+[, $bib4] = register($base, 'Bru' . $unique, 'Roig', 2016);
+check('Les inscripcions del web continuen la numeració', (int) $bib4 === $free + 1, $bib4 . ' després de ' . $free);
+
+$emptied = req('POST', $base . '/admin/inscripcions/' . $manualId,
+    array_merge(formData(req('GET', $base . '/admin/inscripcions/' . $manualId)['body']), ['bib_number' => '']));
+check('Si es buida el camp, se n\'hi posa un de nou', $emptied['status'] === 302
+    && preg_match('#name="bib_number" value="(\d+)"#', req('GET', $base . '/admin/inscripcions/' . $manualId)['body'], $after) === 1
+    && (int) $after[1] > 0, 'ha de tenir dorsal igualment');
 
 echo "\n== Resultats de la cursa ==\n";
 check('Els resultats no són públics fins que es publiquen', req('GET', $base . '/resultats', [], ['anon' => true])['status'] === 404);

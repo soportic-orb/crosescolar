@@ -90,7 +90,8 @@ class RegistrationsController extends Controller
         $data['code'] = Registration::generateCode();
         $data['created_at'] = date('Y-m-d H:i:s');
         $data['updated_at'] = date('Y-m-d H:i:s');
-        $id = Db::insert('registrations', $data);
+        // Sense número al formulari, el sistema li dona el següent lliure.
+        $id = Registration::insert($data);
         Auth::logActivity('registration_create', 'registration', $id);
         flash('success', 'Inscripció afegida.');
         redirect('/admin/inscripcions/' . $id);
@@ -120,7 +121,7 @@ class RegistrationsController extends Controller
         if (!$row) {
             abort(404);
         }
-        [$data, $errors] = $this->collect();
+        [$data, $errors] = $this->collect((int) $row['id']);
         if ($errors) {
             flash('error', reset($errors));
             $this->adminView('registrations/form', [
@@ -132,8 +133,28 @@ class RegistrationsController extends Controller
             ]);
             return;
         }
+        if ($data['bib_number'] === null) {
+            // Ningú no es queda sense dorsal: si es buida, se'n dona un altre.
+            $data['bib_number'] = Registration::nextBib();
+        }
+        if (empty($row['token'])) {
+            $data['token'] = random_token(16);
+        }
         $data['updated_at'] = date('Y-m-d H:i:s');
-        Db::update('registrations', $data, 'id = :id', ['id' => $row['id']]);
+        try {
+            Db::update('registrations', $data, 'id = :id', ['id' => $row['id']]);
+        } catch (\PDOException $e) {
+            // Xoc de dorsals entre dues pantalles obertes alhora.
+            flash('error', 'El dorsal ' . Bib::number($data['bib_number']) . ' l\'acaba d\'agafar un altre participant.');
+            $this->adminView('registrations/form', [
+                'title' => 'Inscripció ' . $row['code'],
+                'row' => array_merge($row, $data),
+                'categories' => Content::categories(),
+                'errors' => ['bib_number' => 'Aquest dorsal ja és d\'un altre participant.'],
+                'isNew' => false,
+            ]);
+            return;
+        }
         Auth::logActivity('registration_update', 'registration', (int) $row['id']);
         flash('success', 'Canvis desats.');
         redirect('/admin/inscripcions/' . $row['id']);
@@ -232,7 +253,11 @@ class RegistrationsController extends Controller
     }
 
     /** @return array{0:array<string,mixed>,1:array<string,string>} */
-    private function collect(): array
+    /**
+     * Dades del formulari. El dorsal es pot deixar buit: s'assigna sol.
+     * @param int $id inscripció que s'està editant (0 si és nova)
+     */
+    private function collect(int $id = 0): array
     {
         $data = [
             'bib_number' => input('bib_number') !== '' ? (int) input('bib_number') : null,
@@ -257,6 +282,14 @@ class RegistrationsController extends Controller
             'last_name' => 'required|max:150',
             'tutor_email' => 'email|max:190',
         ], $data);
+
+        // El dorsal, si se'n posa un a mà, ha de ser un número lliure.
+        $bib = $data['bib_number'];
+        if ($bib !== null && $bib < 1) {
+            $errors['bib_number'] = 'El dorsal ha de ser un número més gran que zero.';
+        } elseif ($bib !== null && Registration::bibTaken($bib, $id ?: null)) {
+            $errors['bib_number'] = 'El dorsal ' . Bib::number($bib) . ' ja és d\'un altre participant.';
+        }
         return [$data, $errors];
     }
 }

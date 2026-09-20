@@ -27,11 +27,8 @@ class Registration
 
     public static function create(array $data): array
     {
-        $code = self::generateCode();
-        $id = Db::insert('registrations', [
-            'code' => $code,
-            'bib_number' => self::nextBib(),
-            'token' => random_token(16),
+        $id = self::insert([
+            'code' => self::generateCode(),
             'first_name' => $data['first_name'],
             'last_name' => $data['last_name'],
             'birth_year' => $data['birth_year'] !== '' ? (int) $data['birth_year'] : null,
@@ -56,10 +53,59 @@ class Registration
         return $registration;
     }
 
+    /**
+     * Desa una inscripció nova assignant-li dorsal i enllaç privat si no en porta.
+     * Si dues inscripcions arriben alhora i es barallen pel mateix número, es
+     * torna a provar amb el següent lliure.
+     */
+    public static function insert(array $data): int
+    {
+        $auto = empty($data['bib_number']);
+        if (empty($data['token'])) {
+            $data['token'] = random_token(16);
+        }
+        for ($attempt = 0; $attempt < 5; $attempt++) {
+            if ($auto) {
+                $data['bib_number'] = self::nextBib();
+            }
+            try {
+                return Db::insert('registrations', $data);
+            } catch (\PDOException $e) {
+                if (!$auto || !self::isDuplicateBib($e)) {
+                    throw $e;
+                }
+            }
+        }
+        throw new \RuntimeException('No s\'ha pogut assignar cap número de dorsal lliure.');
+    }
+
     /** Següent número de dorsal lliure (comença per 1). */
     public static function nextBib(): int
     {
         return (int) Db::val('SELECT COALESCE(MAX(bib_number), 0) FROM registrations', [], 0) + 1;
+    }
+
+    /** Hi ha cap altre participant amb aquest dorsal? */
+    public static function bibTaken(int $bib, ?int $exceptId = null): bool
+    {
+        if ($bib <= 0) {
+            return false;
+        }
+        $sql = 'SELECT 1 FROM registrations WHERE bib_number = :bib';
+        $params = ['bib' => $bib];
+        if ($exceptId !== null) {
+            $sql .= ' AND id <> :id';
+            $params['id'] = $exceptId;
+        }
+        return (bool) Db::val($sql, $params);
+    }
+
+    private static function isDuplicateBib(\PDOException $e): bool
+    {
+        $message = $e->getMessage();
+        return str_contains($message, 'Duplicate entry')
+            || str_contains($message, 'UNIQUE constraint failed')
+            || $e->getCode() === '23000';
     }
 
     /** Assigna dorsal i codi d'accés a les inscripcions que no en tinguin. */
