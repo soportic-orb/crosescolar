@@ -144,6 +144,8 @@ return [
         'icon' => 'flag',
         'description' => 'Maqueta dels dorsals i on s\'hi col·loquen les dades de cada participant. Les posicions es mesuren en mil·límetres des de la cantonada superior esquerra.',
         'fields' => [
+            'bib_public_download' => ['label' => 'Les famílies poden descarregar el dorsal', 'type' => 'bool', 'default' => '1',
+                'help' => 'Si ho desactiveu, l\'enllaç per descarregar el dorsal desapareix del web, de «Les meves inscripcions» i dels correus de confirmació. Des del panell els podreu continuar imprimint.'],
             'bib_template' => ['label' => 'Maqueta del dorsal (PDF)', 'type' => 'file', 'folder' => 'documents', 'accept' => '.pdf', 'default' => '', 'help' => 'Pugeu el disseny en PDF. Si no n\'hi ha cap, els dorsals es generen sobre un fons blanc.'],
             'bib_template_page' => ['label' => 'Pàgina de la maqueta', 'type' => 'number', 'default' => '1', 'help' => 'Per si el PDF té més d\'una pàgina.'],
             'bib_orientation' => ['label' => 'Orientació del dorsal', 'type' => 'select', 'default' => 'auto',

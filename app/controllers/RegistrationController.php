@@ -112,6 +112,7 @@ class RegistrationController extends Controller
     /** Dorsal del participant (enllaç privat del correu de confirmació). */
     public function bib(array $params): void
     {
+        $this->ensureBibsArePublic();
         $registration = Registration::findByToken((string) $params['token']);
         if (!$registration) {
             abort(404, 'Aquest enllaç no és vàlid.');
@@ -119,9 +120,18 @@ class RegistrationController extends Controller
         $this->sendBib([$registration], 'dorsal-' . Bib::number($registration) . '.pdf');
     }
 
+    /** Amb la descàrrega desactivada, aquestes adreces no existeixen. */
+    private function ensureBibsArePublic(): void
+    {
+        if (!Bib::publicDownload()) {
+            abort(404, 'Aquest enllaç no és vàlid.');
+        }
+    }
+
     /** Dorsals de tots els participants inscrits amb la mateixa adreça de contacte. */
     public function bibs(array $params): void
     {
+        $this->ensureBibsArePublic();
         $registration = Registration::findByToken((string) $params['token']);
         if (!$registration) {
             abort(404, 'Aquest enllaç no és vàlid.');

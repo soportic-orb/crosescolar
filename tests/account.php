@@ -53,6 +53,11 @@ function token(string $html): string
     return preg_match('/name="_token" value="([^"]+)"/', $html, $m) ? $m[1] : '';
 }
 
+function text(string $html): string
+{
+    return html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+}
+
 function check(string $name, bool $ok, string $detail = ''): void
 {
     global $passed, $failed;
@@ -62,6 +67,7 @@ function check(string $name, bool $ok, string $detail = ''): void
 
 // L'apartat ha d'estar actiu tant si s'executa sola com després d'altres bateries.
 Settings::set('registrations_selfservice', '1');
+Settings::set('bib_public_download', '1');
 
 /* ------------------------------------------------ Participants de la prova */
 $laia = Registration::create([
@@ -132,6 +138,17 @@ check('Es veuen els dos participants de la família',
 check('No es veuen els d\'una altra família', !str_contains($list['body'], 'Roc' . $unique));
 check('Hi ha el número de dorsal', str_contains($list['body'], \Cros\Models\Bib::number($laia)));
 check('Es pot descarregar el dorsal', str_contains($list['body'], '/inscripcio/dorsal/' . $laia['token']));
+
+// Amb la descàrrega desactivada no n'ha de quedar rastre en aquesta pàgina.
+Settings::set('bib_public_download', '0');
+$withoutBib = req('GET', $base . '/les-meves-inscripcions');
+check('Sense descàrrega, no hi ha cap enllaç al dorsal',
+    !str_contains($withoutBib['body'], '/inscripcio/dorsal') && !str_contains(text($withoutBib['body']), 'Descarregar el dorsal'));
+check('Ni el botó de tots els dorsals', !str_contains(text($withoutBib['body']), 'Tots els dorsals'));
+check('El número de dorsal es continua veient', str_contains($withoutBib['body'], \Cros\Models\Bib::number($laia)));
+Settings::set('bib_public_download', '1');
+check('En tornar-ho a activar, hi torna a ser',
+    str_contains(req('GET', $base . '/les-meves-inscripcions')['body'], '/inscripcio/dorsal/' . $laia['token']));
 
 echo "\n== Modificar les dades ==\n";
 $edit = req('GET', $base . '/les-meves-inscripcions/' . $laia['id'] . '/modificar');

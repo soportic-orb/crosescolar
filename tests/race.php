@@ -216,6 +216,30 @@ check('L\'assignació de dorsals pendents funciona', $assign['status'] === 302);
 check('La configuració dels dorsals existeix',
     str_contains(text(req('GET', $base . '/admin/configuracio/bibs')['body']), 'Maqueta del dorsal'));
 
+echo "\n== Es pot treure la descàrrega del dorsal ==\n";
+check('Hi ha l\'opció a la configuració de dorsals',
+    str_contains(text(req('GET', $base . '/admin/configuracio/bibs')['body']), 'Les famílies poden descarregar el dorsal'));
+
+$off = saveSettings($base, 'bibs', ['bib_public_download' => '0']);
+check('Es pot desactivar', $off['status'] === 302);
+check('L\'enllaç del dorsal deixa d\'existir',
+    req('GET', $base . '/inscripcio/dorsal/' . $token1, [], ['anon' => true])['status'] === 404);
+check('I el de tots els dorsals també',
+    req('GET', $base . '/inscripcio/dorsals/' . $token1, [], ['anon' => true])['status'] === 404);
+$done = req('GET', $base . '/inscripcio/confirmada/' . $code1, [], ['anon' => true]);
+check('La confirmació no ofereix descarregar-lo',
+    !str_contains($done['body'], '/inscripcio/dorsal/') && !str_contains(text($done['body']), 'Descarregar el dorsal'),
+    'no n\'ha de quedar rastre');
+check('...però el número del dorsal es continua veient', str_contains($done['body'], $bib1));
+check('El panell sí que el pot descarregar',
+    req('GET', $base . '/admin/inscripcions/dorsals')['status'] === 200);
+
+saveSettings($base, 'bibs', ['bib_public_download' => '1']);
+check('En tornar-ho a activar, l\'enllaç torna a servir',
+    req('GET', $base . '/inscripcio/dorsal/' . $token1, [], ['anon' => true])['status'] === 200);
+check('I la confirmació el torna a oferir',
+    str_contains(req('GET', $base . '/inscripcio/confirmada/' . $code1, [], ['anon' => true])['body'], '/inscripcio/dorsal/'));
+
 echo "\n== Dorsals des del panell ==\n";
 $newForm = req('GET', $base . '/admin/inscripcions/nova');
 check('El formulari diu quin dorsal tocarà', str_contains($newForm['body'], 'assigna sol el següent lliure'));

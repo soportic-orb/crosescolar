@@ -11,7 +11,7 @@
       <div style="font-size:3.4rem;font-weight:800;line-height:1.1;color:var(--green-700)">
         <?= e(\Cros\Models\Bib::number($registration)) ?>
       </div>
-      <?php if (!empty($registration['token'])): ?>
+      <?php if (!empty($registration['token']) && \Cros\Models\Bib::publicDownload()): ?>
         <div class="flex" style="justify-content:center;margin-top:1rem">
           <a class="btn" href="<?= e(url('/inscripcio/dorsal/' . $registration['token'])) ?>">
             <?= \Cros\Core\Icons::svg('download', 'icon', 18) ?> Descarregar el dorsal (PDF)

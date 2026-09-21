@@ -20,6 +20,15 @@ class Bib
         return str_pad((string) (int) $number, $digits, '0', STR_PAD_LEFT);
     }
 
+    /**
+     * Les famílies poden descarregar el seu dorsal?
+     * Si no, no n'ha de quedar cap rastre al web públic ni als correus.
+     */
+    public static function publicDownload(): bool
+    {
+        return setting('bib_public_download', '1') === '1';
+    }
+
     /** Ruta de la maqueta, o null si no n'hi ha cap de vàlida. */
     public static function templateFile(): ?string
     {

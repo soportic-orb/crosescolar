@@ -3,6 +3,15 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.10.0] — 2026-09-21
+
+### Afegit
+- **La descàrrega del dorsal es pot desactivar**: a Configuració → Dorsals hi ha
+  l'interruptor «Les famílies poden descarregar el dorsal». Si es desactiva, l'enllaç
+  desapareix de la pàgina de confirmació, de «Les meves inscripcions» i dels correus, i
+  les adreces de descàrrega deixen de respondre. El número del dorsal es continua veient
+  i, des del panell, els dorsals es poden imprimir igualment.
+
 ## [1.9.2] — 2026-09-20
 
 ### Canviat

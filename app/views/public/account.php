@@ -37,7 +37,7 @@
             <a class="btn btn--sm" href="<?= e(url('/les-meves-inscripcions/' . (int) $registration['id'] . '/modificar')) ?>">
               <?= \Cros\Core\Icons::svg('edit', 'icon', 16) ?> Modificar les dades
             </a>
-            <?php if (!empty($registration['token'])): ?>
+            <?php if (!empty($registration['token']) && \Cros\Models\Bib::publicDownload()): ?>
               <a class="btn btn--ghost btn--sm" href="<?= e(url('/inscripcio/dorsal/' . $registration['token'])) ?>">
                 <?= \Cros\Core\Icons::svg('download', 'icon', 16) ?> Descarregar el dorsal
               </a>
@@ -46,7 +46,7 @@
         </div>
       <?php endforeach; ?>
 
-      <?php if (count($registrations) > 1 && !empty($registrations[0]['token'])): ?>
+      <?php if (count($registrations) > 1 && !empty($registrations[0]['token']) && \Cros\Models\Bib::publicDownload()): ?>
         <a class="btn" href="<?= e(url('/inscripcio/dorsals/' . $registrations[0]['token'])) ?>">
           <?= \Cros\Core\Icons::svg('download', 'icon', 18) ?> Tots els dorsals en un PDF
         </a>

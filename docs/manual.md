@@ -109,6 +109,12 @@ les voltes.
 Cada inscripció rep automàticament un **número de dorsal** (001, 002, 003…) i les
 famílies el poden descarregar en PDF des del correu de confirmació.
 
+Si els dorsals els voleu imprimir i repartir vosaltres, desactiveu **«Les famílies poden
+descarregar el dorsal»** a Configuració → Dorsals: l'enllaç desapareix del web, de «Les
+meves inscripcions» i dels correus de confirmació, i qui provi d'obrir un enllaç antic
+es trobarà que ja no existeix. El número del dorsal es continua veient, i des del panell
+els podeu imprimir igualment.
+
 **Configuració → Dorsals** permet dissenyar-los:
 
 1. Pugeu la **maqueta en PDF** (el disseny amb els logotips, fet amb Canva, Illustrator,

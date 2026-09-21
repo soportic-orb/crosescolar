@@ -22,7 +22,7 @@
   </td></tr>
 </table>
 <?php $token = (string) ($registration['token'] ?? ''); ?>
-<?php if ($token !== ''): ?>
+<?php if ($token !== '' && \Cros\Models\Bib::publicDownload()): ?>
   <p style="text-align:center;margin:24px 0 8px">
     <a href="<?= e(url('/inscripcio/dorsal/' . $token)) ?>"
        style="display:inline-block;background:<?= e(setting('color_primary', '#2f6b3c')) ?>;color:#fff;text-decoration:none;padding:13px 26px;border-radius:999px;font-weight:700">
