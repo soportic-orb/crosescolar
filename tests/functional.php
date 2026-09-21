@@ -147,6 +147,12 @@ check('I els marcadors s\'hi substitueixen',
 check('El peu de pàgina hi enllaça',
     str_contains(req('GET', $base . '/')['body'], '/reglament">Reglament de la cursa'));
 
+$peu = req('GET', $base . '/')['body'];
+check('El peu diu qui ha fet el web',
+    str_contains(text($peu), 'Desenvolupat per') && str_contains(text($peu), 'Octavi Rodríguez'));
+check('I el nom enllaça a un correu',
+    preg_match('#Desenvolupat per <a href="mailto:octavi@soportic\.es">#', $peu) === 1);
+
 $regForm = req('GET', $base . '/inscripcio');
 check('El formulari demana acceptar-lo', str_contains($regForm['body'], 'name="consent_rules"'));
 check('I el text de la casella hi enllaça',

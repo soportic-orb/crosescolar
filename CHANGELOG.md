@@ -3,6 +3,13 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.15.1] — 2026-09-21
+
+### Afegit
+- Al peu de pàgina, al costat de l'avís legal i la privacitat, hi surt **«Desenvolupat per
+  Octavi Rodríguez»**, amb el nom enllaçat al seu correu. El nom i l'adreça es canvien a
+  *Configuració → SEO i legal*; si es deixa el nom buit, la línia no es mostra.
+
 ## [1.15.0] — 2026-09-21
 
 ### Corregit

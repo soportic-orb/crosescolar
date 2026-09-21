@@ -185,6 +185,15 @@ if (\Cros\Core\Settings::bool('results_published')) {
       <span>
         <a href="<?= e(url('/avis-legal')) ?>">Avís legal</a> ·
         <a href="<?= e(url('/privacitat')) ?>">Privacitat</a> ·
+        <?php $credits = trim((string) setting('credits_label', '')); ?>
+        <?php if ($credits !== ''): ?>
+          <?php $creditsMail = trim((string) setting('credits_email', '')); ?>
+          <?php if ($creditsMail !== ''): ?>
+            Desenvolupat per <a href="mailto:<?= e($creditsMail) ?>"><?= e($credits) ?></a> ·
+          <?php else: ?>
+            Desenvolupat per <?= e($credits) ?> ·
+          <?php endif; ?>
+        <?php endif; ?>
         <a href="<?= e(url('/admin')) ?>">Gestió</a>
       </span>
     </div>
