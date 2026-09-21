@@ -4,7 +4,7 @@
  * Els formularis del panell es generen automàticament a partir d'aquest fitxer.
  *
  * Tipus disponibles: text, textarea, html, email, url, tel, number, money, date,
- * time, color, bool, select, image, file, password.
+ * time, color, coord, bool, select, image, file, password.
  */
 return [
     'general' => [
@@ -17,8 +17,13 @@ return [
             'event_date' => ['label' => 'Data de la cursa', 'type' => 'date', 'default' => '2026-10-04'],
             'event_time' => ['label' => 'Hora d\'inici', 'type' => 'time', 'default' => '09:30'],
             'event_place' => ['label' => 'Lloc de sortida', 'type' => 'text', 'default' => 'Zona esportiva de La Granada'],
-            'event_address' => ['label' => 'Adreça', 'type' => 'text', 'default' => 'Carrer de l\'Esport, s/n — 08792 La Granada (Alt Penedès)'],
+            'event_address' => ['label' => 'Adreça', 'type' => 'text', 'default' => 'Carrer de Vilafranca, s/n — 08792 La Granada (Alt Penedès)'],
             'event_town' => ['label' => 'Població', 'type' => 'text', 'default' => 'La Granada, Alt Penedès'],
+            'map_lat' => ['label' => 'Latitud de la sortida', 'type' => 'coord', 'axis' => 'lat', 'default' => '41.376699',
+                'help' => 'Punt exacte que marca el mapa. A OpenStreetMap, feu clic dret al lloc i trieu «Mostra l\'adreça»; també hi podeu enganxar un enllaç del mapa i se\'n treuen les coordenades.'],
+            'map_lng' => ['label' => 'Longitud de la sortida', 'type' => 'coord', 'axis' => 'lng', 'default' => '1.713535'],
+            'map_embed' => ['label' => 'Enllaç del mapa', 'type' => 'text', 'default' => '',
+                'help' => 'Opcional. Si enganxeu un enllaç d\'OpenStreetMap o de Google Maps, el punt es treu de l\'enllaç. Si deixeu buides les coordenades i l\'enllaç, el mapa cercarà l\'adreça escrita aquí sobre.'],
             'organizer' => ['label' => 'Organitza', 'type' => 'text', 'default' => 'AFA Escola La Granada'],
             'collaborators' => ['label' => 'Amb la col·laboració de', 'type' => 'text', 'default' => 'Ajuntament de La Granada i Consell Esportiu de l\'Alt Penedès'],
             'contact_email' => ['label' => 'Correu de contacte', 'type' => 'email', 'default' => 'cros@afalagranada.cat'],
@@ -71,9 +76,6 @@ return [
             'gallery_title' => ['label' => 'Títol de la galeria', 'type' => 'text', 'default' => 'Edicions anteriors'],
             'location_title' => ['label' => 'Títol de la ubicació', 'type' => 'text', 'default' => 'Com arribar-hi'],
             'location_text' => ['label' => 'Text de la ubicació', 'type' => 'textarea', 'rows' => 3, 'default' => 'La Granada és a 5 minuts de Vilafranca del Penedès. Hi ha aparcament gratuït a la zona esportiva i estació de Rodalies (R4) a 10 minuts a peu.'],
-            'map_embed' => ['label' => 'Mapa (enllaç d\'OpenStreetMap o Google Maps)', 'type' => 'url', 'default' => 'https://www.openstreetmap.org/?mlat=41.3778&mlon=1.7203#map=16/41.3778/1.7203'],
-            'map_lat' => ['label' => 'Latitud', 'type' => 'text', 'default' => '41.3778'],
-            'map_lng' => ['label' => 'Longitud', 'type' => 'text', 'default' => '1.7203'],
             'sponsors_title' => ['label' => 'Títol dels patrocinadors', 'type' => 'text', 'default' => 'Amb el suport de'],
             'sponsors_intro' => ['label' => 'Text dels patrocinadors', 'type' => 'textarea', 'rows' => 2, 'default' => 'Gràcies a les entitats i empreses que fan possible el cros escolar.'],
         ],
@@ -124,6 +126,11 @@ return [
                 'help' => 'Si el desactiveu, la pàgina d\'inscripció només mostrarà el text informatiu de més avall, sense cap formulari.'],
             'registrations_title' => ['label' => 'Títol de la pàgina', 'type' => 'text', 'default' => 'Inscripció a la cursa'],
             'registrations_intro' => ['label' => 'Introducció (només amb el formulari actiu)', 'type' => 'html', 'rows' => 4, 'default' => '<p>La inscripció és gratuïta per a l\'alumnat de l\'escola i per a totes les persones que vulguin participar. Empleneu un formulari per cada participant.</p>'],
+            'registrations_aside' => ['label' => 'Mostrar el requadre de recordatoris', 'type' => 'bool', 'default' => '1',
+                'help' => 'És el requadre que surt al costat del formulari, amb el que cal tenir present abans d\'inscriure\'s.'],
+            'registrations_aside_title' => ['label' => 'Títol del requadre', 'type' => 'text', 'default' => 'Recorda', 'show_if' => 'registrations_aside'],
+            'registrations_aside_text' => ['label' => 'Contingut del requadre', 'type' => 'html', 'rows' => 6, 'show_if' => 'registrations_aside',
+                'default' => '<ul><li>Cal omplir un formulari per cada participant.</li><li>Els dorsals es recullen el mateix dia a la zona esportiva.</li><li>Arribeu 15 minuts abans de la vostra sortida.</li><li>El punt de recàrrega té tiquet a part: <a href="/punt-de-recarrega">mira-ho aquí</a>.</li></ul>'],
             'registrations_close_at' => ['label' => 'Data de tancament del formulari', 'type' => 'date', 'default' => '2026-10-02',
                 'help' => 'Passada aquesta data el formulari es tanca sol i es mostra el text informatiu. Deixeu-ho buit per no posar-hi data límit.'],
             'registrations_closed_text' => ['label' => 'Text informatiu (sense formulari)', 'type' => 'html', 'rows' => 5, 'default' => '<p>Enguany les inscripcions no es fan per internet. El mateix dia de la cursa hi haurà inscripcions presencials a la carpa de l\'AFA fins a 30 minuts abans de cada sortida.</p>', 'help' => 'És l\'únic que es veurà a la pàgina quan el formulari estigui desactivat o s\'hagi passat la data.'],

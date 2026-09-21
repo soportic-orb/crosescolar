@@ -210,6 +210,48 @@ $saved = req('POST', $base . '/admin/configuracio/general', [
 check('Desa la configuració', $saved['status'] === 302);
 check('El nou lema surt al web', str_contains(req('GET', $base . '/')['body'], 'Corrent entre vinyes'));
 
+echo "\n== Mapa de la ubicació ==\n";
+$mapPost = static function (array $values) use ($base) {
+    $form = req('GET', $base . '/admin/configuracio/general');
+    return req('POST', $base . '/admin/configuracio/general', array_merge([
+        '_token' => token($form['body']),
+        'site_name' => 'Cros Escolar La Granada',
+        'event_place' => 'Zona esportiva de La Granada',
+        'event_address' => 'Carrer de Vilafranca, s/n — 08792 La Granada (Alt Penedès)',
+        'pretty_urls' => '1',
+    ], $values));
+};
+
+// Enganxar un enllaç de Google Maps a un dels camps omple les dues coordenades.
+check('Accepta un enllaç enganxat al camp de la latitud',
+    $mapPost(['map_lat' => 'https://www.google.com/maps/place/X/@41.3767,1.7135,17z', 'map_lng' => ''])['status'] === 302);
+$mapForm = req('GET', $base . '/admin/configuracio/general')['body'];
+check('En treu la latitud', str_contains($mapForm, 'value="41.3767"'));
+check('I també la longitud', str_contains($mapForm, 'value="1.7135"'));
+$home = req('GET', $base . '/')['body'];
+check('La portada obre el punt a OpenStreetMap',
+    str_contains($home, 'openstreetmap.org/?mlat=41.3767&amp;mlon=1.7135#map=17/41.3767/1.7135'));
+check('I n\'ensenya el mapa amb el marcador', str_contains($home, 'marker=41.3767,1.7135'));
+
+// La coma decimal és la manera normal d'escriure-ho aquí.
+$mapPost(['map_lat' => '41,376699', 'map_lng' => '1,713535']);
+check('Desa les coordenades amb coma decimal',
+    str_contains(req('GET', $base . '/admin/configuracio/general')['body'], 'value="41.376699"'));
+
+// Un valor impossible es rebutja i no s'endú el mapa per davant.
+$mapPost(['map_lat' => 'aquí mateix', 'map_lng' => '1,713535']);
+$mapForm = req('GET', $base . '/admin/configuracio/general')['body'];
+check('Rebutja una coordenada que no ho és', str_contains(text($mapForm), 'cal una coordenada vàlida'));
+check('I conserva la que hi havia', str_contains($mapForm, 'value="41.376699"'));
+
+// Sense coordenades, el mapa cerca l'adreça configurada.
+$mapPost(['map_lat' => '', 'map_lng' => '']);
+$home = req('GET', $base . '/')['body'];
+check('Sense coordenades, cerca l\'adreça de la cursa',
+    str_contains($home, 'openstreetmap.org/search?query=') && str_contains(text($home), 'Zona esportiva'));
+check('I no incrusta cap mapa', !str_contains($home, 'export/embed.html'));
+$mapPost(['map_lat' => '41.376699', 'map_lng' => '1.713535']);
+
 $xss = req('POST', $base . '/admin/configuracio/home', [
     '_token' => token(req('GET', $base . '/admin/configuracio/home')['body']),
     'countdown_enabled' => '1',
@@ -366,16 +408,42 @@ check('La comprovació no ha creat cap inscripció',
 check('La portada convida a consultar com inscriure\'s',
     str_contains(text(req('GET', $base . '/', [], ['anon' => true])['body']), 'Com inscriure-s\'hi'));
 
-req('POST', $base . '/admin/configuracio/registrations', [
-    '_token' => token(req('GET', $base . '/admin/configuracio/registrations')['body']),
-    'registrations_enabled' => '1',
-    'registrations_notify' => '1',
-    'registrations_selfservice' => '1',
-    'registrations_closed_link_label' => '',
-    'registrations_closed_link_url' => '',
-]);
+$regOpen = static function (array $values = []) use ($base) {
+    return req('POST', $base . '/admin/configuracio/registrations', array_merge([
+        '_token' => token(req('GET', $base . '/admin/configuracio/registrations')['body']),
+        'registrations_enabled' => '1',
+        'registrations_notify' => '1',
+        'registrations_selfservice' => '1',
+        'registrations_aside' => '1',
+        'registrations_aside_title' => 'Recorda',
+        'registrations_aside_text' => '<ul><li>Cal omplir un formulari per cada participant.</li></ul>',
+        'registrations_closed_link_label' => '',
+        'registrations_closed_link_url' => '',
+    ], $values));
+};
+$regOpen();
 $openPage = req('GET', $base . '/inscripcio', [], ['anon' => true]);
 check('En reactivar-lo torna a sortir el formulari', str_contains($openPage['body'], 'name="first_name"'));
+
+echo "\n== Requadre de recordatoris de la inscripció ==\n";
+check('Es pot editar des del panell',
+    str_contains(text(req('GET', $base . '/admin/configuracio/registrations')['body']), 'Contingut del requadre'));
+$regOpen([
+    'registrations_aside_title' => 'Abans de començar',
+    'registrations_aside_text' => '<ul><li>Porteu roba d\'esport.</li><li>Consulteu els <a href="/recorreguts">recorreguts</a>.</li></ul><script>alert(1)</script>',
+]);
+$asidePage = text(req('GET', $base . '/inscripcio', [], ['anon' => true])['body']);
+check('El títol nou surt a la pàgina', str_contains($asidePage, 'Abans de començar'));
+check('I el contingut nou també', str_contains($asidePage, 'Porteu roba d\'esport.'));
+check('Els enllaços del text es conserven', str_contains($asidePage, 'href="/recorreguts"'));
+check('El text antic ja no hi és', !str_contains($asidePage, 'Arribeu 15 minuts abans'));
+check('Neteja l\'HTML perillós', !str_contains($asidePage, '<script>alert(1)'));
+
+$regOpen(['registrations_aside' => '0']);
+$asidePage = text(req('GET', $base . '/inscripcio', [], ['anon' => true])['body']);
+check('Es pot amagar el requadre sencer', !str_contains($asidePage, 'Abans de començar'));
+check('I el del termini continua sortint-hi', str_contains($asidePage, 'Termini'));
+$regOpen();
 
 echo "\n== Web en preparació ==\n";
 $soonForm = req('GET', $base . '/admin/configuracio/coming_soon');

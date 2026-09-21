@@ -3,6 +3,36 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.11.0] — 2026-09-21
+
+### Corregit
+- **El mapa de la ubicació no obria el punt correcte.** L'enllaç del mapa era un text fix
+  que no tenia res a veure amb l'adreça configurada a *Dades de la cursa*, i els camps de
+  latitud i longitud no s'utilitzaven enlloc: canviéssiu el que canviéssiu, el mapa
+  sempre obria el mateix lloc. Ara el punt surt de les coordenades configurades i
+  l'enllaç el marca amb `mlat`/`mlon` i hi centra el mapa.
+
+### Afegit
+- **El punt del mapa es pot enganxar.** Als camps de latitud i longitud s'hi pot posar un
+  enllaç d'OpenStreetMap o de Google Maps, una adreça `geo:` o les dues coordenades
+  juntes: el panell en treu el punt i omple els dos camps. També s'hi accepta la coma
+  decimal i la lletra de l'hemisferi (`1,7135 E`).
+- **Mapa a la portada**: amb les coordenades posades, a «Com arribar-hi» hi surt el mapa
+  amb el punt marcat. Com el de Wikiloc, no es connecta a OpenStreetMap fins que el
+  visitant hi fa clic.
+- **Sense coordenades, el mapa cerca l'adreça** de la cursa, de manera que el botó «Obre
+  el mapa» sempre porta on toca. A la pàgina de contacte l'adreça també hi fa d'enllaç.
+- **El requadre «Recorda» de la pàgina d'inscripció és editable**: a Configuració →
+  Inscripcions s'hi canvia el títol i el contingut (amb HTML bàsic) i es pot amagar.
+
+### Canviat
+- Els camps del mapa han passat de *Portada* a **Dades de la cursa**, al costat de
+  l'adreça a què corresponen.
+- En actualitzar, les **opcions noves** d'una versió s'inicialitzen soles amb el seu
+  valor per defecte; les que ja estaven escrites no es toquen.
+- L'adreça d'exemple apuntava a un carrer que no existeix al mapa: ara és la del camp
+  municipal. Només canvia si encara teníeu el text d'exemple.
+
 ## [1.10.0] — 2026-09-21
 
 ### Afegit

@@ -12,7 +12,14 @@
         <?php if (setting('contact_phone', '')): ?>
           <li class="flex"><?= \Cros\Core\Icons::svg('phone', 'icon', 20) ?> <?= e(setting('contact_phone')) ?></li>
         <?php endif; ?>
-        <li class="flex"><?= \Cros\Core\Icons::svg('location', 'icon', 20) ?> <?= e(setting('event_address', '')) ?></li>
+        <li class="flex"><?= \Cros\Core\Icons::svg('location', 'icon', 20) ?>
+          <?php $mapLink = \Cros\Core\Map::link(); ?>
+          <?php if ($mapLink !== ''): ?>
+            <a href="<?= e($mapLink) ?>" target="_blank" rel="noopener"><?= e(setting('event_address', '')) ?></a>
+          <?php else: ?>
+            <?= e(setting('event_address', '')) ?>
+          <?php endif; ?>
+        </li>
       </ul>
     </div>
 

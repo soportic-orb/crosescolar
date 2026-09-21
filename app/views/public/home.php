@@ -271,11 +271,7 @@ $salesOpen = \Cros\Controllers\TicketsController::salesOpen();
       <h2><?= e(setting('location_title', 'Com arribar-hi')) ?></h2>
       <p class="lead"><?= nl(setting('location_text', '')) ?></p>
       <p><strong><?= e(setting('event_place', '')) ?></strong><br><?= e(setting('event_address', '')) ?></p>
-      <?php if (setting('map_embed', '')): ?>
-        <a class="btn btn--ghost" href="<?= e(setting('map_embed')) ?>" target="_blank" rel="noopener">
-          <?= \Cros\Core\Icons::svg('map', 'icon', 18) ?> Obre el mapa
-        </a>
-      <?php endif; ?>
+      <?= \Cros\Core\View::partial('partials/location-map') ?>
     </div>
     <?php if ($faqs): ?>
       <div>

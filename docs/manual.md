@@ -31,6 +31,22 @@ desactiveu l'opció a la configuració.
 
 ## Abans de la cursa
 
+### 0. Dades de la cursa i mapa de la sortida
+**Configuració → Dades de la cursa**
+- *Lloc de sortida*, *adreça* i *població*: surten al web, als correus i als llistats.
+- *Latitud* i *longitud de la sortida*: el punt exacte que marca el mapa. La manera més
+  senzilla d'omplir-los és anar a [openstreetmap.org](https://www.openstreetmap.org),
+  buscar el lloc, fer-hi **clic dret → «Mostra l'adreça»** i copiar els dos números.
+  També podeu **enganxar directament un enllaç** d'OpenStreetMap o de Google Maps a
+  qualsevol dels dos camps: el panell en treu les coordenades i omple tots dos.
+- *Enllaç del mapa*: opcional, per si feu servir un mapa propi.
+- Si deixeu les coordenades i l'enllaç **buits**, el botó «Obre el mapa» cerca l'adreça
+  que hi ha escrita més amunt.
+
+Amb les coordenades posades, a la portada hi surt el mapa amb el punt marcat (només es
+connecta a OpenStreetMap quan el visitant hi fa clic) i el botó obre el mapa centrat
+sobre la sortida.
+
 ### 1. Personalitzar la portada
 **Configuració → Portada**
 - *Imatge del banner*: fotografia horitzontal (1920×1080). Si no n'hi ha cap es mostra
@@ -72,6 +88,12 @@ desactiveu l'opció a la configuració.
 El formulari també es tanca sol quan es passa la **data de tancament**; deixeu la data
 buida si no en voleu posar cap. En tots dos casos, si algú prova d'enviar el formulari
 tot i estar tancat, la inscripció es rebutja.
+
+Al costat del formulari hi ha el **requadre de recordatoris** («Recorda»), amb el que
+convé tenir present abans d'inscriure's. El títol i el contingut s'editen a
+**Configuració → Inscripcions** (*Títol del requadre* i *Contingut del requadre*, amb
+HTML bàsic: llistes, negretes i enllaços), i l'interruptor *Mostrar el requadre de
+recordatoris* el treu de la pàgina si no el voleu.
 
 ### 5.1. «Les meves inscripcions»
 

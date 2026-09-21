@@ -451,6 +451,12 @@ input:disabled, select:disabled, textarea:disabled { background: var(--green-50)
 .prose table { width: 100%; border-collapse: collapse; margin-bottom: 1.4em; }
 .prose th, .prose td { border: 1px solid var(--line); padding: .6rem .8rem; text-align: left; }
 
+/* Text dins d'un requadre lateral: una mica més petit i discret. */
+.prose--aside { color: var(--ink-soft); font-size: .95rem; }
+.prose--aside > :first-child { margin-top: 0; }
+.prose--aside > :last-child { margin-bottom: 0; }
+.prose--aside ul, .prose--aside ol { padding-left: 1.1rem; margin-bottom: 0; }
+
 .split { display: grid; gap: clamp(1.6rem, 4vw, 3rem); grid-template-columns: 1.15fr .85fr; align-items: start; }
 @media (max-width: 900px) { .split { grid-template-columns: 1fr; } }
 

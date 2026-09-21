@@ -67,6 +67,15 @@ class Migrator
             $done[] = $name;
             log_line('migrate', 'Migració aplicada', ['file' => $name]);
         }
+
+        // Les opcions noves d'aquesta versió parteixen del seu valor per defecte;
+        // les que ja hi havia no es toquen.
+        try {
+            Settings::seedDefaults();
+        } catch (\Throwable $e) {
+            log_line('migrate', 'No s\'han pogut inicialitzar les opcions noves', ['error' => $e->getMessage()]);
+        }
+
         return $done;
     }
 

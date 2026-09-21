@@ -6,6 +6,7 @@ namespace Cros\Controllers\Admin;
 use Cros\Core\Auth;
 use Cros\Core\Controller;
 use Cros\Core\Html;
+use Cros\Core\Map;
 use Cros\Core\Settings;
 use Cros\Core\Uploader;
 
@@ -65,6 +66,8 @@ class SettingsController extends Controller
         }
 
         $errors = [];
+        $overrides = $this->pastedCoords($group['fields']);
+
         foreach ($group['fields'] as $name => $field) {
             $type = $field['type'] ?? 'text';
 
@@ -95,7 +98,7 @@ class SettingsController extends Controller
                 continue;
             }
 
-            $raw = $_POST[$name] ?? null;
+            $raw = $overrides[$name] ?? ($_POST[$name] ?? null);
             if ($raw === null) {
                 continue;
             }
@@ -109,6 +112,14 @@ class SettingsController extends Controller
             }
             if ($type === 'select' && isset($field['options']) && !array_key_exists($value, $field['options'])) {
                 continue;
+            }
+            if ($type === 'coord') {
+                $coord = Map::coord($value, (string) ($field['axis'] ?? 'lat'));
+                if ($coord === null) {
+                    $errors[] = $field['label'] . ': cal una coordenada vàlida (p. ex. 41,376699).';
+                    continue;
+                }
+                $value = $coord;
             }
             if ($type === 'number' && $value !== '' && !is_numeric($value)) {
                 $errors[] = $field['label'] . ': cal un valor numèric.';
@@ -128,5 +139,36 @@ class SettingsController extends Controller
             flash('success', 'Configuració desada.');
         }
         redirect('/admin/configuracio/' . $key);
+    }
+
+    /**
+     * Si s'enganxa un enllaç d'un mapa o el parell sencer de coordenades a
+     * qualsevol dels dos camps, s'omplen tots dos amb el punt que s'hi ha trobat.
+     *
+     * @return array<string,string>
+     */
+    private function pastedCoords(array $fields): array
+    {
+        $axes = [];
+        $pair = null;
+        foreach ($fields as $name => $field) {
+            if (($field['type'] ?? '') !== 'coord') {
+                continue;
+            }
+            $axes[$name] = ($field['axis'] ?? 'lat') === 'lng' ? 'lng' : 'lat';
+            if ($pair === null && is_string($_POST[$name] ?? null)) {
+                $pair = Map::parse($_POST[$name]);
+            }
+        }
+        if ($pair === null || count($axes) < 2) {
+            return [];
+        }
+
+        $values = [];
+        foreach ($axes as $name => $axis) {
+            $values[$name] = Map::format($pair[$axis]);
+        }
+
+        return $values;
     }
 }

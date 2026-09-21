@@ -149,16 +149,16 @@ $externalLink = (bool) preg_match('#^https?://#i', $linkUrl);
     </div>
 
     <aside>
-      <div class="card">
-        <h3><?= \Cros\Core\Icons::svg('info', 'icon', 20) ?> Recorda</h3>
-        <ul style="padding-left:1.1rem;color:var(--ink-soft);font-size:.95rem">
-          <li>Cal omplir un formulari per cada participant.</li>
-          <li>Els dorsals es recullen el mateix dia a la zona esportiva.</li>
-          <li>Arribeu 15 minuts abans de la vostra sortida.</li>
-          <li>El punt de recàrrega té tiquet a part: <a href="<?= e(url('/punt-de-recarrega')) ?>">mira-ho aquí</a>.</li>
-        </ul>
-      </div>
-      <div class="card" style="margin-top:1.2rem">
+      <?php $asideText = \Cros\Core\Settings::bool('registrations_aside', true) ? setting_html('registrations_aside_text') : ''; ?>
+      <?php if (trim(strip_tags($asideText)) !== ''): ?>
+        <div class="card">
+          <?php if (setting('registrations_aside_title', '') !== ''): ?>
+            <h3><?= \Cros\Core\Icons::svg('info', 'icon', 20) ?> <?= e(setting('registrations_aside_title')) ?></h3>
+          <?php endif; ?>
+          <div class="prose prose--aside"><?= $asideText ?></div>
+        </div>
+      <?php endif; ?>
+      <div class="card"<?= trim(strip_tags($asideText)) !== '' ? ' style="margin-top:1.2rem"' : '' ?>>
         <h3><?= \Cros\Core\Icons::svg('clock', 'icon', 20) ?> Termini</h3>
         <p style="margin:0">
           <?php $close = (string) setting('registrations_close_at', ''); ?>

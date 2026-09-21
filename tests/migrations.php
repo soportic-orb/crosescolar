@@ -10,6 +10,7 @@ declare(strict_types=1);
 require __DIR__ . '/env.php';
 
 use Cros\Core\Db;
+use Cros\Core\Map;
 use Cros\Core\Settings;
 
 $passed = 0;
@@ -128,6 +129,87 @@ check('I hi fa una volta',
 $sample = Db::one('SELECT c.id, c.course_id, cc.course_id AS relacio FROM categories c
                    JOIN category_courses cc ON cc.category_id = c.id WHERE c.course_id IS NOT NULL');
 check('El recorregut és el mateix', (int) ($sample['course_id'] ?? 0) === (int) ($sample['relacio'] ?? -1), json_encode($sample));
+
+echo "\n== 0009: el mapa surt de les dades de la cursa ==\n";
+
+$mapBefore = [];
+foreach (['map_lat', 'map_lng', 'map_embed', 'event_address'] as $key) {
+    $mapBefore[$key] = (string) Settings::get($key, '');
+}
+$oldEmbed = 'https://www.openstreetmap.org/?mlat=41.3778&mlon=1.7203#map=16/41.3778/1.7203';
+$migration = require CROS_APP . '/migrations/0009_mapa_ubicacio.php';
+
+// Una instal·lació que no havia tocat el mapa mai.
+Settings::set('map_embed', $oldEmbed);
+Settings::set('map_lat', '41.3778');
+Settings::set('map_lng', '1.7203');
+Settings::set('event_address', 'Carrer de l\'Esport, s/n — 08792 La Granada (Alt Penedès)');
+Settings::load(true);
+$migration(Db::conn());
+Settings::load(true);
+check('L\'enllaç antic per defecte es retira', (string) Settings::get('map_embed', '') === '',
+    (string) Settings::get('map_embed', ''));
+check('El punt passa a ser la zona esportiva',
+    (string) Settings::get('map_lat', '') === '41.376699' && (string) Settings::get('map_lng', '') === '1.713535',
+    Settings::get('map_lat', '') . ', ' . Settings::get('map_lng', ''));
+check('L\'adreça per defecte apunta a un carrer que existeix al mapa',
+    str_contains((string) Settings::get('event_address', ''), 'Carrer de Vilafranca'),
+    (string) Settings::get('event_address', ''));
+check('I el mapa obre aquest punt',
+    Map::link() === 'https://www.openstreetmap.org/?mlat=41.376699&mlon=1.713535#map=17/41.376699/1.713535',
+    Map::link());
+
+// Una instal·lació que hi havia posat el seu enllaç de Google Maps.
+Settings::set('map_embed', 'https://www.google.com/maps/place/Escola/@41.3452,1.6988,18z');
+Settings::set('map_lat', '');
+Settings::set('map_lng', '');
+Settings::load(true);
+$migration(Db::conn());
+Settings::load(true);
+check('D\'un enllaç propi se\'n treu el punt',
+    (string) Settings::get('map_lat', '') === '41.3452' && (string) Settings::get('map_lng', '') === '1.6988',
+    Settings::get('map_lat', '') . ', ' . Settings::get('map_lng', ''));
+check('I l\'enllaç de l\'organització es conserva',
+    str_contains((string) Settings::get('map_embed', ''), 'google.com'));
+
+// Una instal·lació que ja havia ajustat les coordenades: no s'hi toca.
+Settings::set('map_embed', '');
+Settings::set('map_lat', '41.5');
+Settings::set('map_lng', '1.5');
+Settings::load(true);
+$migration(Db::conn());
+Settings::load(true);
+check('Les coordenades que ja s\'havien ajustat es respecten',
+    (string) Settings::get('map_lat', '') === '41.5', (string) Settings::get('map_lat', ''));
+
+foreach ($mapBefore as $key => $value) {
+    Settings::set($key, $value);
+}
+Settings::load(true);
+
+echo "\n== Les opcions noves d'una versió arriben amb el seu valor per defecte ==\n";
+
+$asideBefore = (string) Settings::get('registrations_aside_text', '');
+$titleBefore = (string) Settings::get('registrations_aside_title', '');
+
+// Una instal·lació de la versió anterior: encara no té l'opció nova.
+Db::delete('settings', 'k = :k', ['k' => 'registrations_aside_text']);
+Settings::set('registrations_aside_title', 'El que cal saber');
+Settings::load(true);
+
+\Cros\Core\Migrator::run();
+Settings::load(true);
+
+check('L\'opció que faltava s\'omple amb el valor per defecte',
+    str_contains((string) Settings::get('registrations_aside_text', ''), 'un formulari per cada participant'),
+    substr((string) Settings::get('registrations_aside_text', ''), 0, 60));
+check('I les que ja estaven escrites no es toquen',
+    (string) Settings::get('registrations_aside_title', '') === 'El que cal saber',
+    (string) Settings::get('registrations_aside_title', ''));
+
+Settings::set('registrations_aside_text', $asideBefore);
+Settings::set('registrations_aside_title', $titleBefore);
+Settings::load(true);
 
 echo "\n== Resultat ==\n  $passed proves correctes, $failed errors\n\n";
 exit($failed === 0 ? 0 : 1);
