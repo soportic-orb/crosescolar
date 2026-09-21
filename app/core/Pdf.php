@@ -235,6 +235,54 @@ class Pdf
         ));
     }
 
+    /**
+     * Línia de punts, per marcar per on s'ha de retallar el full.
+     * El patró es deixa dins d'un q/Q perquè no afecti el que es dibuixi després.
+     */
+    public function dashedLine(float $x1, float $y1, float $x2, float $y2, float $thickness = 0.25, float $dash = 2.0, float $gap = 1.6): void
+    {
+        $this->write(sprintf(
+            "q %.2F w %s RG [%.2F %.2F] 0 d %.2F %.2F m %.2F %.2F l S Q\n",
+            $thickness * self::MM,
+            $this->colorString($this->stroke),
+            $dash * self::MM,
+            $gap * self::MM,
+            $x1 * self::MM,
+            ($this->pageHeight() - $y1) * self::MM,
+            $x2 * self::MM,
+            ($this->pageHeight() - $y2) * self::MM
+        ));
+    }
+
+    /** Cercle fet amb quatre corbes de Bézier. */
+    public function circle(float $cx, float $cy, float $radius, string $style = 'D', float $thickness = 0.2): void
+    {
+        $k = 0.5522847498 * $radius;
+        $x = $cx * self::MM;
+        $y = ($this->pageHeight() - $cy) * self::MM;
+        $r = $radius * self::MM;
+        $c = $k * self::MM;
+        $operator = match (strtoupper($style)) {
+            'F' => 'f',
+            'B' => 'B',
+            default => 'S',
+        };
+        $this->write(sprintf(
+            "%.2F w %s rg %s RG %.2F %.2F m %.2F %.2F %.2F %.2F %.2F %.2F c "
+            . "%.2F %.2F %.2F %.2F %.2F %.2F c %.2F %.2F %.2F %.2F %.2F %.2F c "
+            . "%.2F %.2F %.2F %.2F %.2F %.2F c %s\n",
+            $thickness * self::MM,
+            $this->colorString($this->fill),
+            $this->colorString($this->stroke),
+            $x - $r, $y,
+            $x - $r, $y + $c, $x - $c, $y + $r, $x, $y + $r,
+            $x + $c, $y + $r, $x + $r, $y + $c, $x + $r, $y,
+            $x + $r, $y - $c, $x + $c, $y - $r, $x, $y - $r,
+            $x - $c, $y - $r, $x - $r, $y - $c, $x - $r, $y,
+            $operator
+        ));
+    }
+
     public function rect(float $x, float $y, float $width, float $height, string $style = 'F', float $thickness = 0.2): void
     {
         $operator = match (strtoupper($style)) {

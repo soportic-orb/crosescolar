@@ -41,10 +41,24 @@ class Bib
     }
 
     /**
-     * Genera el PDF amb un dorsal per participant.
+     * PDF per a la família: de cada participant, dues còpies del seu dorsal en
+     * un full A4 vertical, una a dalt i una a baix, amb la línia per retallar.
+     * Així en tenen un per al pit i un altre de recanvi.
+     *
      * @param array<int,array> $registrations
      */
-    public static function pdf(array $registrations): string
+    public static function familyPdf(array $registrations): string
+    {
+        return self::pdf($registrations, true);
+    }
+
+    /**
+     * Genera el PDF amb un dorsal per participant.
+     *
+     * @param array<int,array> $registrations
+     * @param bool $duplicate dues còpies de cada dorsal, amb la línia de retallar
+     */
+    public static function pdf(array $registrations, bool $duplicate = false): string
     {
         $pdf = new Pdf(['title' => 'Dorsals · ' . setting('site_name', 'Cros Escolar La Granada')]);
         $template = null;
@@ -74,7 +88,16 @@ class Bib
             }
         }
 
-        $sheet = self::sheet($size);
+        $sheet = self::sheet($size, $duplicate);
+        if ($duplicate) {
+            // De cada participant, dues còpies seguides.
+            $doubled = [];
+            foreach ($registrations as $registration) {
+                $doubled[] = $registration;
+                $doubled[] = $registration;
+            }
+            $registrations = $doubled;
+        }
         // La primera pàgina ja s'ha creat en importar la maqueta: si ara resulta
         // que al full n'hi caben dos, cal que tingui la mida del full.
         if ($template !== null && $sheet['per_sheet'] > 1) {
@@ -94,6 +117,10 @@ class Bib
                 $pdf->useTemplate($template, $placement[0], $placement[1] + $top, $placement[2], $placement[3], $rotate);
             }
             self::drawFields($pdf, $registration, $size[0], $top);
+            // La línia de retallar va entre les dues meitats, un cop dibuixada la de dalt.
+            if ($duplicate && $sheet['per_sheet'] > 1 && $slot === 0) {
+                self::cutMark($pdf, $sheet['offset'], $sheet['sheet'][0]);
+            }
             $slot = ($slot + 1) % $sheet['per_sheet'];
         }
         if (!$registrations) {
@@ -112,10 +139,10 @@ class Bib
      * @param array{0:float,1:float} $size mida del dorsal en mm
      * @return array{sheet:array{0:float,1:float},per_sheet:int,offset:float}
      */
-    public static function sheet(array $size): array
+    public static function sheet(array $size, bool $force = false): array
     {
         $one = ['sheet' => $size, 'per_sheet' => 1, 'offset' => 0.0];
-        if (setting('bib_two_per_sheet', '0') !== '1') {
+        if (!$force && setting('bib_two_per_sheet', '0') !== '1') {
             return $one;
         }
         [$a4Width, $a4Height] = Pdf::SIZES['a4'];
@@ -126,6 +153,31 @@ class Bib
         }
 
         return ['sheet' => [$a4Width, $a4Height], 'per_sheet' => 2, 'offset' => $half];
+    }
+
+    /**
+     * Marca per on s'ha de retallar el full: una línia de punts d'una banda a
+     * l'altra amb unes tisores al començament.
+     */
+    private static function cutMark(Pdf $pdf, float $y, float $width): void
+    {
+        $pdf->setStrokeColor(120, 130, 122);
+        self::scissors($pdf, 14.0, $y, 2.1);
+        $pdf->dashedLine(20.0, $y, $width - 8.0, $y);
+        $pdf->setFont('helvetica', 7.5);
+        $pdf->setColorHex('#78827a');
+        $pdf->text($width - 8.0, $y - 1.6, 'Retalleu per aquí', ['align' => 'right']);
+        $pdf->setStrokeColor(0, 0, 0);
+    }
+
+    /** Unes tisores petites: dues fulles creuades i dues anelles. */
+    private static function scissors(Pdf $pdf, float $x, float $y, float $size): void
+    {
+        $blade = $size * 1.9;
+        $pdf->line($x - $size * 0.2, $y, $x + $blade, $y - $size * 1.1, 0.28);
+        $pdf->line($x - $size * 0.2, $y, $x + $blade, $y + $size * 1.1, 0.28);
+        $pdf->circle($x - $size * 0.75, $y - $size * 0.62, $size * 0.6, 'D', 0.28);
+        $pdf->circle($x - $size * 0.75, $y + $size * 0.62, $size * 0.6, 'D', 0.28);
     }
 
     /** Dorsal d'exemple per previsualitzar el disseny. */

@@ -187,7 +187,15 @@ i es gasta la meitat de paper. Només s'aplica si el dorsal hi cap — un A5 apa
 dorsal de prova que el número, el nom i la categoria quedin dins del dorsal: si alguna
 posició se'n surt, al full de dos es ficaria dins de l'altre dorsal.
 
-Per imprimir-los tots: **Inscripcions → Dorsals en PDF** (es pot filtrar per categoria). Cada fitxa d'inscripció també té el seu botó de descàrrega.
+**El dorsal que es descarrega la família** és diferent del que imprimiu vosaltres: porta
+**dues còpies del mateix dorsal** en un full A4 vertical, una a dalt i una a baix, amb una
+línia de punts i unes tisores al mig. Així, amb un sol full, en tenen un per al pit i un
+de recanvi (o un per davant i un per darrere). Si tenen més d'un fill inscrit, cada
+participant té el seu full. Quan el dorsal és massa gran per partir el full (un A4
+sencer), se'n fan dues còpies en dos fulls, sense línia de retallar.
+
+Per imprimir-los tots: **Inscripcions → Dorsals en PDF** (es pot filtrar per categoria).
+Aquí sí que va un dorsal per pàgina, o dos de diferents per full si heu activat l'opció. Cada fitxa d'inscripció també té el seu botó de descàrrega.
 
 El número s'assigna **sol** en inscriure's, tant si ho fa la família pel web com si el
 feu vosaltres des de **Inscripcions → Nova**: el sistema agafa el següent lliure (001,

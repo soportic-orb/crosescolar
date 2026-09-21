@@ -158,7 +158,7 @@ class RegistrationController extends Controller
 
     private function sendBib(array $registrations, string $filename): void
     {
-        $pdf = Bib::pdf($registrations);
+        $pdf = Bib::familyPdf($registrations);
         header('Content-Type: application/pdf');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
         header('Content-Length: ' . strlen($pdf));

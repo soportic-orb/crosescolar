@@ -277,6 +277,70 @@ if ($text !== null) {
 Settings::set('bib_two_per_sheet', '0');
 Settings::setMany($before);
 
+echo "\n== El dorsal que es descarrega la família ==\n";
+$familyBefore = [];
+foreach (['bib_template', 'bib_page_size', 'bib_orientation', 'bib_two_per_sheet',
+          'bib_number_y', 'bib_name_y', 'bib_category_y'] as $key) {
+    $familyBefore[$key] = (string) Settings::get($key);
+}
+Settings::setMany([
+    'bib_template' => '', 'bib_page_size' => 'a5', 'bib_orientation' => 'landscape',
+    'bib_two_per_sheet' => '0',
+    'bib_number_y' => '55', 'bib_name_y' => '95', 'bib_category_y' => '115',
+]);
+$one = ['first_name' => 'Laia', 'last_name' => 'Ferrer', 'bib_number' => 7];
+$two = ['first_name' => 'Pau', 'last_name' => 'Vidal', 'bib_number' => 8];
+
+$family = Bib::familyPdf([$one]);
+check('Un participant, un sol full', substr_count($family, '/Type /Page') === 2,
+    (string) (substr_count($family, '/Type /Page') - 1));
+check('I el full és A4 vertical',
+    preg_match('#/MediaBox \[0 0 595\.\d+ 841\.\d+\]#', $family) === 1);
+$text = pdf_text($family);
+if ($text !== null) {
+    check('Amb dues còpies del mateix dorsal', substr_count($text, '007') === 2,
+        trim(str_replace("\n", ' ', $text)));
+    check('I les dues amb el nom', substr_count($text, 'Laia Ferrer') === 2);
+    check('Hi diu per on s\'ha de retallar', str_contains($text, 'Retalleu per aquí'));
+    check('I la marca només surt un cop', substr_count($text, 'Retalleu per aquí') === 1);
+}
+
+// Cada participant, el seu full.
+$familyTwo = Bib::familyPdf([$one, $two]);
+check('Dos participants, dos fulls', substr_count($familyTwo, '/Type /Page') === 3,
+    (string) (substr_count($familyTwo, '/Type /Page') - 1));
+$text = pdf_text($familyTwo);
+if ($text !== null) {
+    $pages = explode("\f", $text);
+    check('Cada full porta un sol participant, dues vegades',
+        substr_count($pages[0] ?? '', 'Laia Ferrer') === 2 && !str_contains($pages[0] ?? '', 'Pau Vidal'),
+        trim(str_replace("\n", ' ', $pages[0] ?? '')));
+    check('I l\'altre participant va al seu full',
+        substr_count($pages[1] ?? '', 'Pau Vidal') === 2);
+}
+
+// El que imprimeix el panell no canvia: un dorsal per pàgina.
+$adminPdf = Bib::pdf([$one]);
+check('El dorsal del panell continua sent un per pàgina',
+    substr_count($adminPdf, '/Type /Page') === 2);
+$text = pdf_text($adminPdf);
+if ($text !== null) {
+    check('Sense duplicar-lo ni marcar cap retall',
+        substr_count($text, '007') === 1 && !str_contains($text, 'Retalleu'));
+}
+
+// Un dorsal que ocupa tot un A4 no es pot partir: dues còpies, dos fulls.
+Settings::setMany(['bib_page_size' => 'a4', 'bib_orientation' => 'portrait']);
+$big = Bib::familyPdf([$one]);
+check('Un dorsal A4 sencer fa dos fulls', substr_count($big, '/Type /Page') === 3);
+$text = pdf_text($big);
+if ($text !== null) {
+    check('Amb les dues còpies i sense línia de retallar',
+        substr_count($text, '007') === 2 && !str_contains($text, 'Retalleu'));
+}
+
+Settings::setMany($familyBefore);
+
 echo "\n== Anys de les categories ==\n";
 check('Dos anys diferents es mostren tots dos',
     Content::years(['year_from' => 2013, 'year_to' => 2014]) === '2013–2014');

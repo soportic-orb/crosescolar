@@ -3,6 +3,21 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.20.0] — 2026-09-21
+
+### Canviat
+- **El dorsal que es descarrega la família porta dues còpies**: un full A4 vertical amb el
+  mateix dorsal a dalt i a baix, apaïsats, separats per una línia de punts amb unes
+  tisores i el text «Retalleu per aquí». Amb un sol full en tenen un per al pit i un de
+  recanvi. Si hi ha més d'un participant, cadascun té el seu full. Si el dorsal ocupa un
+  A4 sencer i no es pot partir el full, se'n fan dues còpies en dos fulls.
+- El que s'imprimeix des del panell no canvia: un dorsal per pàgina, o dos de diferents
+  per full amb l'opció «Dos dorsals per full A4».
+
+### Afegit
+- El motor de PDF sap dibuixar **línies de punts i cercles**, que és el que fa falta per a
+  la marca de retallar.
+
 ## [1.19.0] — 2026-09-21
 
 ### Afegit
