@@ -73,6 +73,13 @@ class Mailer
         $transport = (string) setting('mail_transport', 'mail');
 
         try {
+            if ($transport === 'log') {
+                // Mode d'assaig: no surt res del servidor, però queda registrat
+                // com si s'hagués enviat, per poder-ho provar tot sense molestar ningú.
+                log_line('mail', 'Assaig (no s\'envia)', ['to' => $to, 'subject' => $subject]);
+                self::logEmail($to, $subject, 'sent');
+                return true;
+            }
             $sent = $transport === 'smtp'
                 ? self::smtpSend($fromEmail, $to, $encodedSubject, $headers, $body, $options)
                 : @mail($to, $encodedSubject, $body, implode("\r\n", $headers));

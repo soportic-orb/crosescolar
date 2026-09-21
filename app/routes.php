@@ -7,6 +7,7 @@ declare(strict_types=1);
 use Cros\Controllers\Admin\AuthController;
 use Cros\Controllers\Admin\CrudController;
 use Cros\Controllers\Admin\DashboardController;
+use Cros\Controllers\Admin\MailingsController;
 use Cros\Controllers\Admin\OrdersController;
 use Cros\Controllers\Admin\RegistrationsController;
 use Cros\Controllers\Admin\ResultsController;
@@ -112,6 +113,18 @@ $router->post('/admin/resultats/{id}/premi-local', [ResultsController::class, 'l
 $router->post('/admin/resultats/publicar', [ResultsController::class, 'publish']);
 $router->get('/admin/resultats/pdf', [ResultsController::class, 'pdf']);
 $router->get('/admin/resultats/csv', [ResultsController::class, 'csv']);
+
+$router->get('/admin/enviaments', [MailingsController::class, 'index']);
+$router->get('/admin/enviaments/nou', [MailingsController::class, 'create']);
+$router->post('/admin/enviaments/nou', [MailingsController::class, 'store']);
+$router->get('/admin/enviaments/{id}', [MailingsController::class, 'show']);
+$router->get('/admin/enviaments/{id}/editar', [MailingsController::class, 'edit']);
+$router->post('/admin/enviaments/{id}/editar', [MailingsController::class, 'update']);
+$router->get('/admin/enviaments/{id}/vista-previa', [MailingsController::class, 'preview']);
+$router->post('/admin/enviaments/{id}/prova', [MailingsController::class, 'test']);
+$router->post('/admin/enviaments/{id}/preparar', [MailingsController::class, 'start']);
+$router->post('/admin/enviaments/{id}/tanda', [MailingsController::class, 'batch']);
+$router->post('/admin/enviaments/{id}/esborrar', [MailingsController::class, 'destroy']);
 
 $router->get('/admin/validacio', [ToolsController::class, 'scanner']);
 $router->post('/admin/validacio', [ToolsController::class, 'validateTicket']);

@@ -47,6 +47,8 @@ $pending = (int) \Cros\Core\Db::val('SELECT COUNT(*) FROM orders WHERE status = 
       <?php if (\Cros\Core\Settings::bool('results_published')): ?><span class="badge badge--green">Publicats</span><?php endif; ?>
     </a>
 
+    <a class="nav-link<?= $isActive('/admin/enviaments') ? ' is-active' : '' ?>" href="<?= e(url('/admin/enviaments')) ?>"><?= Icons::svg('mail', 'icon', 18) ?> Enviaments</a>
+
     <div class="sidebar__section">Continguts</div>
     <?php foreach ($resources as $key => $resource): ?>
       <?php if ($key === 'tipus-tiquet') { continue; } ?>

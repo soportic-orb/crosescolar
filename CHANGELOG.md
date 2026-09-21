@@ -3,6 +3,28 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.13.0] — 2026-09-21
+
+### Afegit
+- **Correus a les persones inscrites**: nou apartat **Enviaments** al panell. S'hi escriu
+  el tema i el cos amb un **editor visual** (negreta, cursiva, títols, llistes i enllaços,
+  amb un botó per veure i tocar l'HTML) i es tria a qui va: totes les persones inscrites,
+  només algunes categories o unes adreces escrites a mà. També es pot limitar a les
+  inscripcions confirmades; les anul·lades no en reben mai cap.
+- **Una adreça, un correu**: una família amb diversos fills inscrits rep un sol missatge.
+  Al cos s'hi poden escriure els marcadors `{{tutor}}`, `{{participants}}`, `{{dorsals}}`,
+  `{{cursa}}` i `{{data}}`, que se substitueixen a cada enviament.
+- **Enviament per tandes** amb barra de progrés, pensat per a allotjaments compartits: si
+  es talla, es continua des d'on era i no es repeteix cap correu. En acabar, el botó
+  «Enviar-lo a les inscripcions noves» escriu només a qui s'ha inscrit després.
+- **Vista prèvia i correu de prova** abans d'enviar-lo a ningú, i llistat de destinataris
+  amb l'estat de cadascun.
+- **Mode d'assaig del correu** (*Configuració → Correu electrònic → Mètode d'enviament*):
+  no surt res del servidor però tot queda registrat com si s'hagués enviat, per poder
+  assajar un enviament sencer sense escriure a ningú.
+- **Correus per tanda** configurable (20 per defecte), per si l'allotjament en limita el
+  nombre per hora.
+
 ## [1.12.0] — 2026-09-21
 
 ### Afegit

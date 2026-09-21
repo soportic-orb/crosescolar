@@ -246,4 +246,153 @@
       }
     });
   });
+  /* Editor visual del cos dels correus ------------------------------- */
+  document.querySelectorAll('[data-editor]').forEach(function (editor) {
+    var area = editor.querySelector('[data-editor-area]');
+    var source = editor.querySelector('[data-editor-source]');
+    if (!area || !source) { return; }
+
+    // Amb JavaScript, l'HTML es veu format; el textarea queda de reserva.
+    area.innerHTML = source.value.trim() || '<p><br></p>';
+    editor.classList.add('editor--live');
+
+    // Etiquetes senzilles (<b>, <p>) en lloc d'estils dins de l'HTML: així el
+    // correu es veu igual a tots els programes de correu.
+    try { document.execCommand('styleWithCSS', false, false); } catch (e) {}
+    try { document.execCommand('defaultParagraphSeparator', false, 'p'); } catch (e) {}
+
+    var sync = function () {
+      var html = area.innerHTML.trim();
+      // Un paràgraf buit no és contingut: així la comprovació del servidor l'enxampa.
+      source.value = (html === '<p><br></p>' || html === '<br>') ? '' : html;
+    };
+    area.addEventListener('input', sync);
+    area.addEventListener('blur', sync);
+
+    // Enganxar sempre com a text: així no s'hi cola el format d'un altre web.
+    area.addEventListener('paste', function (event) {
+      event.preventDefault();
+      var text = (event.clipboardData || window.clipboardData).getData('text/plain');
+      document.execCommand('insertText', false, text);
+    });
+
+    var run = function (command, value) {
+      area.focus();
+      try { document.execCommand(command, false, value || null); } catch (e) {}
+      sync();
+    };
+
+    var commands = {
+      bold: function () { run('bold'); },
+      italic: function () { run('italic'); },
+      h2: function () { run('formatBlock', 'H2'); },
+      h3: function () { run('formatBlock', 'H3'); },
+      p: function () { run('formatBlock', 'P'); },
+      ul: function () { run('insertUnorderedList'); },
+      ol: function () { run('insertOrderedList'); },
+      unlink: function () { run('unlink'); },
+      clear: function () { run('removeFormat'); },
+      link: function () {
+        var url = window.prompt('Adreça de l\'enllaç', 'https://');
+        if (url) { run('createLink', url); }
+      },
+      source: function () {
+        var showing = editor.classList.toggle('editor--source');
+        if (showing) {
+          sync();
+          source.focus();
+        } else {
+          area.innerHTML = source.value;
+          area.focus();
+        }
+      }
+    };
+
+    editor.querySelector('.editor__bar').addEventListener('click', function (event) {
+      var button = event.target.closest('[data-command]');
+      if (!button) { return; }
+      var command = commands[button.getAttribute('data-command')];
+      if (command) { command(); }
+    });
+
+    // En desar, el que val és el textarea.
+    var form = editor.closest('form');
+    if (form) {
+      form.addEventListener('submit', function () {
+        if (!editor.classList.contains('editor--source')) { sync(); }
+      });
+    }
+  });
+
+  /* Destinataris: només es demana el que fa falta ---------------------- */
+  (function () {
+    var radios = document.querySelectorAll('[data-audience]');
+    if (!radios.length) { return; }
+    var blocks = document.querySelectorAll('[data-audience-for]');
+    var update = function () {
+      var chosen = '';
+      radios.forEach(function (radio) { if (radio.checked) { chosen = radio.value; } });
+      blocks.forEach(function (block) {
+        var wanted = block.getAttribute('data-audience-for').split(' ');
+        block.style.display = wanted.indexOf(chosen) === -1 ? 'none' : '';
+      });
+    };
+    radios.forEach(function (radio) { radio.addEventListener('change', update); });
+    update();
+  })();
+
+  /* Enviament per tandes amb barra de progrés ------------------------- */
+  (function () {
+    var box = document.querySelector('[data-send]');
+    if (!box) { return; }
+    var button = box.querySelector('[data-send-start]');
+    var bar = box.querySelector('[data-send-bar]');
+    var note = box.querySelector('[data-send-note]');
+    var url = box.getAttribute('data-send');
+    var token = box.getAttribute('data-token');
+    var total = parseInt(box.getAttribute('data-total'), 10) || 0;
+    if (!button) { return; }
+
+    var show = function (sent, failed) {
+      var done = sent + failed;
+      if (bar) { bar.style.width = (total ? Math.round((done / total) * 100) : 100) + '%'; }
+      if (note) {
+        note.textContent = done + ' de ' + total + ' · ' + sent + ' enviats'
+          + (failed ? ' · ' + failed + ' amb error' : '');
+      }
+    };
+
+    var step = function () {
+      var data = new FormData();
+      data.append('_token', token);
+      fetch(url, {
+        method: 'POST',
+        body: data,
+        credentials: 'same-origin',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      }).then(function (response) {
+        return response.ok ? response.json() : Promise.reject(new Error('estat ' + response.status));
+      }).then(function (result) {
+        show(result.sentTotal || 0, result.failedTotal || 0);
+        if (result.done) {
+          if (note) { note.textContent += ' · fet!'; }
+          window.setTimeout(function () { window.location.reload(); }, 900);
+          return;
+        }
+        window.setTimeout(step, 400);
+      }).catch(function (error) {
+        button.disabled = false;
+        button.textContent = 'Continuar l\'enviament';
+        if (note) { note.textContent = 'S\'ha aturat: ' + error.message + '. Podeu continuar quan vulgueu.'; }
+      });
+    };
+
+    button.addEventListener('click', function (event) {
+      event.preventDefault();
+      button.disabled = true;
+      button.textContent = 'Enviant…';
+      box.classList.add('is-sending');
+      step();
+    });
+  })();
 })();

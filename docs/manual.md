@@ -267,6 +267,48 @@ Si us equivoqueu, des de la fitxa de la comanda podeu **restablir** un tiquet.
 - **Configuració → Punt de recàrrega**: tanqueu la venda de tiquets.
 - **Sistema → Actualitzacions**: feu una còpia de seguretat per arxivar l'edició.
 
+## Correus a les persones inscrites
+
+**Enviaments** (al menú, dins de *Participants*) serveix per escriure a tothom qui s'ha
+inscrit: recordatoris abans de la cursa, canvis d'horari, l'avís que ja hi ha els
+resultats…
+
+1. **Nou enviament**. Poseu-hi el **tema** (el que es llegeix a la safata d'entrada) i
+   escriviu el **cos** amb l'editor visual: negreta, cursiva, títols, llistes i enllaços.
+   El botó **&lt;/&gt; HTML** deixa veure i tocar el codi per a qui s'hi vulgui posar.
+2. **Trieu els destinataris**: totes les persones inscrites, només algunes categories, o
+   unes adreces escrites a mà (útil per al voluntariat). També podeu decidir si hi entren
+   només les inscripcions confirmades o també les pendents; les anul·lades no reben mai res.
+3. **Reviseu-lo**: la **vista prèvia** mostra com quedarà amb les dades d'una família real,
+   i **enviar-ne una prova** us el fa arribar a vosaltres.
+4. **Preparar l'enviament** fixa la llista de destinataris. A partir d'aquí el correu ja no
+   es pot editar, però encara no s'ha enviat res.
+5. **Enviar ara**. Els correus surten per tandes, amb una barra de progrés. Si es talla
+   (tanqueu el navegador, cau la connexió), torneu-hi i continueu des d'on era: **no es
+   repeteix cap correu**.
+
+**Una adreça, un correu.** Una família amb tres fills inscrits rep un sol missatge, amb els
+tres noms. Al cos del correu hi podeu escriure marcadors que se substitueixen a cada enviament:
+
+| Marcador | Què hi posa |
+|---|---|
+| `{{tutor}}` | El nom de la persona de contacte |
+| `{{participants}}` | Els noms dels participants d'aquella família |
+| `{{dorsals}}` | Els seus números de dorsal |
+| `{{cursa}}` | El nom de la cursa |
+| `{{data}}` | La data de la cursa |
+
+Quan s'acaba, el botó **«Enviar-lo a les inscripcions noves»** busca qui s'ha inscrit
+després i només escriu a aquestes adreces.
+
+> **Abans del primer enviament de debò**, poseu **Configuració → Correu electrònic →
+> Mètode d'enviament** en **«Assaig: no enviar res»** i feu-ne una prova sencera: tot
+> funcionarà igual i quedarà al registre de correus, però no sortirà cap missatge del
+> servidor. Recordeu tornar-ho a deixar com estava.
+
+Si l'allotjament limita quants correus es poden enviar per hora, abaixeu **Correus per
+tanda** a la mateixa pantalla de configuració (per defecte, 20).
+
 ## Reglament de la cursa
 
 **Configuració → Reglament** conté el text del reglament, que es publica a `/reglament` i

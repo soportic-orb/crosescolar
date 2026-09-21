@@ -76,6 +76,9 @@ jobs:
       - name: Proves del mapa de la ubicació
         run: php tests/map.php
 
+      - name: Proves dels enviaments de correu
+        run: php tests/mailings.php
+
       - name: Eines per comprovar els PDF
         run: sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils
 
