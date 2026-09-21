@@ -72,21 +72,18 @@ Settings::set('bib_public_download', '1');
 /* ------------------------------------------------ Participants de la prova */
 $laia = Registration::create([
     'first_name' => 'Laia' . $unique, 'last_name' => 'Duran', 'birth_year' => (string) ((int) date('Y') - 9),
-    'gender' => 'femeni', 'category_id' => '', 'school' => 'Escola La Granada', 'class_group' => 'Primària 4rt',
-    'tutor_name' => 'Anna Duran', 'tutor_email' => $email, 'tutor_phone' => '600111222',
-    'shirt_size' => '10', 'notes' => '', 'consent_data' => 1, 'consent_image' => 0,
+    'gender' => 'femeni', 'category_id' => '', 'school' => 'Escola La Granada', 'tutor_name' => 'Anna Duran', 'tutor_email' => $email, 'tutor_phone' => '600111222',
+    'notes' => '', 'consent_data' => 1, 'consent_image' => 0,
 ]);
 $pau = Registration::create([
     'first_name' => 'Pau' . $unique, 'last_name' => 'Duran', 'birth_year' => (string) ((int) date('Y') - 11),
-    'gender' => 'masculi', 'category_id' => '', 'school' => 'Escola La Granada', 'class_group' => 'Primària 6è',
-    'tutor_name' => 'Anna Duran', 'tutor_email' => $email, 'tutor_phone' => '600111222',
-    'shirt_size' => '12', 'notes' => '', 'consent_data' => 1, 'consent_image' => 0,
+    'gender' => 'masculi', 'category_id' => '', 'school' => 'Escola La Granada', 'tutor_name' => 'Anna Duran', 'tutor_email' => $email, 'tutor_phone' => '600111222',
+    'notes' => '', 'consent_data' => 1, 'consent_image' => 0,
 ]);
 $altri = Registration::create([
     'first_name' => 'Roc' . $unique, 'last_name' => 'Soler', 'birth_year' => (string) ((int) date('Y') - 10),
-    'gender' => 'masculi', 'category_id' => '', 'school' => 'Escola La Granada', 'class_group' => 'Primària 5è',
-    'tutor_name' => 'Jordi Soler', 'tutor_email' => 'altrafamilia' . strtolower($unique) . '@example.test',
-    'tutor_phone' => '600333444', 'shirt_size' => '', 'notes' => '', 'consent_data' => 1, 'consent_image' => 0,
+    'gender' => 'masculi', 'category_id' => '', 'school' => 'Escola La Granada', 'tutor_name' => 'Jordi Soler', 'tutor_email' => 'altrafamilia' . strtolower($unique) . '@example.test',
+    'tutor_phone' => '600333444', 'notes' => '', 'consent_data' => 1, 'consent_image' => 0,
 ]);
 
 echo "\n== Demanar el codi ==\n";
@@ -162,8 +159,6 @@ $saved = req('POST', $base . '/les-meves-inscripcions/' . $laia['id'] . '/modifi
     'birth_year' => (string) ((int) date('Y') - 9),
     'gender' => 'femeni',
     'school' => 'Escola La Granada',
-    'class_group' => 'Primària 5è',
-    'shirt_size' => '12',
     'tutor_name' => 'Anna Duran',
     'tutor_phone' => '600999888',
     'notes' => 'Ve amb la germana',
@@ -172,7 +167,7 @@ $saved = req('POST', $base . '/les-meves-inscripcions/' . $laia['id'] . '/modifi
 check('Es desen els canvis', $saved['status'] === 302);
 $row = Registration::find((int) $laia['id']);
 check('El nom s\'ha actualitzat', ($row['first_name'] ?? '') === 'Laieta' . $unique, (string) ($row['first_name'] ?? ''));
-check('El curs s\'ha actualitzat', ($row['class_group'] ?? '') === 'Primària 5è');
+check('L\'escola s\'ha actualitzat', ($row['school'] ?? '') === 'Escola La Granada');
 check('El telèfon s\'ha actualitzat', ($row['tutor_phone'] ?? '') === '600999888');
 check('El consentiment d\'imatge s\'ha activat', (int) ($row['consent_image'] ?? 0) === 1);
 check('El dorsal no canvia', (int) ($row['bib_number'] ?? 0) === (int) $laia['bib_number']);
@@ -217,8 +212,7 @@ check('Després de sortir ja no es veuen les inscripcions',
 $limitEmail = 'limit' . strtolower($unique) . '@example.test';
 Registration::create([
     'first_name' => 'Limit' . $unique, 'last_name' => 'Prova', 'birth_year' => (string) ((int) date('Y') - 10),
-    'gender' => '', 'category_id' => '', 'school' => '', 'class_group' => '',
-    'tutor_name' => 'Prova', 'tutor_email' => $limitEmail, 'tutor_phone' => '', 'shirt_size' => '',
+    'gender' => '', 'category_id' => '', 'school' => '', 'tutor_name' => 'Prova', 'tutor_email' => $limitEmail, 'tutor_phone' => '',
     'notes' => '', 'consent_data' => 1, 'consent_image' => 0,
 ]);
 for ($i = 0; $i < 5; $i++) {

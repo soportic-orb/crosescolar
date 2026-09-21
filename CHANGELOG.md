@@ -3,6 +3,28 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.12.0] — 2026-09-21
+
+### Afegit
+- **Premi «Primer local»**: cada categoria pot premiar el primer classificat de l'escola
+  del poble. S'activa a *Categories → editar* i el guanyador es marca a mà des de
+  *Resultats*, un per categoria; el panell assenyala amb l'etiqueta *local* qui hi pot
+  optar. El premi surt a la classificació pública, al CSV i al PDF de la categoria. El
+  nom del premi i quina és l'escola del poble es configuren a *Configuració → Categories
+  i premis*.
+- **Avís legal i política de privacitat redactats**: textos complets a partir del que fa
+  realment aquest web (qui organitza, quines dades es demanen, qui hi accedeix, quant es
+  guarden i quins drets hi ha). Hi admeten marcadors — `{{entitat}}`, `{{cursa}}`,
+  `{{poble}}`, `{{correu}}`, `{{telefon}}` i `{{web}}` — que se substitueixen sols, de
+  manera que no es queden antics quan canvia el contacte.
+
+### Canviat
+- El formulari d'inscripció ja no demana **la talla de samarreta** ni **el curs**. Els
+  camps desapareixen del web, de «Les meves inscripcions», de la fitxa del panell, dels
+  correus i de les exportacions.
+- L'entitat responsable per defecte passa a ser l'**AFA Jacint Verdaguer de La Granada**,
+  i la política de privacitat ja no parla de pagaments amb Stripe: aquest web no en fa cap.
+
 ## [1.11.0] — 2026-09-21
 
 ### Corregit

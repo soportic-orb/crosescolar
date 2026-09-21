@@ -74,6 +74,22 @@ class ResultsController extends Controller
         $this->back('/admin/resultats');
     }
 
+    /** Marca o desmarca qui s'endú el premi «Primer local» de la categoria. */
+    public function localPrize(array $params): void
+    {
+        Auth::requireLogin();
+        $this->checkCsrf();
+        $enable = input_bool('enable') === 1;
+        if (!RaceResult::setLocalPrize((int) $params['id'], $enable)) {
+            flash('error', 'Aquesta arribada ja no existeix.');
+            $this->back('/admin/resultats');
+        }
+        flash('success', $enable
+            ? 'Premi «' . RaceResult::localPrizeLabel() . '» assignat. Dins de la categoria només el pot tenir una persona.'
+            : 'Premi «' . RaceResult::localPrizeLabel() . '» retirat.');
+        $this->back('/admin/resultats');
+    }
+
     /** Publica o amaga els resultats al web. */
     public function publish(): void
     {
@@ -112,7 +128,7 @@ class ResultsController extends Controller
         header('Content-Disposition: attachment; filename="resultats-' . date('Y-m-d') . '.csv"');
         $out = fopen('php://output', 'w');
         fwrite($out, "\xEF\xBB\xBF");
-        fputcsv($out, ['Ordre d\'arribada', 'Posició a la categoria', 'Dorsal', 'Participant', 'Categoria', 'Escola', 'Curs', 'Hora de registre'], ';', '"', '\\');
+        fputcsv($out, ['Ordre d\'arribada', 'Posició a la categoria', 'Dorsal', 'Participant', 'Categoria', 'Escola', 'Premi local', 'Hora de registre'], ';', '"', '\\');
         foreach (RaceResult::csvRows() as $row) {
             fputcsv($out, $row, ';', '"', '\\');
         }

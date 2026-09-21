@@ -65,23 +65,6 @@
         </div>
         <div class="field"><label for="school">Escola o club</label>
           <input type="text" id="school" name="school" value="<?= e($row['school'] ?? '') ?>"></div>
-        <?php
-          $courses = \Cros\Models\Registration::COURSES;
-          $course = (string) ($row['class_group'] ?? '');
-          if ($course !== '' && !in_array($course, $courses, true)) {
-              $courses[] = $course;
-          }
-        ?>
-        <div class="field"><label for="class_group">Curs</label>
-          <select id="class_group" name="class_group">
-            <option value="">—</option>
-            <?php foreach ($courses as $value): ?>
-              <option value="<?= e($value) ?>" <?= $course === $value ? 'selected' : '' ?>><?= e($value) ?></option>
-            <?php endforeach; ?>
-          </select>
-        </div>
-        <div class="field"><label for="shirt_size">Talla</label>
-          <input type="text" id="shirt_size" name="shirt_size" value="<?= e($row['shirt_size'] ?? '') ?>"></div>
         <div class="field"><label for="tutor_name">Persona de contacte</label>
           <input type="text" id="tutor_name" name="tutor_name" value="<?= e($row['tutor_name'] ?? '') ?>"></div>
         <div class="field"><label for="tutor_email">Correu</label>

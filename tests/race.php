@@ -408,6 +408,98 @@ check('Els altres camps de la categoria no s\'han perdut',
     str_contains(req('GET', $base . '/categories-i-premis', [], ['anon' => true])['body'], '1.000 m'));
 saveCategory($base, $alevi, ['medals' => '1', 'winners' => '3']);
 
+echo "\n== Premi «Primer local» ==\n";
+
+/** La fila d'un participant dins d'una taula de resultats. */
+function resultRow(string $html, string $name): string
+{
+    if (preg_match_all('#<tr>(.*?)</tr>#s', $html, $matches)) {
+        foreach ($matches[1] as $row) {
+            if (str_contains($row, $name)) {
+                return $row;
+            }
+        }
+    }
+    return '';
+}
+
+/** Identificador de l'arribada d'un participant, llegit del panell de resultats. */
+function resultRowId(string $html, string $name): int
+{
+    if (preg_match_all('#<tr>(.*?)</tr>#s', $html, $matches)) {
+        foreach ($matches[1] as $row) {
+            if (str_contains($row, $name) && preg_match('#/admin/resultats/(\d+)/premi-local#', $row, $id)) {
+                return (int) $id[1];
+            }
+        }
+    }
+    return 0;
+}
+
+check('La fitxa de la categoria porta el premi local',
+    str_contains(text(req('GET', $base . '/admin/contingut/categories/' . $alevi)['body']), 'Premi «Primer local»'));
+check('El nom del premi i l\'escola es configuren a Categories i premis',
+    str_contains(text(req('GET', $base . '/admin/configuracio/categories')['body']), 'Nom del premi local'));
+
+$panel = req('GET', $base . '/admin/resultats');
+check('El panell hi té una columna per marcar-lo', str_contains(text($panel['body']), 'Primer local'));
+check('Assenyala qui és de l\'escola del poble', str_contains(text($panel['body']), 'title="Escola del poble">local'));
+
+$jordiResult = resultRowId($panel['body'], 'Jordi' . $unique);
+$martaResult = resultRowId($panel['body'], 'Marta' . $unique);
+check('Es troben les arribades al panell', $jordiResult > 0 && $martaResult > 0, $jordiResult . '/' . $martaResult);
+
+$marked = req('POST', $base . '/admin/resultats/' . $jordiResult . '/premi-local',
+    ['_token' => token($panel['body']), 'enable' => '1']);
+check('Es marca el guanyador', $marked['status'] === 302);
+$publicLocal = text(req('GET', $base . '/resultats', [], ['anon' => true])['body']);
+check('El premi surt al costat del seu nom',
+    str_contains(resultRow($publicLocal, 'Jordi' . $unique), 'Primer local'),
+    resultRow($publicLocal, 'Jordi' . $unique));
+check('Només el porta una persona', substr_count($publicLocal, 'Primer local') === 1, (string) substr_count($publicLocal, 'Primer local'));
+
+// Marcar-ne un altre allibera l'anterior: només n'hi pot haver un per categoria.
+req('POST', $base . '/admin/resultats/' . $martaResult . '/premi-local',
+    ['_token' => token(req('GET', $base . '/admin/resultats')['body']), 'enable' => '1']);
+$publicLocal = text(req('GET', $base . '/resultats', [], ['anon' => true])['body']);
+check('En marcar-ne un altre, el primer el perd', substr_count($publicLocal, 'Primer local') === 1);
+check('I ara el porta qui toca',
+    str_contains(resultRow($publicLocal, 'Marta' . $unique), 'Primer local')
+    && !str_contains(resultRow($publicLocal, 'Jordi' . $unique), 'Primer local'));
+
+// El CSV se l'emporta.
+$csvLocal = req('GET', $base . '/admin/resultats/csv');
+check('El CSV porta la columna del premi', str_contains($csvLocal['body'], 'Premi local'));
+check('I qui l\'ha guanyat', preg_match('#Marta' . $unique . '[^\n]*Primer local#', $csvLocal['body']) === 1);
+
+// Desmarcar-lo el treu del web.
+req('POST', $base . '/admin/resultats/' . $martaResult . '/premi-local',
+    ['_token' => token(req('GET', $base . '/admin/resultats')['body']), 'enable' => '0']);
+check('Es pot desmarcar',
+    !str_contains(text(req('GET', $base . '/resultats', [], ['anon' => true])['body']), 'Primer local'));
+
+// Una categoria que no el dona no l'ensenya enlloc.
+saveCategory($base, $alevi, ['local_prize' => '0']);
+$panelOff = req('GET', $base . '/admin/resultats');
+check('Sense premi a la categoria, no hi ha res per marcar',
+    resultRowId($panelOff['body'], 'Jordi' . $unique) === 0);
+$catPage = text(req('GET', $base . '/categories-i-premis', [], ['anon' => true])['body']);
+check('I la pàgina de categories tampoc l\'anuncia en aquesta categoria',
+    !str_contains(resultRow($catPage, 'Aleví'), 'Primer local') && str_contains($catPage, 'Primer local'),
+    'les altres categories l\'han de conservar');
+
+saveCategory($base, $alevi, ['local_prize' => '1']);
+check('En tornar-lo a activar, la pàgina de categories l\'anuncia',
+    str_contains(text(req('GET', $base . '/categories-i-premis', [], ['anon' => true])['body']), 'Primer local'));
+
+// El nom del premi es pot canviar.
+saveSettings($base, 'categories', ['prizes_local_label' => 'Primer del poble']);
+req('POST', $base . '/admin/resultats/' . $jordiResult . '/premi-local',
+    ['_token' => token(req('GET', $base . '/admin/resultats')['body']), 'enable' => '1']);
+check('El nom del premi es pot canviar',
+    str_contains(text(req('GET', $base . '/resultats', [], ['anon' => true])['body']), 'Primer del poble'));
+saveSettings($base, 'categories', ['prizes_local_label' => 'Primer local']);
+
 echo "\n== Exportacions ==\n";
 $byCategory = req('GET', $base . '/admin/resultats/pdf');
 check('PDF de totes les categories', $byCategory['status'] === 200 && isPdf($byCategory['body']), 'estat ' . $byCategory['status']);

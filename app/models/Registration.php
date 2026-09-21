@@ -12,18 +12,6 @@ class Registration
     /** Opcions de gènere admeses als formularis. */
     public const GENDERS = ['femeni' => 'Femení', 'masculi' => 'Masculí'];
 
-    /** Cursos de l'escola, en l'ordre en què es mostren als formularis. */
-    public const COURSES = [
-        'Infantil 1er',
-        'Infantil 2on',
-        'Infantil 3r',
-        'Primària 1er',
-        'Primària 2on',
-        'Primària 3r',
-        'Primària 4rt',
-        'Primària 5è',
-        'Primària 6è',
-    ];
 
     public static function create(array $data): array
     {
@@ -35,11 +23,9 @@ class Registration
             'gender' => $data['gender'] ?: null,
             'category_id' => !empty($data['category_id']) ? (int) $data['category_id'] : null,
             'school' => $data['school'] ?: null,
-            'class_group' => $data['class_group'] ?: null,
             'tutor_name' => $data['tutor_name'] ?: null,
             'tutor_email' => $data['tutor_email'] ? mb_strtolower($data['tutor_email']) : null,
             'tutor_phone' => $data['tutor_phone'] ?: null,
-            'shirt_size' => $data['shirt_size'] ?: null,
             'notes' => $data['notes'] ?: null,
             'status' => 'confirmed',
             'consent_data' => (int) ($data['consent_data'] ?? 0),
@@ -185,8 +171,8 @@ class Registration
 
     /** Camps que la família pot canviar des del web. */
     public const EDITABLE = [
-        'first_name', 'last_name', 'birth_year', 'gender', 'school', 'class_group',
-        'shirt_size', 'tutor_name', 'tutor_phone', 'notes', 'consent_image',
+        'first_name', 'last_name', 'birth_year', 'gender', 'school',
+        'tutor_name', 'tutor_phone', 'notes', 'consent_image',
     ];
 
     /**
@@ -205,8 +191,6 @@ class Registration
             'birth_year' => $data['birth_year'] !== '' ? (int) $data['birth_year'] : null,
             'gender' => $data['gender'] ?: null,
             'school' => $data['school'] ?: null,
-            'class_group' => $data['class_group'] ?: null,
-            'shirt_size' => $data['shirt_size'] ?: null,
             'tutor_name' => $data['tutor_name'] ?: null,
             'tutor_phone' => $data['tutor_phone'] ?: null,
             'notes' => $data['notes'] ?: null,
@@ -282,7 +266,7 @@ class Registration
     {
         return Db::all(
             'SELECT r.bib_number, r.code, r.first_name, r.last_name, r.birth_year, r.gender, c.name AS category,
-                    r.school, r.class_group, r.tutor_name, r.tutor_email, r.tutor_phone, r.shirt_size,
+                    r.school, r.tutor_name, r.tutor_email, r.tutor_phone,
                     r.notes, r.status, r.consent_data, r.consent_image, r.created_at
              FROM registrations r LEFT JOIN categories c ON c.id = r.category_id
              ORDER BY r.created_at ASC'

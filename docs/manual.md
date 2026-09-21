@@ -101,8 +101,8 @@ Les famílies poden revisar i corregir les dades que van posar sense haver d'esc
 A **Les meves inscripcions** del web escriuen la seva adreça electrònica, reben un
 **codi de sis xifres** i, un cop escrit, veuen tots els participants que han inscrit amb
 aquella adreça. De cadascun poden canviar el nom, l'any de naixement (la categoria es
-torna a calcular sola), el gènere, l'escola, el curs, la talla, el contacte, les
-observacions i el consentiment d'imatge, i descarregar-ne el dorsal.
+torna a calcular sola), el gènere, l'escola, el contacte, les observacions i el
+consentiment d'imatge, i descarregar-ne el dorsal.
 
 El codi val 15 minuts i només serveix un cop. **No** es poden canviar des del web
 l'adreça de contacte, el número de dorsal ni l'estat de la inscripció: aquestes coses
@@ -221,6 +221,21 @@ a la cursa de famílies. Les tres primeres posicions porten els colors d'or, pla
 bronze, i de la quarta en endavant, el verd de la cursa. Al llistat de categories hi ha
 una columna **Premiats** que ho resumeix.
 
+#### Premi «Primer local»
+
+A més de les medalles, cada categoria pot donar un premi al **primer classificat de
+l'escola del poble**. S'activa a **Categories → editar → «Premi «Primer local»»**, i el
+nom del premi i quina és l'escola del poble es configuren a **Configuració → Categories i
+premis**.
+
+Aquest premi **el marqueu vosaltres a mà**, perquè qui és «del poble» no sempre es
+dedueix del nom que s'ha escrit a la inscripció. A **Resultats**, dins de cada categoria
+que el dona, hi ha una columna amb un botó **Marcar** a cada fila; les persones de
+l'escola configurada porten l'etiqueta *local* per trobar-les de seguida. Només el pot
+tenir una persona per categoria: si en marqueu una altra, la primera el perd. El premi
+surt al costat del seu nom a la classificació pública, al CSV i al peu del PDF de la
+categoria.
+
 **Exportacions** (botons de la mateixa pantalla):
 
 | Botó | Què genera |
@@ -251,6 +266,33 @@ Si us equivoqueu, des de la fitxa de la comanda podeu **restablir** un tiquet.
 - **Galeria**: pugeu les fotografies de la jornada.
 - **Configuració → Punt de recàrrega**: tanqueu la venda de tiquets.
 - **Sistema → Actualitzacions**: feu una còpia de seguretat per arxivar l'edició.
+
+## Textos legals
+
+**Configuració → SEO i legal** conté l'**avís legal** i la **política de privacitat** que
+es publiquen a `/avis-legal` i `/privacitat`. Hi trobareu uns textos ja redactats a partir
+del que fa aquest web: qui organitza la cursa, quines dades es demanen a la inscripció,
+qui hi té accés, quant de temps es guarden i quins drets té la gent.
+
+Dins d'aquests dos textos podeu escriure marcadors, que se substitueixen sols en
+publicar-se:
+
+| Marcador | Què hi posa |
+|---|---|
+| `{{entitat}}` | L'entitat responsable |
+| `{{cursa}}` | El nom del web |
+| `{{poble}}` | La població |
+| `{{correu}}` | El correu de contacte, ja enllaçat |
+| `{{telefon}}` | El telèfon de contacte |
+| `{{web}}` | L'adreça del web |
+
+Així, quan canvieu el correu o el telèfon a **Dades de la cursa**, els textos legals no es
+queden antics.
+
+> Els textos diuen que el web **no fa cap cobrament en línia**. Si algun dia activeu el
+> pagament amb targeta a **Configuració → Pagaments (Stripe)**, reviseu-los: caldrà
+> explicar-hi quines dades hi intervenen. I, com qualsevol text legal, val la pena que el
+> llegeixi algú de l'entitat abans de publicar-lo.
 
 ## Consells
 

@@ -187,6 +187,45 @@ foreach ($mapBefore as $key => $value) {
 }
 Settings::load(true);
 
+echo "\n== 0011: els textos legals ==\n";
+
+$legalBefore = [];
+foreach (['legal_entity', 'legal_notice', 'privacy_text'] as $key) {
+    $legalBefore[$key] = (string) Settings::get($key, '');
+}
+$migration = require CROS_APP . '/migrations/0011_textos_legals.php';
+
+// Una instal·lació amb els textos d'exemple de les versions anteriors.
+Settings::set('legal_entity', 'AFA Escola La Granada');
+Settings::set('legal_notice', '<p>Aquest lloc web és titularitat de l\'AFA de l\'Escola La Granada, entitat sense ànim de lucre que organitza el Cros Escolar de La Granada.</p>');
+Settings::set('privacy_text', '<p>Les dades personals recollides mitjançant els formularis d\'inscripció i de compra de tiquets s\'utilitzen exclusivament per organitzar el Cros Escolar La Granada i no se cedeixen a tercers, tret de les obligacions legals i dels serveis necessaris per al pagament (Stripe).</p><p>Podeu exercir els drets d\'accés, rectificació i supressió escrivint a l\'adreça de contacte.</p>');
+Settings::load(true);
+$migration(Db::conn());
+Settings::load(true);
+
+check('L\'entitat responsable passa a ser l\'AFA Jacint Verdaguer',
+    (string) Settings::get('legal_entity', '') === 'AFA Jacint Verdaguer de La Granada',
+    (string) Settings::get('legal_entity', ''));
+check('L\'avís legal queda redactat', substr_count((string) Settings::get('legal_notice', ''), '<h2>') >= 6);
+check('La privacitat també', substr_count((string) Settings::get('privacy_text', ''), '<h2>') >= 8);
+check('I ja no parla de Stripe',
+    stripos((string) Settings::get('privacy_text', ''), 'stripe') === false);
+
+// Una que ja s'havia redactat els seus textos: no s'hi toca.
+Settings::set('legal_notice', '<p>El nostre avís legal, escrit per l\'advocada de l\'entitat.</p>');
+Settings::set('legal_entity', 'AFA de prova');
+Settings::load(true);
+$migration(Db::conn());
+Settings::load(true);
+check('Els textos ja redactats es respecten',
+    (string) Settings::get('legal_notice', '') === '<p>El nostre avís legal, escrit per l\'advocada de l\'entitat.</p>');
+check('I el nom de l\'entitat també', (string) Settings::get('legal_entity', '') === 'AFA de prova');
+
+foreach ($legalBefore as $key => $value) {
+    Settings::set($key, $value);
+}
+Settings::load(true);
+
 echo "\n== Les opcions noves d'una versió arriben amb el seu valor per defecte ==\n";
 
 $asideBefore = (string) Settings::get('registrations_aside_text', '');

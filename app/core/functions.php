@@ -144,6 +144,28 @@ function setting_html(string $key, string $default = ''): string
     return \Cros\Core\Html::clean($value);
 }
 
+/**
+ * Text legal amb les dades de l'entitat posades al seu lloc.
+ *
+ * Als textos de l'avís legal i la privacitat s'hi poden escriure marcadors com
+ * ara {{entitat}} o {{correu}}: així, quan canvien les dades de contacte, els
+ * textos no es queden antics.
+ */
+function legal_html(string $key): string
+{
+    $email = trim((string) setting('contact_email', ''));
+    $replacements = [
+        '{{entitat}}' => e((string) setting('legal_entity', '')),
+        '{{cursa}}' => e((string) setting('site_name', '')),
+        '{{poble}}' => e((string) setting('event_town', '')),
+        '{{telefon}}' => e((string) setting('contact_phone', '')),
+        '{{web}}' => e((string) (parse_url(base_url(), PHP_URL_HOST) ?: '')),
+        '{{correu}}' => $email === '' ? '' : '<a href="mailto:' . e($email) . '">' . e($email) . '</a>',
+    ];
+
+    return strtr(setting_html($key), $replacements);
+}
+
 /** Redirecció HTTP i aturada de l'execució. */
 function redirect(string $path, int $status = 302): void
 {

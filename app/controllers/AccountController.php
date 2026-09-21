@@ -181,8 +181,6 @@ class AccountController extends Controller
             'birth_year' => (string) input('birth_year'),
             'gender' => (string) input('gender'),
             'school' => (string) input('school'),
-            'class_group' => (string) input('class_group'),
-            'shirt_size' => (string) input('shirt_size'),
             'tutor_name' => (string) input('tutor_name'),
             'tutor_phone' => (string) input('tutor_phone'),
             'notes' => mb_substr((string) input('notes'), 0, 500),
@@ -190,9 +188,6 @@ class AccountController extends Controller
         ];
         if (!isset(Registration::GENDERS[$data['gender']])) {
             $data['gender'] = '';
-        }
-        if (!in_array($data['class_group'], Registration::COURSES, true)) {
-            $data['class_group'] = '';
         }
 
         $errors = $this->validate([

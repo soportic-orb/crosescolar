@@ -50,22 +50,17 @@ class RegistrationController extends Controller
             'gender' => (string) input('gender'),
             'category_id' => (string) input('category_id'),
             'school' => (string) input('school'),
-            'class_group' => (string) input('class_group'),
             'tutor_name' => (string) input('tutor_name'),
             'tutor_email' => (string) input('tutor_email'),
             'tutor_phone' => (string) input('tutor_phone'),
-            'shirt_size' => (string) input('shirt_size'),
             'notes' => mb_substr((string) input('notes'), 0, 500),
             'consent_data' => input_bool('consent_data'),
             'consent_image' => input_bool('consent_image'),
         ];
 
-        // Gènere i curs només poden portar una de les opcions del formulari.
+        // El gènere només pot portar una de les opcions del formulari.
         if (!isset(Registration::GENDERS[$data['gender']])) {
             $data['gender'] = '';
-        }
-        if (!in_array($data['class_group'], Registration::COURSES, true)) {
-            $data['class_group'] = '';
         }
 
         $errors = $this->validate([

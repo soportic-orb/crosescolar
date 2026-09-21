@@ -1,15 +1,5 @@
 <?php
 /** «Les meves inscripcions»: modificar les dades d'un participant. */
-$sizes = ['4', '6', '8', '10', '12', '14', 'S', 'M', 'L', 'XL'];
-$courses = \Cros\Models\Registration::COURSES;
-$course = (string) ($registration['class_group'] ?? '');
-if ($course !== '' && !in_array($course, $courses, true)) {
-    $courses[] = $course;
-}
-$size = (string) ($registration['shirt_size'] ?? '');
-if ($size !== '' && !in_array($size, $sizes, true)) {
-    $sizes[] = $size;
-}
 ?>
 <?= \Cros\Core\View::partial('partials/page-header', [
     'title' => 'Modificar la inscripció',
@@ -54,29 +44,9 @@ if ($size !== '' && !in_array($size, $sizes, true)) {
             <input type="text" value="<?= e($registration['category_name'] ?? 'Per assignar') ?>" disabled>
           </div>
         </div>
-        <div class="form-row">
-          <div class="field">
-            <label for="school">Escola o club</label>
-            <input type="text" id="school" name="school" value="<?= e($registration['school'] ?? '') ?>">
-          </div>
-          <div class="field">
-            <label for="class_group">Curs</label>
-            <select id="class_group" name="class_group">
-              <option value="">—</option>
-              <?php foreach ($courses as $value): ?>
-                <option value="<?= e($value) ?>" <?= $course === $value ? 'selected' : '' ?>><?= e($value) ?></option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-          <div class="field">
-            <label for="shirt_size">Talla de samarreta</label>
-            <select id="shirt_size" name="shirt_size">
-              <option value="">—</option>
-              <?php foreach ($sizes as $value): ?>
-                <option value="<?= e($value) ?>" <?= $size === $value ? 'selected' : '' ?>><?= e($value) ?></option>
-              <?php endforeach; ?>
-            </select>
-          </div>
+        <div class="field">
+          <label for="school">Escola o club</label>
+          <input type="text" id="school" name="school" value="<?= e($registration['school'] ?? '') ?>">
         </div>
 
         <h2 style="margin-top:1.5rem">Dades de contacte</h2>

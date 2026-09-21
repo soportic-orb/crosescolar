@@ -2,7 +2,9 @@
 /** Classificació pública de la cursa. */
 use Cros\Core\Icons;
 use Cros\Models\Bib;
+use Cros\Models\RaceResult;
 $showBib = setting('results_show_bib', '1') === '1';
+$localLabel = RaceResult::localPrizeLabel();
 $publicPdf = setting('results_public_pdf', '1') === '1';
 // Guanyadors destacats amb medalla: or, plata, bronze i, a partir del quart, el verd de la cursa.
 // Cada categoria decideix si en mostra i a quants participants.
@@ -69,7 +71,12 @@ $medals = ['#c9a227', '#9aa6ad', '#b06a3b'];
                     <?php endif; ?>
                   </td>
                   <?php if ($showBib): ?><td class="mono"><?= e(Bib::number($row)) ?></td><?php endif; ?>
-                  <td><strong><?= e(trim($row['first_name'] . ' ' . $row['last_name'])) ?></strong></td>
+                  <td>
+                    <strong><?= e(trim($row['first_name'] . ' ' . $row['last_name'])) ?></strong>
+                    <?php if (!empty($group['local_prize']) && (int) ($row['local_prize'] ?? 0) === 1): ?>
+                      <span class="chip chip--accent"><?= Icons::svg('trophy', 'icon', 15) ?> <?= e($localLabel) ?></span>
+                    <?php endif; ?>
+                  </td>
                   <td style="color:var(--ink-soft)"><?= e($row['school'] ?? '') ?></td>
                 </tr>
               <?php endforeach; ?>

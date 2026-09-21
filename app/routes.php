@@ -107,6 +107,7 @@ $router->get('/admin/resultats', [ResultsController::class, 'index']);
 $router->post('/admin/resultats/arribada', [ResultsController::class, 'store']);
 $router->post('/admin/resultats/{id}/esborrar', [ResultsController::class, 'destroy']);
 $router->post('/admin/resultats/{id}/moure', [ResultsController::class, 'move']);
+$router->post('/admin/resultats/{id}/premi-local', [ResultsController::class, 'localPrize']);
 $router->post('/admin/resultats/publicar', [ResultsController::class, 'publish']);
 $router->get('/admin/resultats/pdf', [ResultsController::class, 'pdf']);
 $router->get('/admin/resultats/csv', [ResultsController::class, 'csv']);

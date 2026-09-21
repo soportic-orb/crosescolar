@@ -2,6 +2,9 @@
 /** Control de les arribades a meta. */
 use Cros\Core\Icons;
 use Cros\Models\Bib;
+use Cros\Models\RaceResult;
+
+$localLabel = RaceResult::localPrizeLabel();
 ?>
 <div class="grid-cards mb-2">
   <div class="kpi">
@@ -107,14 +110,34 @@ use Cros\Models\Bib;
       </h3>
       <div class="table-wrap">
         <table class="admin-table">
-          <thead><tr><th style="width:70px">Posició</th><th>Dorsal</th><th>Participant</th><th>Escola</th><th></th></tr></thead>
+          <thead><tr><th style="width:70px">Posició</th><th>Dorsal</th><th>Participant</th><th>Escola</th>
+            <?php if (!empty($group['local_prize'])): ?><th style="width:130px"><?= e($localLabel) ?></th><?php endif; ?>
+            <th></th></tr></thead>
           <tbody>
             <?php foreach ($group['rows'] as $row): ?>
+              <?php $hasLocal = (int) ($row['local_prize'] ?? 0) === 1; ?>
               <tr>
                 <td><strong><?= (int) $row['position'] ?></strong></td>
                 <td class="mono"><?= e(Bib::number($row)) ?></td>
                 <td><?= e(trim($row['first_name'] . ' ' . $row['last_name'])) ?></td>
-                <td class="text-soft"><?= e($row['school'] ?? '') ?></td>
+                <td class="text-soft">
+                  <?= e($row['school'] ?? '') ?>
+                  <?php if (RaceResult::isLocalSchool($row['school'] ?? null)): ?>
+                    <span class="badge badge--green" title="Escola del poble">local</span>
+                  <?php endif; ?>
+                </td>
+                <?php if (!empty($group['local_prize'])): ?>
+                  <td>
+                    <form method="post" action="<?= e(url('/admin/resultats/' . $row['id'] . '/premi-local')) ?>">
+                      <?= csrf_field() ?>
+                      <input type="hidden" name="enable" value="<?= $hasLocal ? '0' : '1' ?>">
+                      <button class="btn btn--sm <?= $hasLocal ? '' : 'btn--ghost' ?>" type="submit"
+                              title="<?= e($hasLocal ? 'Treure el premi «' . $localLabel . '»' : 'Donar-li el premi «' . $localLabel . '»') ?>">
+                        <?= Icons::svg('trophy', 'icon', 14) ?> <?= $hasLocal ? 'Premiat' : 'Marcar' ?>
+                      </button>
+                    </form>
+                  </td>
+                <?php endif; ?>
                 <td class="actions">
                   <form method="post" style="display:inline" action="<?= e(url('/admin/resultats/' . $row['id'] . '/moure')) ?>">
                     <?= csrf_field() ?><input type="hidden" name="direccio" value="puja">

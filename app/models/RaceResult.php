@@ -118,6 +118,58 @@ class RaceResult
         Db::update('results', ['position' => $target, 'updated_at' => date('Y-m-d H:i:s')], 'id = :id', ['id' => $id]);
     }
 
+    /**
+     * Marca (o desmarca) qui s'endú el premi «Primer local» de la categoria.
+     * Només n'hi pot haver un per categoria: marcar-ne un altre allibera l'anterior.
+     */
+    public static function setLocalPrize(int $id, bool $enable): bool
+    {
+        $result = self::find($id);
+        if (!$result) {
+            return false;
+        }
+        $categoryId = $result['category_id'] !== null ? (int) $result['category_id'] : null;
+        Db::update(
+            'results',
+            ['local_prize' => 0, 'updated_at' => date('Y-m-d H:i:s')],
+            $categoryId === null ? 'category_id IS NULL' : 'category_id = :cat',
+            $categoryId === null ? [] : ['cat' => $categoryId]
+        );
+        if ($enable) {
+            Db::update('results', ['local_prize' => 1, 'updated_at' => date('Y-m-d H:i:s')], 'id = :id', ['id' => $id]);
+        }
+        Auth::logActivity('result_local_prize', 'result', $id, ['dorsal' => $result['bib_number'], 'actiu' => $enable]);
+
+        return true;
+    }
+
+    /** Nom del premi al primer classificat de l'escola del poble. */
+    public static function localPrizeLabel(): string
+    {
+        $label = trim((string) setting('prizes_local_label', 'Primer local'));
+
+        return $label !== '' ? $label : 'Primer local';
+    }
+
+    /** L'escola del poble, per assenyalar al panell qui pot optar al premi local. */
+    public static function localSchool(): string
+    {
+        return trim((string) setting('prizes_local_school', ''));
+    }
+
+    /** Aquest participant és de l'escola del poble? Només és un suggeriment. */
+    public static function isLocalSchool(?string $school): bool
+    {
+        $school = trim((string) $school);
+        $local = self::localSchool();
+        if ($school === '' || $local === '') {
+            return false;
+        }
+        $normalize = static fn (string $value): string => mb_strtolower(trim(preg_replace('/\s+/u', ' ', $value) ?? ''));
+
+        return str_contains($normalize($school), $normalize($local)) || str_contains($normalize($local), $normalize($school));
+    }
+
     /** Recalcula les posicions d'una categoria perquè siguin consecutives. */
     public static function renumber(?int $categoryId): void
     {
@@ -135,9 +187,10 @@ class RaceResult
     /** Consulta base amb les dades del participant. */
     private static function baseQuery(): string
     {
-        return 'SELECT res.*, r.first_name, r.last_name, r.bib_number, r.school, r.class_group, r.birth_year,
+        return 'SELECT res.*, r.first_name, r.last_name, r.bib_number, r.school, r.birth_year,
                        c.name AS category_name, c.sort_order AS category_order,
-                       c.medals AS category_medals, c.winners AS category_winners
+                       c.medals AS category_medals, c.winners AS category_winners,
+                       c.local_prize AS category_local_prize
                 FROM results res
                 JOIN registrations r ON r.id = res.registration_id
                 LEFT JOIN categories c ON c.id = res.category_id';
@@ -175,6 +228,8 @@ class RaceResult
                     // Medalles: cada categoria decideix si en mostra i a quants.
                     'medals' => (int) ($row['category_medals'] ?? 1) === 1,
                     'winners' => max(0, min(50, (int) ($row['category_winners'] ?? 3))),
+                    // Premi al primer classificat de l'escola del poble, marcat a mà.
+                    'local_prize' => (int) ($row['category_local_prize'] ?? 0) === 1,
                     'rows' => [],
                 ];
             }
@@ -206,7 +261,7 @@ class RaceResult
                 trim($row['first_name'] . ' ' . $row['last_name']),
                 $row['category_name'] ?? '',
                 $row['school'] ?? '',
-                $row['class_group'] ?? '',
+                (int) ($row['local_prize'] ?? 0) === 1 ? self::localPrizeLabel() : '',
                 dt($row['created_at']),
             ];
         }
@@ -285,6 +340,25 @@ class RaceResult
             $pdf->setFont('helvetica', 11);
             $pdf->setColorHex('#4a5b50');
             $pdf->text(15, $y + 4, 'Encara no hi ha cap arribada registrada.');
+            return;
+        }
+
+        // El premi al primer classificat de l'escola del poble, per llegir-lo al lliurament.
+        if (!$arrivalOrder) {
+            foreach ($rows as $row) {
+                if ((int) ($row['local_prize'] ?? 0) !== 1) {
+                    continue;
+                }
+                if ($y > 272) {
+                    $pdf->addPage('a4');
+                    $y = self::pdfHeader($pdf, $title . ' (continuació)', count($rows));
+                }
+                $pdf->setFont('helvetica-bold', 10);
+                $pdf->setColorHex('#2f6b3c');
+                $pdf->text(15, $y + 5, self::localPrizeLabel() . ': ' . Bib::number($row) . ' · '
+                    . trim($row['first_name'] . ' ' . $row['last_name']));
+                break;
+            }
         }
     }
 

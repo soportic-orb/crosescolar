@@ -62,7 +62,17 @@
                     <span class="text-soft">—</span>
                   <?php endif; ?>
                 </td>
-                <td style="font-size:.92rem"><?= nl($category['prizes'] ?? '') ?></td>
+                <td style="font-size:.92rem">
+                  <?= nl($category['prizes'] ?? '') ?>
+                  <?php if ((int) ($category['local_prize'] ?? 0) === 1): ?>
+                    <div style="margin-top:.35rem">
+                      <span class="chip chip--accent">
+                        <?= \Cros\Core\Icons::svg('trophy', 'icon', 14) ?>
+                        <?= e(\Cros\Models\RaceResult::localPrizeLabel()) ?>
+                      </span>
+                    </div>
+                  <?php endif; ?>
+                </td>
               </tr>
             <?php endforeach; ?>
           </tbody>

@@ -5,7 +5,6 @@
  * desactivat (o s'ha passat la data límit), només s'hi mostra el text informatiu.
  */
 $errors = $errors ?? [];
-$sizes = ['4', '6', '8', '10', '12', '14', 'S', 'M', 'L', 'XL'];
 $linkLabel = trim((string) setting('registrations_closed_link_label', ''));
 $linkUrl = trim((string) setting('registrations_closed_link_url', ''));
 $externalLink = (bool) preg_match('#^https?://#i', $linkUrl);
@@ -84,29 +83,9 @@ $externalLink = (bool) preg_match('#^https?://#i', $linkUrl);
               </select>
             </div>
           </div>
-          <div class="form-row">
-            <div class="field">
-              <label for="school">Escola o club</label>
-              <input type="text" id="school" name="school" value="<?= e(old('school', 'Escola La Granada')) ?>">
-            </div>
-            <div class="field">
-              <label for="class_group">Curs</label>
-              <select id="class_group" name="class_group">
-                <option value="">—</option>
-                <?php foreach (\Cros\Models\Registration::COURSES as $course): ?>
-                  <option value="<?= e($course) ?>" <?= old('class_group') === $course ? 'selected' : '' ?>><?= e($course) ?></option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-            <div class="field">
-              <label for="shirt_size">Talla de samarreta</label>
-              <select id="shirt_size" name="shirt_size">
-                <option value="">—</option>
-                <?php foreach ($sizes as $size): ?>
-                  <option value="<?= e($size) ?>" <?= old('shirt_size') === $size ? 'selected' : '' ?>><?= e($size) ?></option>
-                <?php endforeach; ?>
-              </select>
-            </div>
+          <div class="field">
+            <label for="school">Escola o club</label>
+            <input type="text" id="school" name="school" value="<?= e(old('school', 'Escola La Granada')) ?>">
           </div>
 
           <h2 style="margin-top:1.5rem">Dades de contacte</h2>

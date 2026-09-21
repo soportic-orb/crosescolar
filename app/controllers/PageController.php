@@ -99,7 +99,7 @@ class PageController extends Controller
     {
         $this->view('public/text-page', [
             'title' => 'Avís legal',
-            'body' => setting_html('legal_notice'),
+            'body' => legal_html('legal_notice'),
         ]);
     }
 
@@ -107,7 +107,7 @@ class PageController extends Controller
     {
         $this->view('public/text-page', [
             'title' => 'Política de privacitat',
-            'body' => setting_html('privacy_text'),
+            'body' => legal_html('privacy_text'),
         ]);
     }
 

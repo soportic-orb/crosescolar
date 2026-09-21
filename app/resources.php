@@ -83,6 +83,8 @@ return [
             'winners' => ['label' => 'Participants premiats', 'type' => 'number', 'default' => '3', 'min' => '1', 'max' => '50',
                 'show_if' => 'medals',
                 'help' => 'Quants en reben premi: els tres primers, els quatre primers… Les tres primeres posicions porten els colors d\'or, plata i bronze, i la resta, el verd de la cursa.'],
+            'local_prize' => ['label' => 'Premi «Primer local»', 'type' => 'bool', 'default' => '1',
+                'help' => 'Aquesta categoria premia el primer classificat de l\'escola del poble. El guanyador es marca a mà des de Resultats, un per categoria. El nom del premi i l\'escola es configuren a Configuració → Categories i premis.'],
             'notes' => ['label' => 'Observacions', 'type' => 'textarea', 'rows' => 2],
             'sort_order' => ['label' => 'Ordre', 'type' => 'number', 'default' => '0'],
             'active' => ['label' => 'Visible', 'type' => 'bool', 'default' => '1'],

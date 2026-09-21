@@ -28,8 +28,6 @@
                 <tr><th>Gènere</th><td><?= e(\Cros\Models\Registration::GENDERS[$registration['gender']] ?? $registration['gender']) ?></td></tr>
               <?php endif; ?>
               <?php if (!empty($registration['school'])): ?><tr><th>Escola</th><td><?= e($registration['school']) ?></td></tr><?php endif; ?>
-              <?php if (!empty($registration['class_group'])): ?><tr><th>Curs</th><td><?= e($registration['class_group']) ?></td></tr><?php endif; ?>
-              <?php if (!empty($registration['shirt_size'])): ?><tr><th>Talla</th><td><?= e($registration['shirt_size']) ?></td></tr><?php endif; ?>
               <tr><th>Contacte</th><td><?= e($registration['tutor_name']) ?> · <?= e($registration['tutor_phone'] ?? '') ?></td></tr>
             </tbody>
           </table>

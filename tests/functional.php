@@ -95,6 +95,27 @@ $vella = req('GET', $base . '/esmorzar');
 check('L\'adreça antiga redirigeix a la nova',
     $vella['status'] === 301 && str_contains($vella['headers'], '/punt-de-recarrega'), 'estat ' . $vella['status']);
 
+echo "\n== Textos legals ==\n";
+$legal = req('GET', $base . '/avis-legal');
+$privacy = req('GET', $base . '/privacitat');
+check('Hi ha l\'avís legal', $legal['status'] === 200 && substr_count($legal['body'], '<h2>') >= 6);
+check('Hi ha la política de privacitat', $privacy['status'] === 200 && substr_count($privacy['body'], '<h2>') >= 8);
+check('Anomenen l\'entitat responsable',
+    str_contains(text($legal['body']), 'AFA Jacint Verdaguer de La Granada')
+    && str_contains(text($privacy['body']), 'AFA Jacint Verdaguer de La Granada'));
+check('Hi posen el correu de contacte configurat',
+    str_contains($legal['body'], 'mailto:cros@afalagranada.cat')
+    && str_contains($privacy['body'], 'mailto:cros@afalagranada.cat'));
+check('Cap marcador es queda sense substituir',
+    !str_contains($legal['body'], '{{') && !str_contains($privacy['body'], '{{'));
+check('No parlen de cap pagament en línia',
+    stripos($legal['body'], 'stripe') === false && stripos($privacy['body'], 'stripe') === false
+    && stripos($privacy['body'], 'targeta') !== false);
+check('La privacitat explica els drets i on reclamar',
+    str_contains(text($privacy['body']), 'Autoritat Catalana de Protecció de Dades')
+    && str_contains($privacy['body'], 'apdcat.gencat.cat'));
+check('I parla de les dades dels menors', str_contains(text($privacy['body']), 'menors d\'edat'));
+
 echo "\n== Menú principal ==\n";
 $menu = req('GET', $base . '/', [], ['anon' => true]);
 preg_match('#<nav class="nav".*?</nav>#s', $menu['body'], $nav);
@@ -125,11 +146,9 @@ check('El gènere només ofereix femení i masculí',
     substr_count($genderField[0] ?? '', '<option') === 3
     && str_contains($genderField[0] ?? '', 'Femení') && str_contains($genderField[0] ?? '', 'Masculí')
     && !str_contains($genderField[0] ?? '', 'Altre'), $genderField[0] ?? 'sense camp');
-preg_match('#<select id="class_group".*?</select>#s', $form['body'], $courseField);
-check('El curs es tria d\'una llista amb els nou cursos de l\'escola',
-    substr_count($courseField[0] ?? '', '<option') === 10
-    && str_contains($courseField[0] ?? '', 'Infantil 1er')
-    && str_contains($courseField[0] ?? '', 'Primària 6è'), $courseField[0] ?? 'sense camp');
+check('El formulari ja no demana el curs ni la talla de samarreta',
+    !str_contains($form['body'], 'name="class_group"') && !str_contains($form['body'], 'name="shirt_size"')
+    && !str_contains(text($form['body']), 'Talla de samarreta'));
 $registration = req('POST', $base . '/inscripcio', [
     '_token' => $csrf,
     'first_name' => 'Laia',
@@ -138,7 +157,6 @@ $registration = req('POST', $base . '/inscripcio', [
     'gender' => 'femeni',
     'category_id' => '',
     'school' => 'Escola La Granada',
-    'class_group' => 'Primària 4rt',
     'tutor_name' => 'Marc Ferrer',
     'tutor_email' => 'families@example.test',
     'tutor_phone' => '600000000',
@@ -161,7 +179,7 @@ check('Evita inscripcions duplicades', $duplicate['status'] === 302 && !str_cont
 req('POST', $base . '/inscripcio', [
     '_token' => token(req('GET', $base . '/inscripcio')['body']),
     'first_name' => 'Nil', 'last_name' => 'Fora ' . $unique, 'birth_year' => (string) ((int) date('Y') - 10),
-    'gender' => 'altre', 'class_group' => 'Batxillerat',
+    'gender' => 'altre', 'class_group' => 'Batxillerat', 'shirt_size' => 'XXL',
     'tutor_name' => 'Marc Ferrer', 'tutor_email' => 'families@example.test', 'consent_data' => '1',
 ]);
 
@@ -375,10 +393,13 @@ $csv = req('GET', $base . '/admin/comandes/exportar');
 check('Exportació CSV de comandes', $csv['status'] === 200 && str_contains($csv['headers'], 'text/csv'));
 $csv2 = req('GET', $base . '/admin/inscripcions/exportar');
 check('Exportació CSV d\'inscripcions', $csv2['status'] === 200 && str_contains($csv2['body'], 'Ferrer'));
-check('El curs triat es desa', str_contains($csv2['body'], 'Primària 4rt'));
-check('Descarta el gènere i el curs que no són del formulari',
+check('L\'exportació ja no porta el curs ni la talla',
+    !str_contains(text($csv2['body']), 'Curs') && !str_contains(text($csv2['body']), 'Talla'));
+check('Descarta el gènere que no és del formulari',
     str_contains($csv2['body'], 'Fora ' . $unique)   // la inscripció sí que s'ha desat
-    && !str_contains($csv2['body'], 'Batxillerat') && !str_contains($csv2['body'], 'altre'));
+    && !str_contains($csv2['body'], 'altre'));
+check('I els camps retirats no es desen encara que s\'enviïn',
+    !str_contains($csv2['body'], 'Batxillerat') && !str_contains($csv2['body'], 'XXL'));
 
 echo "\n== Inscripcions sense formulari en línia ==\n";
 $regForm = req('GET', $base . '/admin/configuracio/registrations');

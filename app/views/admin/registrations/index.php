@@ -39,7 +39,7 @@ use Cros\Core\Icons;
             </td>
             <td><?= e($row['birth_year']) ?></td>
             <td><?= e($row['category_name'] ?? '—') ?></td>
-            <td><?= e($row['school'] ?? '') ?> <span class="text-soft"><?= e($row['class_group'] ?? '') ?></span></td>
+            <td><?= e($row['school'] ?? '') ?></td>
             <td style="font-size:.85rem"><?= e($row['tutor_name'] ?? '') ?><div class="text-soft"><?= e($row['tutor_email'] ?? '') ?></div></td>
             <td class="text-soft" style="font-size:.84rem"><?= e(dt($row['created_at'], 'd/m H:i')) ?></td>
             <td class="actions">

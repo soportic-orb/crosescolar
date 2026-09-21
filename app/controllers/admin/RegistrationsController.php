@@ -178,7 +178,7 @@ class RegistrationsController extends Controller
         header('Content-Disposition: attachment; filename="inscripcions-' . date('Y-m-d') . '.csv"');
         $out = fopen('php://output', 'w');
         fwrite($out, "\xEF\xBB\xBF");
-        fputcsv($out, ['Dorsal', 'Codi', 'Nom', 'Cognoms', 'Any', 'Gènere', 'Categoria', 'Escola', 'Curs', 'Tutor/a', 'Correu', 'Telèfon', 'Talla', 'Notes', 'Estat', 'Consent. dades', 'Consent. imatge', 'Data'], ';', '"', '\\');
+        fputcsv($out, ['Dorsal', 'Codi', 'Nom', 'Cognoms', 'Any', 'Gènere', 'Categoria', 'Escola', 'Tutor/a', 'Correu', 'Telèfon', 'Notes', 'Estat', 'Consent. dades', 'Consent. imatge', 'Data'], ';', '"', '\\');
         foreach ($rows as $row) {
             fputcsv($out, array_values($row), ';', '"', '\\');
         }
@@ -267,11 +267,9 @@ class RegistrationsController extends Controller
             'gender' => (string) input('gender'),
             'category_id' => (int) input('category_id') ?: null,
             'school' => (string) input('school'),
-            'class_group' => (string) input('class_group'),
             'tutor_name' => (string) input('tutor_name'),
             'tutor_email' => mb_strtolower((string) input('tutor_email')),
             'tutor_phone' => (string) input('tutor_phone'),
-            'shirt_size' => (string) input('shirt_size'),
             'notes' => mb_substr((string) input('notes'), 0, 500),
             'status' => in_array((string) input('status'), ['confirmed', 'pending', 'cancelled'], true) ? (string) input('status') : 'confirmed',
             'consent_data' => input_bool('consent_data'),
