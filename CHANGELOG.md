@@ -20,6 +20,8 @@ i el versionatge semàntic.
   dibuixaven sense separació perquè l'estil `.flex` només existia al panell. Ara hi ha
   aire entre els botons i també entre les files quan n'hi ha més d'una.
 
+## [1.21.0] — 2026-09-21
+
 ### Afegit
 - **Les famílies poden anul·lar una inscripció**: a *Les meves inscripcions*, cada
   participant té el botó **Anul·lar la inscripció**, que demana confirmació abans de fer
