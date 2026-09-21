@@ -111,11 +111,14 @@ class RegistrationController extends Controller
         }
 
         if ($data['category_id'] === '' && $data['birth_year'] !== '') {
-            $category = Registration::categoryForYear((int) $data['birth_year']);
+            $category = Registration::categoryForYear((int) $data['birth_year'], (string) $data['gender']);
             $data['category_id'] = $category['id'] ?? '';
         }
 
         $registration = Registration::create($data);
+        // Qui acaba d'inscriure algú pot anar directament a «Les meves
+        // inscripcions» i corregir-hi el que calgui, sense esperar cap codi.
+        AccountController::remember((int) ($registration['id'] ?? 0));
         redirect('/inscripcio/confirmada/' . $registration['code']);
     }
 

@@ -74,22 +74,58 @@ class Bib
             }
         }
 
+        $sheet = self::sheet($size);
+        // La primera pàgina ja s'ha creat en importar la maqueta: si ara resulta
+        // que al full n'hi caben dos, cal que tingui la mida del full.
+        if ($template !== null && $sheet['per_sheet'] > 1) {
+            $pdf->resizePage($sheet['sheet']);
+        }
+
         $first = $template !== null;
+        $slot = 0;
         foreach ($registrations as $registration) {
             if ($first) {
-                $first = false; // la primera pàgina ja s'ha creat en importar la maqueta
-            } else {
-                $pdf->addPage($size);
+                $first = false;
+            } elseif ($slot === 0) {
+                $pdf->addPage($sheet['sheet']);
             }
+            $top = $slot * $sheet['offset'];
             if ($template !== null && $placement !== null) {
-                $pdf->useTemplate($template, $placement[0], $placement[1], $placement[2], $placement[3], $rotate);
+                $pdf->useTemplate($template, $placement[0], $placement[1] + $top, $placement[2], $placement[3], $rotate);
             }
-            self::drawFields($pdf, $registration, $size[0]);
+            self::drawFields($pdf, $registration, $size[0], $top);
+            $slot = ($slot + 1) % $sheet['per_sheet'];
         }
         if (!$registrations) {
-            $pdf->addPage($size);
+            $pdf->addPage($sheet['sheet']);
         }
         return $pdf->output();
+    }
+
+    /**
+     * Quants dorsals hi caben a cada full i quina mida té el full.
+     *
+     * Amb l'opció activada i un dorsal que ocupi com a molt mig A4 (un A5
+     * apaïsat, 210×148 mm), se n'imprimeixen dos per full A4 vertical, un a
+     * dalt i un a baix. Si el dorsal és més gran, se'n continua fent un per full.
+     *
+     * @param array{0:float,1:float} $size mida del dorsal en mm
+     * @return array{sheet:array{0:float,1:float},per_sheet:int,offset:float}
+     */
+    public static function sheet(array $size): array
+    {
+        $one = ['sheet' => $size, 'per_sheet' => 1, 'offset' => 0.0];
+        if (setting('bib_two_per_sheet', '0') !== '1') {
+            return $one;
+        }
+        [$a4Width, $a4Height] = Pdf::SIZES['a4'];
+        $half = $a4Height / 2;
+        // Mig mil·límetre de marge per als dissenys fets clavats a la mida.
+        if ($size[0] > $a4Width + 0.5 || $size[1] > $half + 0.5) {
+            return $one;
+        }
+
+        return ['sheet' => [$a4Width, $a4Height], 'per_sheet' => 2, 'offset' => $half];
     }
 
     /** Dorsal d'exemple per previsualitzar el disseny. */
@@ -238,24 +274,23 @@ class Bib
             : $label . ' (' . $years . ')';
     }
 
-    private static function drawFields(Pdf $pdf, array $registration, float $pageWidth): void
+    private static function drawFields(Pdf $pdf, array $registration, float $pageWidth, float $top = 0.0): void
     {
-        $name = self::name($registration);
-        $category = self::category($registration);
-
-        self::drawField($pdf, 'bib_number', self::number($registration), $pageWidth);
-        self::drawField($pdf, 'bib_name', $name, $pageWidth);
-        self::drawField($pdf, 'bib_category', $category, $pageWidth);
+        self::drawField($pdf, 'bib_number', self::number($registration), $pageWidth, $top);
+        self::drawField($pdf, 'bib_name', self::name($registration), $pageWidth, $top);
+        self::drawField($pdf, 'bib_category', self::category($registration), $pageWidth, $top);
     }
 
-    private static function drawField(Pdf $pdf, string $prefix, string $value, float $pageWidth): void
+    private static function drawField(Pdf $pdf, string $prefix, string $value, float $pageWidth, float $top = 0.0): void
     {
         // Sense valor per defecte explícit: així s'agafa el de l'esquema de configuració.
         if ($value === '' || $value === '—' || (string) setting($prefix . '_show') !== '1') {
             return;
         }
         $x = (float) setting($prefix . '_x');
-        $y = (float) setting($prefix . '_y');
+        // Les posicions es configuren dins del dorsal; «top» diu on comença
+        // el dorsal dins del full quan n'hi ha més d'un.
+        $y = (float) setting($prefix . '_y') + $top;
         $size = max(4.0, (float) setting($prefix . '_size'));
         $align = (string) setting($prefix . '_align');
         $bold = (string) setting($prefix . '_bold') === '1';

@@ -234,6 +234,9 @@ check('La inscripció es desa', $registration['status'] === 302 && str_contains(
 preg_match('#/inscripcio/confirmada/([A-Z0-9-]+)#', $registration['headers'], $m);
 $done = req('GET', $base . '/inscripcio/confirmada/' . ($m[1] ?? 'X'));
 check('Pàgina de confirmació', $done['status'] === 200 && str_contains($done['body'], 'Laia'));
+check('La confirmació ja no té el botó del punt de recàrrega',
+    preg_match('#class="btn[^"]*" href="[^"]*/punt-de-recarrega"#', $done['body']) === 0);
+check('I porta a «Les meves inscripcions»', str_contains($done['body'], '/les-meves-inscripcions'));
 check('Assigna la categoria per any', str_contains($done['body'], 'Aleví'), 'categoria assignada automàticament');
 
 $duplicate = req('POST', $base . '/inscripcio', [

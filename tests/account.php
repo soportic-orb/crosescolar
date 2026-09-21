@@ -180,7 +180,7 @@ req('POST', $base . '/les-meves-inscripcions/' . $laia['id'] . '/modificar', [
     'tutor_name' => 'Anna Duran',
 ]);
 $row = Registration::find((int) $laia['id']);
-$expected = Registration::categoryForYear($year);
+$expected = Registration::categoryForYear($year, (string) ($row['gender'] ?? ''));
 check('Canviar l\'any recalcula la categoria',
     (int) ($row['category_id'] ?? 0) === (int) ($expected['id'] ?? 0) && $expected !== null,
     (string) ($row['category_name'] ?? 'cap'));
@@ -191,6 +191,83 @@ $invalid = req('POST', $base . '/les-meves-inscripcions/' . $laia['id'] . '/modi
 ]);
 check('Un nom buit no es desa', $invalid['status'] === 200 && str_contains($invalid['body'], 'field--error'));
 check('La inscripció manté el nom', (Registration::find((int) $laia['id'])['first_name'] ?? '') === 'Laieta' . $unique);
+
+echo "\n== La categoria segueix l'any i el gènere ==\n";
+
+// Dues categories del mateix any: una de noies i una de nois.
+$catM = Db::insert('categories', ['name' => 'Infantil masculí ' . $unique, 'code' => 'IM' . $unique,
+    'year_from' => 2013, 'year_to' => 2014, 'gender' => 'masculi', 'sort_order' => 900, 'active' => 1]);
+$catF = Db::insert('categories', ['name' => 'Infantil femení ' . $unique, 'code' => 'IF' . $unique,
+    'year_from' => 2013, 'year_to' => 2014, 'gender' => 'femeni', 'sort_order' => 901, 'active' => 1]);
+$catMixt = Db::insert('categories', ['name' => 'Famílies ' . $unique, 'code' => 'FA' . $unique,
+    'year_from' => 1950, 'year_to' => 2012, 'gender' => 'mixt', 'sort_order' => 902, 'active' => 1]);
+
+check('Una noia va a la categoria femenina',
+    (int) (Registration::categoryForYear(2013, 'femeni')['id'] ?? 0) === $catF,
+    (string) (Registration::categoryForYear(2013, 'femeni')['name'] ?? 'cap'));
+check('I un noi, a la masculina',
+    (int) (Registration::categoryForYear(2013, 'masculi')['id'] ?? 0) === $catM);
+$noGender = Registration::categoryForYear(2013, '');
+check('Sense gènere no se n\'assigna cap de masculina ni femenina',
+    $noGender === null || ($noGender['gender'] ?? 'mixt') === 'mixt',
+    (string) ($noGender['name'] ?? 'cap'));
+check('I un noi no acaba mai en una categoria femenina',
+    (Registration::categoryForYear(2013, 'masculi')['gender'] ?? '') !== 'femeni');
+check('Si només n\'hi ha de mixtes, s\'hi assigna igualment',
+    (int) (Registration::categoryForYear(2000, 'femeni')['id'] ?? 0) === $catMixt);
+check('Un any sense cap categoria queda per assignar',
+    Registration::categoryForYear(1900, 'femeni') === null);
+
+// I el mateix pel formulari públic d'inscripció.
+$anon = sys_get_temp_dir() . '/cros-account-anon.txt';
+@unlink($anon);
+$jarBefore = $jar;
+$jar = $anon;
+$form = req('GET', $base . '/inscripcio');
+$done = req('POST', $base . '/inscripcio', [
+    '_token' => token($form['body']),
+    'first_name' => 'Noia' . $unique, 'last_name' => 'Prova', 'birth_year' => '2013',
+    'gender' => 'femeni', 'category_id' => '',
+    'school' => 'Escola La Granada', 'tutor_name' => 'Tutor',
+    'tutor_email' => 'noia' . strtolower($unique) . '@example.test',
+    'consent_data' => '1', 'consent_rules' => '1',
+]);
+$nova = Db::one('SELECT r.id, r.category_id FROM registrations r WHERE r.first_name = :n', ['n' => 'Noia' . $unique]);
+check('En inscriure\'s pel web, la noia va a la categoria femenina',
+    (int) ($nova['category_id'] ?? 0) === $catF,
+    'categoria ' . (string) ($nova['category_id'] ?? 'cap'));
+
+echo "\n== Qui acaba d'inscriure's hi entra directament ==\n";
+$mine = req('GET', $base . '/les-meves-inscripcions');
+check('No li demana cap codi', !str_contains($mine['body'], 'name="email"'), 'no hi ha d\'haver formulari d\'adreça');
+check('Hi veu qui acaba d\'inscriure', str_contains($mine['body'], 'Noia' . $unique));
+check('I ho pot modificar', str_contains($mine['body'], '/modificar'));
+check('Amb un avís que només hi ha el que acaba de fer',
+    str_contains(text($mine['body']), 'acabeu de fer'));
+$editOwn = req('GET', $base . '/les-meves-inscripcions/' . (int) $nova['id'] . '/modificar');
+check('El formulari de modificació s\'obre', $editOwn['status'] === 200);
+$savedOwn = req('POST', $base . '/les-meves-inscripcions/' . (int) $nova['id'] . '/modificar', [
+    '_token' => token($editOwn['body']),
+    'first_name' => 'Noieta' . $unique, 'last_name' => 'Prova', 'birth_year' => '2013',
+    'gender' => 'femeni', 'tutor_name' => 'Tutor',
+]);
+check('I els canvis es desen', $savedOwn['status'] === 302
+    && (Registration::find((int) $nova['id'])['first_name'] ?? '') === 'Noieta' . $unique);
+check('Amb «?codi» pot demanar el codi per veure-les totes',
+    str_contains(req('GET', $base . '/les-meves-inscripcions?codi=1')['body'], 'name="email"'));
+
+// Un altre navegador no hi arriba.
+$other = sys_get_temp_dir() . '/cros-account-altri.txt';
+@unlink($other);
+$jar = $other;
+check('Un altre navegador no hi entra',
+    str_contains(req('GET', $base . '/les-meves-inscripcions')['body'], 'name="email"'));
+$blocked = req('GET', $base . '/les-meves-inscripcions/' . (int) $nova['id'] . '/modificar');
+check('Ni pot obrir la inscripció', $blocked['status'] === 302, 'estat ' . $blocked['status']);
+$jar = $jarBefore;
+
+Db::delete('registrations', 'first_name = :n', ['n' => 'Noieta' . $unique]);
+Db::delete('categories', 'id IN (:a, :b, :c)', ['a' => $catM, 'b' => $catF, 'c' => $catMixt]);
 
 echo "\n== Només les pròpies ==\n";
 $other = req('GET', $base . '/les-meves-inscripcions/' . $altri['id'] . '/modificar');

@@ -1,11 +1,21 @@
 <?php /** «Les meves inscripcions»: llista de participants de l'adreça validada. */ ?>
+<?php $partial = ($scope ?? 'email') !== 'email'; ?>
 <?= \Cros\Core\View::partial('partials/page-header', [
     'title' => 'Les meves inscripcions',
-    'subtitle' => 'Inscripcions fetes amb ' . $email,
+    'subtitle' => $partial ? 'Inscripcions que acabeu de fer' : 'Inscripcions fetes amb ' . $email,
     'breadcrumb' => ['Les meves inscripcions' => ''],
 ]) ?>
 <section class="section">
   <div class="container-narrow">
+    <?php if ($partial): ?>
+      <div class="notice-box" style="margin-bottom:1.4rem">
+        Aquí hi teniu el que acabeu d'inscriure des d'aquest navegador i ho podeu corregir.
+        Si n'heu fet més en un altre moment o des d'un altre dispositiu,
+        <a href="<?= e(url('/les-meves-inscripcions', ['codi' => 1])) ?>">demaneu un codi d'accés</a>
+        i les veureu totes.
+      </div>
+    <?php endif; ?>
+
     <?php if (!$registrations): ?>
       <div class="card">
         <p style="margin:0">No hi ha cap inscripció feta amb aquesta adreça.</p>

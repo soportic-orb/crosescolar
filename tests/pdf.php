@@ -177,6 +177,76 @@ if ($withYears !== null) {
         trim(str_replace("\n", ' ', $withYears)));
 }
 
+echo "\n== Dos dorsals per full ==\n";
+$before = [
+    'bib_template' => (string) Settings::get('bib_template', ''),
+    'bib_orientation' => (string) Settings::get('bib_orientation', 'auto'),
+    'bib_page_size' => (string) Settings::get('bib_page_size', 'a5'),
+    'bib_number_y' => (string) Settings::get('bib_number_y', ''),
+    'bib_name_y' => (string) Settings::get('bib_name_y', ''),
+    'bib_category_y' => (string) Settings::get('bib_category_y', ''),
+];
+Settings::setMany([
+    'bib_template' => '', 'bib_page_size' => 'a5', 'bib_orientation' => 'landscape',
+    'bib_number_y' => '55', 'bib_name_y' => '95', 'bib_category_y' => '115',
+]);
+$three = [
+    ['first_name' => 'Laia', 'last_name' => 'Duran', 'bib_number' => 1],
+    ['first_name' => 'Pau', 'last_name' => 'Duran', 'bib_number' => 2],
+    ['first_name' => 'Roc', 'last_name' => 'Soler', 'bib_number' => 3],
+];
+
+Settings::set('bib_two_per_sheet', '0');
+check('Desactivat, un dorsal per pàgina', substr_count(Bib::pdf($three), '/Type /Page') === 4);
+check('I la pàgina té la mida del dorsal',
+    Bib::sheet([210.0, 148.0])['per_sheet'] === 1);
+
+Settings::set('bib_two_per_sheet', '1');
+$sheet = Bib::sheet([210.0, 148.0]);
+check('Un A5 apaïsat en deixa posar dos', $sheet['per_sheet'] === 2, (string) $sheet['per_sheet']);
+check('I el full passa a ser A4 vertical',
+    abs($sheet['sheet'][0] - 210.0) < 0.5 && abs($sheet['sheet'][1] - 297.0) < 0.5,
+    implode('×', $sheet['sheet']));
+check('El segon dorsal va a la meitat de baix', abs($sheet['offset'] - 148.5) < 0.5, (string) $sheet['offset']);
+check('Un dorsal A4 sencer no es parteix', Bib::sheet([210.0, 297.0])['per_sheet'] === 1);
+check('Ni un A5 vertical, que no hi cabria', Bib::sheet([148.0, 210.0])['per_sheet'] === 1);
+
+$document = Bib::pdf($three);
+check('Tres dorsals ocupen dos fulls', substr_count($document, '/Type /Page') === 3,
+    (string) substr_count($document, '/Type /Page'));
+$text = pdf_text($document);
+if ($text !== null) {
+    $pages = explode("\f", $text);
+    check('Al primer full hi ha els dos primers',
+        str_contains($pages[0] ?? '', 'Laia Duran') && str_contains($pages[0] ?? '', 'Pau Duran'),
+        trim(str_replace("\n", ' ', $pages[0] ?? '')));
+    check('I el tercer va al segon full',
+        str_contains($pages[1] ?? '', 'Roc Soler') && !str_contains($pages[1] ?? '', 'Laia'),
+        trim(str_replace("\n", ' ', $pages[1] ?? '')));
+    check('Tots tres hi són', substr_count($text, 'Duran') === 2 && str_contains($text, 'Soler'));
+}
+
+// Amb maqueta, cada meitat en porta una.
+$sample = CROS_ROOT . '/uploads/documents/maqueta-per-full.pdf';
+@mkdir(dirname($sample), 0775, true);
+copy(__DIR__ . '/fixtures/pdf/maqueta.pdf', $sample);
+Settings::set('bib_template', 'documents/maqueta-per-full.pdf');
+$withTemplate = Bib::pdf([$three[0], $three[1]]);
+// «/Type /Page» també apareix al node «/Type /Pages»: per això n'hi ha una de més.
+check('Amb maqueta, els dos dorsals caben en un full',
+    substr_count($withTemplate, '/Type /Page') === 2, (string) substr_count($withTemplate, '/Type /Page'));
+check('I el full és A4 vertical',
+    preg_match('#/MediaBox \[0 0 595\.\d+ 841\.\d+\]#', $withTemplate) === 1);
+$text = pdf_text($withTemplate);
+if ($text !== null) {
+    check('Amb els dos participants al mateix full',
+        str_contains($text, 'Laia Duran') && str_contains($text, 'Pau Duran'));
+}
+
+@unlink($sample);
+Settings::set('bib_two_per_sheet', '0');
+Settings::setMany($before);
+
 echo "\n== Anys de les categories ==\n";
 check('Dos anys diferents es mostren tots dos',
     Content::years(['year_from' => 2013, 'year_to' => 2014]) === '2013–2014');

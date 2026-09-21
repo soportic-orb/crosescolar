@@ -159,8 +159,13 @@ els podeu imprimir igualment.
    els anys de naixement: *Infantil masculí (2013–2014)*, *Prebenjamí femení (2020)*.
 4. Premeu **«Veure un dorsal de prova»** per comprovar com queda abans d'imprimir.
 
-Per imprimir-los tots: **Inscripcions → Dorsals en PDF** (un dorsal per pàgina, i es pot
-filtrar per categoria). Cada fitxa d'inscripció també té el seu botó de descàrrega.
+Amb **«Dos dorsals per full A4»** cada full vertical en porta dos, un a dalt i un a baix,
+i es gasta la meitat de paper. Només s'aplica si el dorsal hi cap — un A5 apaïsat
+(210×148 mm) o més petit; si és més gran, se'n continua fent un per full. Comproveu amb el
+dorsal de prova que el número, el nom i la categoria quedin dins del dorsal: si alguna
+posició se'n surt, al full de dos es ficaria dins de l'altre dorsal.
+
+Per imprimir-los tots: **Inscripcions → Dorsals en PDF** (es pot filtrar per categoria). Cada fitxa d'inscripció també té el seu botó de descàrrega.
 
 El número s'assigna **sol** en inscriure's, tant si ho fa la família pel web com si el
 feu vosaltres des de **Inscripcions → Nova**: el sistema agafa el següent lliure (001,

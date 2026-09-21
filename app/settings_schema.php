@@ -183,6 +183,8 @@ return [
                 'help' => 'Només si la maqueta surt de costat o del revés: el gir s\'aplica abans de l\'orientació. Comproveu-ho amb el botó «Dorsal de prova».'],
             'bib_page_size' => ['label' => 'Mida quan no hi ha maqueta', 'type' => 'select', 'default' => 'a5', 'options' => ['a4' => 'A4 (210×297 mm)', 'a5' => 'A5 (148×210 mm)', 'a6' => 'A6 (105×148 mm)'],
                 'help' => 'L\'orientació de més amunt també s\'hi aplica.'],
+            'bib_two_per_sheet' => ['label' => 'Dos dorsals per full A4', 'type' => 'bool', 'default' => '0',
+                'help' => 'En imprimir-los, cada full A4 vertical porta dos dorsals, un a dalt i un a baix, per gastar la meitat de paper. Només s\'aplica si el dorsal hi cap: un A5 apaïsat (210×148 mm) o més petit. Si és més gran, se\'n continua fent un per full.'],
             'bib_digits' => ['label' => 'Xifres del número de dorsal', 'type' => 'number', 'default' => '3', 'help' => 'Amb 3 xifres, el dorsal 1 es mostra com a 001.'],
             'bib_number_show' => ['label' => 'Mostrar el número', 'type' => 'bool', 'default' => '1'],
             'bib_number_x' => ['label' => 'El número: posició X (mm)', 'type' => 'number', 'step' => '0.5', 'default' => '74'],

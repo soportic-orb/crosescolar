@@ -17,10 +17,52 @@ class AccountController extends Controller
     /** Minuts que dura la sessió un cop validat el codi. */
     private const SESSION_MINUTES = 60;
 
+    /** Quantes inscripcions pròpies recorda el navegador com a màxim. */
+    private const OWN_LIMIT = 30;
+
     /** L'apartat es pot desactivar des del panell. */
     public static function enabled(): bool
     {
         return setting('registrations_selfservice', '1') === '1';
+    }
+
+    /**
+     * Recorda una inscripció acabada de fer en aquest navegador.
+     *
+     * Serveix perquè qui acaba d'inscriure algú pugui anar directament a
+     * «Les meves inscripcions» i corregir-hi el que calgui, sense esperar cap
+     * codi. Només dona accés al que ha escrit aquesta mateixa sessió: per veure
+     * la resta d'inscripcions d'una adreça continua fent falta el codi, perquè
+     * escriure una adreça en un formulari no demostra que sigui teva.
+     */
+    public static function remember(int $registrationId): void
+    {
+        if ($registrationId <= 0) {
+            return;
+        }
+        $own = (array) ($_SESSION['own_registrations'] ?? []);
+        $own[] = $registrationId;
+        $own = array_values(array_unique(array_map('intval', $own)));
+        $_SESSION['own_registrations'] = array_slice($own, -self::OWN_LIMIT);
+    }
+
+    /**
+     * Inscripcions fetes des d'aquest navegador que encara existeixen.
+     * @return array<int,int>
+     */
+    public static function ownIds(): array
+    {
+        $own = array_values(array_unique(array_map('intval', (array) ($_SESSION['own_registrations'] ?? []))));
+        if (!$own) {
+            return [];
+        }
+        $found = array_map(static fn (array $row): int => (int) $row['id'], Registration::forIds($own));
+        if (count($found) !== count($own)) {
+            // Si alguna s'ha esborrat des del panell, s'oblida.
+            $_SESSION['own_registrations'] = $found;
+        }
+
+        return $found;
     }
 
     /** Adreça validada en aquesta sessió, o '' si no n'hi ha cap. */
@@ -39,6 +81,12 @@ class AccountController extends Controller
     {
         $this->ensureEnabled();
         if (self::email() !== '') {
+            $this->listing();
+            return;
+        }
+        // Qui acaba d'inscriure algú veu de seguida el que ha escrit; amb «?codi»
+        // demana el codi per veure també la resta d'inscripcions de l'adreça.
+        if (input('codi', '') === '' && self::ownIds()) {
             $this->listing();
             return;
         }
@@ -147,7 +195,8 @@ class AccountController extends Controller
     public function logout(): void
     {
         $this->checkCsrf();
-        unset($_SESSION['account_email'], $_SESSION['account_until'], $_SESSION['account_pending'], $_SESSION['account_tries']);
+        unset($_SESSION['account_email'], $_SESSION['account_until'], $_SESSION['account_pending'],
+            $_SESSION['account_tries'], $_SESSION['own_registrations']);
         flash('success', 'Heu sortit de «Les meves inscripcions».');
         redirect('/');
     }
@@ -156,12 +205,7 @@ class AccountController extends Controller
     public function edit(array $params): void
     {
         $this->ensureEnabled();
-        $email = $this->requireEmail();
-        $registration = Registration::findForEmail((int) $params['id'], $email);
-        if (!$registration) {
-            abort(404, 'No hem trobat aquesta inscripció.');
-        }
-        $this->editView($registration, []);
+        $this->editView($this->registrationOrFail((int) $params['id']), []);
     }
 
     /** Desa els canvis d'una inscripció. */
@@ -169,11 +213,7 @@ class AccountController extends Controller
     {
         $this->ensureEnabled();
         $this->checkCsrf();
-        $email = $this->requireEmail();
-        $registration = Registration::findForEmail((int) $params['id'], $email);
-        if (!$registration) {
-            abort(404, 'No hem trobat aquesta inscripció.');
-        }
+        $registration = $this->registrationOrFail((int) $params['id']);
 
         $data = [
             'first_name' => (string) input('first_name'),
@@ -203,24 +243,28 @@ class AccountController extends Controller
             return;
         }
 
-        Registration::updateForEmail((int) $registration['id'], $email, $data);
+        Registration::applyChanges($registration, $data);
         log_line('inscripcions', 'Inscripció modificada per la família', [
             'id' => (int) $registration['id'],
-            'email' => $email,
+            'email' => (string) ($registration['tutor_email'] ?? ''),
+            'acces' => self::email() !== '' ? 'codi' : 'acabada d\'inscriure',
         ]);
         flash('success', 'Hem desat els canvis de ' . $data['first_name'] . '.');
         redirect('/les-meves-inscripcions');
     }
 
-    /** Llista de participants inscrits amb aquesta adreça. */
+    /** Llista de participants: tots els de l'adreça validada, o els acabats d'inscriure. */
     private function listing(): void
     {
         $email = self::email();
+        $registrations = $email !== '' ? Registration::forEmail($email) : Registration::forIds(self::ownIds());
         $this->view('public/account', [
             'title' => 'Les meves inscripcions',
             'noindex' => true,
             'email' => $email,
-            'registrations' => Registration::forEmail($email),
+            // Amb «session» només s'hi veu el que s'ha inscrit des d'aquest navegador.
+            'scope' => $email !== '' ? 'email' : 'session',
+            'registrations' => $registrations,
         ]);
     }
 
@@ -234,15 +278,26 @@ class AccountController extends Controller
         ]);
     }
 
-    /** Exigeix una sessió validada. */
-    private function requireEmail(): string
+    /**
+     * La inscripció que s'està consultant, si aquesta sessió hi té dret: perquè
+     * ha validat l'adreça amb un codi o perquè l'acaba d'inscriure ella mateixa.
+     */
+    private function registrationOrFail(int $id): array
     {
         $email = self::email();
-        if ($email === '') {
-            flash('error', 'Per veure les vostres inscripcions cal demanar un codi d\'accés.');
-            redirect('/les-meves-inscripcions');
+        $registration = $email !== '' ? Registration::findForEmail($id, $email) : null;
+        if (!$registration && in_array($id, self::ownIds(), true)) {
+            $registration = Registration::find($id);
         }
-        return $email;
+        if (!$registration) {
+            if ($email === '' && !self::ownIds()) {
+                flash('error', 'Per veure les vostres inscripcions cal demanar un codi d\'accés.');
+                redirect('/les-meves-inscripcions');
+            }
+            abort(404, 'No hem trobat aquesta inscripció.');
+        }
+
+        return $registration;
     }
 
     private function ensureEnabled(): void

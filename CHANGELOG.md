@@ -3,6 +3,30 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.15.0] — 2026-09-21
+
+### Corregit
+- **La categoria automàtica no mirava el gènere.** En inscriure's triant «assignar
+  automàticament», el sistema agafava la primera categoria que quadrava amb l'any de
+  naixement, de manera que amb categories separades per gènere una participant podia
+  acabar a la categoria masculina. Ara s'hi busca primer la categoria del seu gènere; si
+  no n'hi ha cap, una de mixta; i si tampoc, la inscripció queda per assignar en lloc de
+  posar-hi la que no toca. En modificar la inscripció, canviar el gènere també recalcula
+  la categoria.
+- **Després d'inscriure algú, «Les meves inscripcions» hi entra directament**, sense
+  demanar cap codi: qui acaba d'omplir el formulari pot corregir-hi el que calgui. Només
+  s'hi veu el que s'ha inscrit des d'aquell navegador; per veure la resta d'inscripcions
+  de l'adreça continua fent falta el codi, perquè escriure una adreça en un formulari no
+  demostra que sigui teva.
+
+### Afegit
+- **Dos dorsals per full A4**: nova opció a *Configuració → Dorsals*. Cada full vertical
+  porta dos dorsals apaïsats, un a dalt i un a baix, i es gasta la meitat de paper. Només
+  s'aplica quan el dorsal hi cap (un A5 apaïsat o més petit).
+
+### Canviat
+- La pàgina de confirmació d'inscripció ja no té el botó del punt de recàrrega.
+
 ## [1.14.0] — 2026-09-21
 
 ### Canviat

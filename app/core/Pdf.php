@@ -61,6 +61,24 @@ class Pdf
      * Afegeix una pàgina nova.
      * @param string|array $size nom («a4», «a5»…), o [amplada, alçada] en mm
      */
+    /**
+     * Canvia la mida de la pàgina actual sense perdre'n el contingut.
+     * Serveix quan la mida definitiva no es coneix fins després de crear-la.
+     *
+     * @param array{0:float,1:float}|string $size
+     */
+    public function resizePage($size): void
+    {
+        if ($this->current < 0) {
+            return;
+        }
+        $dimensions = is_string($size)
+            ? (self::SIZES[strtolower($size)] ?? self::SIZES['a4'])
+            : [(float) $size[0], (float) $size[1]];
+        $this->pages[$this->current]['width'] = $dimensions[0];
+        $this->pages[$this->current]['height'] = $dimensions[1];
+    }
+
     public function addPage($size = 'a4', string $orientation = 'portrait'): void
     {
         if (is_string($size)) {

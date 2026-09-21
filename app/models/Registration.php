@@ -151,6 +151,31 @@ class Registration
         );
     }
 
+    /**
+     * Inscripcions concretes per identificador, per a qui acaba de fer-les en
+     * aquesta mateixa sessió del navegador.
+     * @param array<int,int> $ids
+     */
+    public static function forIds(array $ids): array
+    {
+        $ids = array_values(array_filter(array_map('intval', $ids)));
+        if (!$ids) {
+            return [];
+        }
+        $in = [];
+        $params = [];
+        foreach ($ids as $index => $id) {
+            $in[] = ':id' . $index;
+            $params['id' . $index] = $id;
+        }
+
+        return Db::all(
+            self::WITH_CATEGORY . ' WHERE r.id IN (' . implode(', ', $in) . ')
+             ORDER BY r.bib_number ASC, r.id ASC',
+            $params
+        );
+    }
+
     /** Inscripció concreta d'una adreça de contacte (per a «Les meves inscripcions»). */
     public static function findForEmail(int $id, string $email): ?array
     {
@@ -187,9 +212,17 @@ class Registration
     public static function updateForEmail(int $id, string $email, array $data): ?array
     {
         $current = self::findForEmail($id, $email);
-        if (!$current) {
-            return null;
-        }
+
+        return $current ? self::applyChanges($current, $data) : null;
+    }
+
+    /**
+     * Desa els canvis d'una inscripció ja comprovada. Qui crida aquest mètode
+     * ja ha decidit que la persona hi té dret.
+     */
+    public static function applyChanges(array $current, array $data): ?array
+    {
+        $id = (int) $current['id'];
         $changes = [
             'first_name' => $data['first_name'],
             'last_name' => $data['last_name'],
@@ -202,9 +235,11 @@ class Registration
             'consent_image' => (int) ($data['consent_image'] ?? 0),
             'updated_at' => date('Y-m-d H:i:s'),
         ];
-        // Si canvia l'any de naixement, la categoria es torna a calcular.
-        if ((int) $current['birth_year'] !== (int) $changes['birth_year'] && $changes['birth_year'] !== null) {
-            $category = self::categoryForYear((int) $changes['birth_year']);
+        // Si canvia l'any de naixement o el gènere, la categoria es torna a calcular.
+        $genderChanged = (string) ($current['gender'] ?? '') !== (string) ($changes['gender'] ?? '');
+        $yearChanged = (int) $current['birth_year'] !== (int) $changes['birth_year'];
+        if (($yearChanged || $genderChanged) && $changes['birth_year'] !== null) {
+            $category = self::categoryForYear((int) $changes['birth_year'], (string) ($changes['gender'] ?? ''));
             $changes['category_id'] = $category['id'] ?? null;
         }
         Db::update('registrations', $changes, 'id = :id', ['id' => $id]);
@@ -220,20 +255,32 @@ class Registration
     }
 
     /** Categoria suggerida segons l'any de naixement. */
-    public static function categoryForYear(int $year): ?array
+    public static function categoryForYear(int $year, string $gender = ''): ?array
     {
         $categories = Db::all(
             'SELECT * FROM categories WHERE active = 1 AND year_from IS NOT NULL AND year_to IS NOT NULL
-             ORDER BY sort_order ASC'
+             ORDER BY sort_order ASC, id ASC'
         );
+
+        $sameGender = null;
+        $mixed = null;
         foreach ($categories as $category) {
             $from = min((int) $category['year_from'], (int) $category['year_to']);
             $to = max((int) $category['year_from'], (int) $category['year_to']);
-            if ($year >= $from && $year <= $to) {
-                return $category;
+            if ($year < $from || $year > $to) {
+                continue;
+            }
+            $categoryGender = (string) ($category['gender'] ?? 'mixt');
+            if ($gender !== '' && $categoryGender === $gender) {
+                $sameGender = $sameGender ?? $category;
+            } elseif ($categoryGender === 'mixt') {
+                $mixed = $mixed ?? $category;
             }
         }
-        return null;
+
+        // Primer la categoria del seu gènere; si no n'hi ha, una de mixta. Mai una
+        // de l'altre gènere: val més deixar-la per assignar que posar-hi la que no toca.
+        return $sameGender ?? $mixed;
     }
 
     /** Envia la confirmació a la família i l'avís a l'organització. */

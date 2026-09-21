@@ -43,9 +43,10 @@
     <div class="flex" style="margin-top:1.5rem">
       <a class="btn" href="<?= e(url('/inscripcio')) ?>">Inscriure un altre participant</a>
       <?php if (\Cros\Controllers\AccountController::enabled()): ?>
-        <a class="btn btn--ghost" href="<?= e(url('/les-meves-inscripcions')) ?>">Les meves inscripcions</a>
+        <a class="btn btn--ghost" href="<?= e(url('/les-meves-inscripcions')) ?>">
+          <?= \Cros\Core\Icons::svg('edit', 'icon', 18) ?> Les meves inscripcions
+        </a>
       <?php endif; ?>
-      <a class="btn btn--ghost" href="<?= e(url('/punt-de-recarrega')) ?>">Punt de recàrrega</a>
     </div>
   </div>
 </section>
