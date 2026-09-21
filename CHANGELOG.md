@@ -5,65 +5,49 @@ i el versionatge semàntic.
 
 ## [1.20.0] — 2026-09-21
 
-### Canviat
-- **El dorsal que es descarrega la família porta dues còpies**: un full A4 vertical amb el
-  mateix dorsal a dalt i a baix, apaïsats, separats per una línia de punts amb unes
-  tisores i el text «Retalleu per aquí». Cada còpia se centra dins de la seva meitat i la
-  línia passa per una franja en blanc, de manera que els dos dorsals queden ben separats
-  encara que el disseny arribi fins a la vora. Amb un sol full en tenen un per al pit i un de
-  recanvi. Si hi ha més d'un participant, cadascun té el seu full. Si el dorsal ocupa un
-  A4 sencer i no es pot partir el full, se'n fan dues còpies en dos fulls.
-- El que s'imprimeix des del panell no canvia: un dorsal per pàgina, o dos de diferents
-  per full amb l'opció «Dos dorsals per full A4».
-
-### Afegit
-- El motor de PDF sap dibuixar **línies de punts i cercles**, que és el que fa falta per a
-  la marca de retallar.
-
-## [1.19.0] — 2026-09-21
-
-### Afegit
-- **Confeti en confirmar la inscripció**: en acabar d'inscriure algú, la pàgina de
-  confirmació celebra el moment amb una pluja de confeti dels colors del web. Dura uns
-  segons i desapareix sola. Es pot apagar a *Configuració → Inscripcions*, i qui tingui
-  activat «reduir el moviment» al seu dispositiu no el veu mai. Fet sense cap llibreria
-  externa: no afegeix cap pes ni cap connexió a tercers.
-
-## [1.18.0] — 2026-09-21
-
-### Afegit
-- **Imprimir els resultats d'una categoria**: a *Resultats* hi ha un selector **Imprimir**
-  que genera el PDF de la categoria triada (o de totes) directament, sense haver de
-  filtrar abans la pantalla. El selector **Veure**, que filtra el llistat, queda a part i
-  ara va etiquetat.
-
-### Canviat
-- **El PDF de resultats diu clarament de quina categoria és**: la categoria surt a la
-  franja verda de dalt i com a títol gran, amb el gènere i els anys de naixement quan en
-  té («Aleví femení (2016–2017)»), i just a sota hi consta quanta gent hi ha
-  classificada. També a les pàgines de continuació.
-- El nom del fitxer PDF porta el nom de la categoria en lloc del seu número intern.
-
-## [1.17.0] — 2026-09-21
+Aquesta versió recull tot el que s'ha fet des de la 1.15.1.
 
 ### Afegit
 - **Menú del web configurable**: nou apartat *Continguts → Menú del web*. S'hi tria quins
   apartats surten al menú públic, s'endrecen amb fletxes i se'ls pot canviar el nom. Els
   que depenen d'una altra cosa —els *Resultats* fins que no es publiquen, *Els meus
   tiquets* sense venda en línia— hi surten marcats com a «ara no es veu» i apareixen sols
-  quan toca. El botó «Inscriu-te!» continua sempre al final.
-- Els apartats que abans no hi eren (*Reglament*, *Punt de recàrrega*, *Preguntes
-  freqüents*, *Contacte*, *Inscripció*) ara es poden afegir al menú sense tocar codi. En
-  actualitzar, el menú queda exactament com estava.
-
-## [1.16.0] — 2026-09-21
-
-### Afegit
+  quan toca. El botó «Inscriu-te!» continua sempre al final. Els apartats que abans no hi
+  eren (*Reglament*, *Punt de recàrrega*, *Preguntes freqüents*, *Contacte*, *Inscripció*)
+  ara s'hi poden afegir sense tocar codi. En actualitzar, el menú queda exactament com estava.
 - **L'escola al dorsal**: a *Configuració → Dorsals* hi ha un quart camp, l'**escola o
   club** que la família escriu a la inscripció, amb les mateixes opcions que el número, el
   nom i la categoria (posició, mida, color, alineació i negreta). Ve desactivat: en
   activar-lo, apareixen les posicions i es pot col·locar amb el botó «Dorsal de prova».
   Si una inscripció no porta escola, al seu dorsal no s'hi dibuixa res.
+- **Imprimir els resultats d'una categoria**: a *Resultats* hi ha un selector **Imprimir**
+  que genera el PDF de la categoria triada (o de totes) directament, sense haver de
+  filtrar abans la pantalla. El selector **Veure**, que filtra el llistat, queda a part i
+  ara va etiquetat.
+- **Confeti en confirmar la inscripció**: en acabar d'inscriure algú, la pàgina de
+  confirmació celebra el moment amb una pluja de confeti dels colors del web. Dura uns
+  segons i desapareix sola. Es pot apagar a *Configuració → Inscripcions*, i qui tingui
+  activat «reduir el moviment» al seu dispositiu no el veu mai. Fet sense cap llibreria
+  externa: no afegeix cap pes ni cap connexió a tercers.
+- El motor de PDF sap dibuixar **línies de punts i cercles**, que és el que fa falta per a
+  la marca de retallar.
+
+### Canviat
+- **El dorsal que es descarrega la família porta dues còpies**: un full A4 vertical amb el
+  mateix dorsal a dalt i a baix, apaïsats, separats per una línia de punts amb unes
+  tisores i el text «Retalleu per aquí». Cada còpia se centra dins de la seva meitat i la
+  línia passa per una franja en blanc, de manera que els dos dorsals queden ben separats
+  encara que el disseny arribi fins a la vora. Amb un sol full en tenen un per al pit i un
+  de recanvi. Si hi ha més d'un participant, cadascun té el seu full. Si el dorsal ocupa un
+  A4 sencer i no es pot partir el full, se'n fan dues còpies en dos fulls.
+- El que s'imprimeix des del panell no canvia: un dorsal per pàgina, o dos de diferents
+  per full amb l'opció «Dos dorsals per full A4».
+- **El PDF de resultats diu clarament de quina categoria és**: la categoria surt a la
+  franja verda de dalt i com a títol gran, amb el gènere i els anys de naixement quan en
+  té («Aleví femení (2016–2017)»), i just a sota hi consta quanta gent hi ha
+  classificada. També a les pàgines de continuació.
+- El nom del fitxer PDF dels resultats porta el nom de la categoria en lloc del seu número
+  intern.
 
 ## [1.15.1] — 2026-09-21
 
