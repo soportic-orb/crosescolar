@@ -6,6 +6,9 @@ i el versionatge semàntic.
 ## [1.13.0] — 2026-09-21
 
 ### Afegit
+- **Dorsals amb el nom sol**: a *Configuració → Dorsals* hi ha la casella **«Només el nom,
+  sense cognoms»**. Amb ella activada, al dorsal hi surt «Laia» en lloc de «Laia Ferrer
+  Miró»; va bé quan el dorsal és petit o quan es vol que s'hi llegeixi de lluny.
 - **Correus a les persones inscrites**: nou apartat **Enviaments** al panell. S'hi escriu
   el tema i el cos amb un **editor visual** (negreta, cursiva, títols, llistes i enllaços,
   amb un botó per veure i tocar l'HTML) i es tria a qui va: totes les persones inscrites,

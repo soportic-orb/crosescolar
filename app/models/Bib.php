@@ -194,9 +194,23 @@ class Bib
         return [($page[0] - $width) / 2, ($page[1] - $height) / 2, $width, $height];
     }
 
+    /**
+     * El nom que va al dorsal: el nom sencer o només el de pila, segons
+     * l'opció «Només el nom, sense cognoms».
+     */
+    public static function name(array $registration): string
+    {
+        $first = trim((string) ($registration['first_name'] ?? ''));
+        if (setting('bib_name_first_only', '0') === '1') {
+            return $first;
+        }
+
+        return trim($first . ' ' . trim((string) ($registration['last_name'] ?? '')));
+    }
+
     private static function drawFields(Pdf $pdf, array $registration, float $pageWidth): void
     {
-        $name = trim(($registration['first_name'] ?? '') . ' ' . ($registration['last_name'] ?? ''));
+        $name = self::name($registration);
         $category = (string) ($registration['category_name'] ?? '');
 
         self::drawField($pdf, 'bib_number', self::number($registration), $pageWidth);

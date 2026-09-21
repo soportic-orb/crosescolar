@@ -126,6 +126,24 @@ if ($text !== null) {
     check('El dorsal porta la categoria', str_contains($text, 'Aleví (3r-4t)'));
 }
 
+// Només el nom de pila: va bé quan el dorsal és petit o es vol llegir de lluny.
+Settings::set('bib_name_first_only', '1');
+check('Sense cognoms, el nom és només el de pila',
+    Bib::name(['first_name' => 'Laia', 'last_name' => 'Ferrer Miró']) === 'Laia');
+$short = pdf_text(Bib::pdf([
+    ['first_name' => 'Laia', 'last_name' => 'Ferrer Miró', 'bib_number' => 1, 'category_name' => 'Aleví (3r-4t)'],
+]));
+if ($short !== null) {
+    check('I al dorsal tampoc hi surten',
+        str_contains($short, 'Laia') && !str_contains($short, 'Ferrer'),
+        trim(str_replace("\n", ' ', $short)));
+    check('La resta del dorsal no canvia',
+        str_contains($short, '001') && str_contains($short, 'Aleví (3r-4t)'));
+}
+Settings::set('bib_name_first_only', '0');
+check('En tornar-ho a desactivar, hi surt el nom sencer',
+    Bib::name(['first_name' => 'Laia', 'last_name' => 'Ferrer Miró']) === 'Laia Ferrer Miró');
+
 // Amb maqueta
 $templatePath = CROS_ROOT . '/uploads/documents/maqueta-de-prova.pdf';
 @mkdir(dirname($templatePath), 0775, true);
