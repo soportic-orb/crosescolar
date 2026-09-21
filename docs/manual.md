@@ -149,9 +149,10 @@ els podeu imprimir igualment.
    apaïsats que el programa de disseny ha desat en un PDF vertical. Si la maqueta surt
    de costat o del revés, corregiu-ho amb **Gir de la maqueta**. A dalt del formulari hi
    diu quina mida té la maqueta i quina tindrà el dorsal.
-3. Indiqueu on van el **número**, el **nom** i la **categoria**: posició X i Y en
-   mil·límetres des de la cantonada superior esquerra, mida de lletra, color,
-   alineació i negreta. Qualsevol dels tres camps es pot amagar. Si canvieu
+3. Indiqueu on van el **número**, el **nom**, la **categoria** i l'**escola**: posició X i
+   Y en mil·límetres des de la cantonada superior esquerra, mida de lletra, color,
+   alineació i negreta. Qualsevol dels quatre camps es pot amagar; l'escola ve
+   desactivada. Si canvieu
    l'orientació, reviseu aquestes posicions: el dorsal ja no té la mateixa forma.
    Amb **«Només el nom, sense cognoms»** al dorsal hi surt «Laia» en lloc de «Laia
    Ferrer Miró»: va bé quan el dorsal és petit o quan voleu que s'hi llegeixi de lluny.

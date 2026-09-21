@@ -177,15 +177,45 @@ if ($withYears !== null) {
         trim(str_replace("\n", ' ', $withYears)));
 }
 
+echo "\n== L'escola al dorsal ==\n";
+$participant = ['first_name' => 'Laia', 'last_name' => 'Ferrer', 'bib_number' => 4,
+    'school' => 'Escola La Granada', 'category_name' => 'Aleví',
+    'category_gender' => 'femeni', 'category_year_from' => 2016, 'category_year_to' => 2017];
+
+Settings::set('bib_school_show', '0');
+$without = pdf_text(Bib::pdf([$participant]));
+if ($without !== null) {
+    check('Desactivada, l\'escola no surt al dorsal', !str_contains($without, 'Escola La Granada'),
+        trim(str_replace("\n", ' ', $without)));
+}
+
+Settings::set('bib_school_show', '1');
+$with = pdf_text(Bib::pdf([$participant]));
+if ($with !== null) {
+    check('Activada, hi surt', str_contains($with, 'Escola La Granada'),
+        trim(str_replace("\n", ' ', $with)));
+    check('I la resta del dorsal no canvia',
+        str_contains($with, '004') && str_contains($with, 'Laia Ferrer') && str_contains($with, 'Aleví'));
+}
+check('El dorsal de prova també l\'ensenya',
+    ($sample = pdf_text(Bib::sample())) === null || str_contains($sample, 'Escola La Granada'));
+
+// Sense escola a la inscripció, no hi ha cap línia buida.
+$noSchool = pdf_text(Bib::pdf([['first_name' => 'Pau', 'last_name' => 'Vidal', 'bib_number' => 5]]));
+if ($noSchool !== null) {
+    check('Sense escola, no s\'hi dibuixa res', !str_contains($noSchool, 'Escola'),
+        trim(str_replace("\n", ' ', $noSchool)));
+}
+Settings::set('bib_school_show', '0');
+
 echo "\n== Dos dorsals per full ==\n";
-$before = [
-    'bib_template' => (string) Settings::get('bib_template', ''),
-    'bib_orientation' => (string) Settings::get('bib_orientation', 'auto'),
-    'bib_page_size' => (string) Settings::get('bib_page_size', 'a5'),
-    'bib_number_y' => (string) Settings::get('bib_number_y', ''),
-    'bib_name_y' => (string) Settings::get('bib_name_y', ''),
-    'bib_category_y' => (string) Settings::get('bib_category_y', ''),
-];
+// Es desen els valors d'ara sense posar-hi cap valor per defecte: si es
+// restaurés una cadena buida, l'opció es quedaria en blanc al panell.
+$before = [];
+foreach (['bib_template', 'bib_orientation', 'bib_page_size',
+          'bib_number_y', 'bib_name_y', 'bib_category_y'] as $key) {
+    $before[$key] = (string) Settings::get($key);
+}
 Settings::setMany([
     'bib_template' => '', 'bib_page_size' => 'a5', 'bib_orientation' => 'landscape',
     'bib_number_y' => '55', 'bib_name_y' => '95', 'bib_category_y' => '115',

@@ -139,6 +139,7 @@ class Bib
             'category_gender' => 'femeni',
             'category_year_from' => 2016,
             'category_year_to' => 2017,
+            'school' => 'Escola La Granada',
         ]]);
     }
 
@@ -279,6 +280,7 @@ class Bib
         self::drawField($pdf, 'bib_number', self::number($registration), $pageWidth, $top);
         self::drawField($pdf, 'bib_name', self::name($registration), $pageWidth, $top);
         self::drawField($pdf, 'bib_category', self::category($registration), $pageWidth, $top);
+        self::drawField($pdf, 'bib_school', trim((string) ($registration['school'] ?? '')), $pageWidth, $top);
     }
 
     private static function drawField(Pdf $pdf, string $prefix, string $value, float $pageWidth, float $top = 0.0): void

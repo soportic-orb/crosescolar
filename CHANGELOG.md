@@ -3,6 +3,15 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.16.0] — 2026-09-21
+
+### Afegit
+- **L'escola al dorsal**: a *Configuració → Dorsals* hi ha un quart camp, l'**escola o
+  club** que la família escriu a la inscripció, amb les mateixes opcions que el número, el
+  nom i la categoria (posició, mida, color, alineació i negreta). Ve desactivat: en
+  activar-lo, apareixen les posicions i es pot col·locar amb el botó «Dorsal de prova».
+  Si una inscripció no porta escola, al seu dorsal no s'hi dibuixa res.
+
 ## [1.15.1] — 2026-09-21
 
 ### Afegit
