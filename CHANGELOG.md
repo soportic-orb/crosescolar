@@ -3,6 +3,32 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.21.0] — 2026-09-21
+
+### Afegit
+- **Les famílies poden anul·lar una inscripció**: a *Les meves inscripcions*, cada
+  participant té el botó **Anul·lar la inscripció**, que demana confirmació abans de fer
+  res. La inscripció **no s'esborra**: es queda al panell amb l'estat **Anul·lada**, amb
+  el dia i l'hora de la baixa i amb qui la va fer (la família o l'organització), i
+  **conserva el seu número de dorsal**, que ja no es donarà mai a ningú altre —així un
+  dorsal imprès no pot acabar en dues mans diferents. La família en rep un correu de
+  confirmació i l'organització, l'avís corresponent.
+- **Filtre d'estat al llistat d'inscripcions**: *Sense les anul·lades* (com es veu per
+  defecte), *Totes* o *Només les anul·lades*. Les anul·lades hi surten marcades i
+  apagades, i la capçalera en diu quantes n'hi ha.
+
+### Canviat
+- Un participant anul·lat no surt als **dorsals per imprimir** del panell, la seva família
+  ja no en pot descarregar el PDF, no entra als **correus massius** i no compta als
+  totals de participants per categoria ni als comptadors del tauler.
+- **A meta**, passar un dorsal anul·lat ja no apunta cap arribada: el panell avisa que la
+  inscripció està anul·lada i recorda que, si finalment corre, cal tornar-la a activar.
+- Les dades d'una inscripció anul·lada ja no es poden modificar des del web.
+- La fitxa del panell explica la diferència entre **anul·lar** (el dorsal queda reservat) i
+  **esborrar** (treu la fila i el número pot tornar a circular), i en permet la
+  reactivació posant l'estat a *Confirmada*.
+- L'exportació CSV d'inscripcions porta una columna nova, **Anul·lada el**.
+
 ## [1.20.0] — 2026-09-21
 
 Aquesta versió recull tot el que s'ha fet des de la 1.15.1.

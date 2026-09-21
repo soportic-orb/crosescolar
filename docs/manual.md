@@ -125,14 +125,36 @@ A **Les meves inscripcions** del web escriuen la seva adreça electrònica, rebe
 **codi de sis xifres** i, un cop escrit, veuen tots els participants que han inscrit amb
 aquella adreça. De cadascun poden canviar el nom, l'any de naixement (la categoria es
 torna a calcular sola), el gènere, l'escola, el contacte, les observacions i el
-consentiment d'imatge, i descarregar-ne el dorsal.
+consentiment d'imatge, descarregar-ne el dorsal i, si cal, anul·lar la inscripció.
 
 El codi val 15 minuts i només serveix un cop. **No** es poden canviar des del web
-l'adreça de contacte, el número de dorsal ni l'estat de la inscripció: aquestes coses
-les feu vosaltres des del panell.
+l'adreça de contacte ni el número de dorsal: aquestes coses les feu vosaltres des del
+panell.
+
+#### Anul·lar una inscripció
+
+Amb el botó **Anul·lar la inscripció** una família pot donar de baixa un participant
+que finalment no correrà. Abans de fer-ho el web els demana que ho confirmin i, un cop
+fet, en rebeu un avís per correu (si teniu posada l'adreça d'avisos).
+
+La inscripció **no s'esborra**: es queda al panell amb l'estat **Anul·lada**, amb el dia
+i l'hora de la baixa i amb el seu **número de dorsal**, que d'aquesta manera no es donarà
+mai a ningú altre. Un participant anul·lat no surt als dorsals per imprimir, la seva
+família ja no en pot descarregar el PDF, no rep els correus massius i, si algú li passa
+el dorsal per meta, el panell avisa que està anul·lat en comptes d'apuntar l'arribada.
+Tampoc es compta als totals de participants per categoria.
+
+Al llistat d'inscripcions el filtre **Sense les anul·lades / Totes / Només les anul·lades**
+decideix quines veieu; per defecte queden amagades. Per recuperar-ne una, obriu la fitxa,
+poseu l'estat a **Confirmada** i deseu: torna a ser una inscripció normal amb el mateix
+dorsal de sempre.
+
+> Anul·lar no és el mateix que **Esborrar**. Esborrar treu la fila de la base de dades i
+> el número de dorsal pot acabar sent d'algú altre; anul·lar el reserva per sempre.
 
 Si preferiu que ningú no pugui tocar les seves dades, desactiveu
-**Configuració → Inscripcions → «Les meves inscripcions» actiu** i la pàgina desapareix.
+**Configuració → Inscripcions → «Les meves inscripcions» actiu** i la pàgina desapareix
+(amb ella, també la possibilitat d'anul·lar-se).
 
 ### 6.2. Recorreguts i voltes de cada categoria
 

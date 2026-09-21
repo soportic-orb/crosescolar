@@ -34,6 +34,18 @@ class RaceResult
         if (!$registration) {
             return ['status' => 'error', 'message' => 'La inscripció no existeix.', 'result' => null];
         }
+        if (Registration::isCancelled($registration)) {
+            // El dorsal es conserva però el participant es va donar de baixa.
+            return [
+                'status' => 'error',
+                'message' => sprintf(
+                    'El dorsal %s (%s) està anul·lat. Si finalment corre, torneu a activar la inscripció des del panell.',
+                    Bib::number($registration),
+                    trim($registration['first_name'] . ' ' . $registration['last_name'])
+                ),
+                'result' => null,
+            ];
+        }
         $existing = Db::one('SELECT * FROM results WHERE registration_id = :id', ['id' => $registrationId]);
         if ($existing) {
             return [
@@ -247,7 +259,7 @@ class RaceResult
     {
         return [
             'total' => (int) Db::val('SELECT COUNT(*) FROM results', [], 0),
-            'registrations' => (int) Db::val('SELECT COUNT(*) FROM registrations', [], 0),
+            'registrations' => (int) Db::val('SELECT COUNT(*) FROM registrations r WHERE ' . Registration::ACTIVE, [], 0),
             'categories' => (int) Db::val('SELECT COUNT(DISTINCT category_id) FROM results', [], 0),
             'last' => Db::one(self::baseQuery() . ' ORDER BY res.arrival_seq DESC LIMIT 1'),
         ];

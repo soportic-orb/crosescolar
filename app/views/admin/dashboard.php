@@ -123,7 +123,11 @@ $currency = (string) setting('payments_currency', 'EUR');
         <tbody>
           <?php foreach ($recentRegistrations as $registration): ?>
             <tr>
-              <td><a href="<?= e(url('/admin/inscripcions/' . $registration['id'])) ?>"><?= e($registration['first_name'] . ' ' . $registration['last_name']) ?></a></td>
+              <td><a href="<?= e(url('/admin/inscripcions/' . $registration['id'])) ?>"><?= e($registration['first_name'] . ' ' . $registration['last_name']) ?></a>
+                <?php if (\Cros\Models\Registration::isCancelled($registration)): ?>
+                  <span class="badge badge--red">Anul·lada</span>
+                <?php endif; ?>
+              </td>
               <td><?= e($registration['category_name'] ?? '—') ?></td>
               <td class="text-soft" style="font-size:.85rem"><?= e(dt($registration['created_at'], 'd/m H:i')) ?></td>
             </tr>

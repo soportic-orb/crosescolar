@@ -20,10 +20,16 @@ class RegistrationsController extends Controller
         Auth::requireLogin();
         $search = trim((string) input('q'));
         $categoryId = (int) input('categoria', 0);
+        $status = (string) input('estat', 'actives');
         $page = max(1, (int) input('p', 1));
 
         $where = [];
         $params = [];
+        if ($status === 'actives') {
+            $where[] = Registration::ACTIVE;
+        } elseif ($status === 'cancelled') {
+            $where[] = "r.status = 'cancelled'";
+        }
         if ($search !== '') {
             $where[] = '(r.first_name LIKE :q OR r.last_name LIKE :q OR r.tutor_email LIKE :q OR r.code LIKE :q OR r.school LIKE :q)';
             $params['q'] = '%' . $search . '%';
@@ -47,13 +53,16 @@ class RegistrationsController extends Controller
             'categories' => Content::categories(),
             'search' => $search,
             'categoryId' => $categoryId,
+            'status' => $status,
             'page' => $page,
             'pages' => max(1, (int) ceil($total / self::PER_PAGE)),
             'total' => $total,
+            'cancelled' => (int) Db::val("SELECT COUNT(*) FROM registrations r WHERE r.status = 'cancelled'", [], 0),
+            // Els números de cada categoria són els qui corren: les anul·lades no hi compten.
             'byCategory' => Db::all(
-                'SELECT c.name, COUNT(r.id) AS total FROM categories c
-                 LEFT JOIN registrations r ON r.category_id = c.id
-                 GROUP BY c.id, c.name ORDER BY c.sort_order ASC'
+                "SELECT c.name, COUNT(r.id) AS total FROM categories c
+                 LEFT JOIN registrations r ON r.category_id = c.id AND r.status <> 'cancelled'
+                 GROUP BY c.id, c.name ORDER BY c.sort_order ASC"
             ),
         ]);
     }
@@ -89,6 +98,7 @@ class RegistrationsController extends Controller
         $data['code'] = Registration::generateCode();
         $data['created_at'] = date('Y-m-d H:i:s');
         $data['updated_at'] = date('Y-m-d H:i:s');
+        $data = array_merge($data, self::cancellation($data['status'], ''));
         // Sense número al formulari, el sistema li dona el següent lliure.
         $id = Registration::insert($data);
         Auth::logActivity('registration_create', 'registration', $id);
@@ -139,6 +149,7 @@ class RegistrationsController extends Controller
         if (empty($row['token'])) {
             $data['token'] = random_token(16);
         }
+        $data = array_merge($data, self::cancellation($data['status'], (string) ($row['status'] ?? '')));
         $data['updated_at'] = date('Y-m-d H:i:s');
         try {
             Db::update('registrations', $data, 'id = :id', ['id' => $row['id']]);
@@ -177,7 +188,7 @@ class RegistrationsController extends Controller
         header('Content-Disposition: attachment; filename="inscripcions-' . date('Y-m-d') . '.csv"');
         $out = fopen('php://output', 'w');
         fwrite($out, "\xEF\xBB\xBF");
-        fputcsv($out, ['Dorsal', 'Codi', 'Nom', 'Cognoms', 'Any', 'Gènere', 'Categoria', 'Escola', 'Tutor/a', 'Correu', 'Telèfon', 'Notes', 'Estat', 'Consent. dades', 'Consent. imatge', 'Reglament', 'Data'], ';', '"', '\\');
+        fputcsv($out, ['Dorsal', 'Codi', 'Nom', 'Cognoms', 'Any', 'Gènere', 'Categoria', 'Escola', 'Tutor/a', 'Correu', 'Telèfon', 'Notes', 'Estat', 'Anul·lada el', 'Consent. dades', 'Consent. imatge', 'Reglament', 'Data'], ';', '"', '\\');
         foreach ($rows as $row) {
             fputcsv($out, array_values($row), ';', '"', '\\');
         }
@@ -201,10 +212,11 @@ class RegistrationsController extends Controller
     {
         Auth::requireLogin();
         $categoryId = (int) input('categoria', 0);
-        $sql = Registration::WITH_CATEGORY;
+        // Les inscripcions anul·lades no surten a imprimir: ningú no les correrà.
+        $sql = Registration::WITH_CATEGORY . ' WHERE ' . Registration::ACTIVE;
         $params = [];
         if ($categoryId > 0) {
-            $sql .= ' WHERE r.category_id = :cat';
+            $sql .= ' AND r.category_id = :cat';
             $params['cat'] = $categoryId;
         }
         $sql .= ' ORDER BY r.bib_number ASC, r.id ASC';
@@ -239,6 +251,22 @@ class RegistrationsController extends Controller
             ? 'S\'han assignat ' . $count . ' dorsals.'
             : 'Totes les inscripcions ja tenien dorsal.');
         $this->back('/admin/inscripcions');
+    }
+
+    /**
+     * Data i autoria de l'anul·lació segons l'estat que es desa.
+     * @return array<string,?string>
+     */
+    private static function cancellation(string $status, string $previous): array
+    {
+        if ($status !== 'cancelled') {
+            return ['cancelled_at' => null, 'cancelled_by' => null];
+        }
+        if ($previous === 'cancelled') {
+            return []; // Ja estava anul·lada: no es toca la data original.
+        }
+
+        return ['cancelled_at' => date('Y-m-d H:i:s'), 'cancelled_by' => 'organitzacio'];
     }
 
     private function sendPdf(string $pdf, string $filename): void

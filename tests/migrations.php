@@ -249,6 +249,22 @@ check('No es toca res si la columna ja hi era', (int) ($row['consent_rules'] ?? 
     'la migració ja aplicada no ha de tornar a marcar-les');
 Db::delete('registrations', 'id = :id', ['id' => $before]);
 
+echo "\n== 0015: les inscripcions anul·lades ==\n";
+
+$cols = array_column(Db::all('PRAGMA table_info(registrations)'), 'name');
+check('Les inscripcions tenen la data d\'anul·lació', in_array('cancelled_at', $cols, true));
+check('I qui la va anul·lar', in_array('cancelled_by', $cols, true));
+
+// Tornar-la a executar no ha de fallar ni tocar res.
+$migration = require CROS_APP . '/migrations/0015_inscripcions_anullades.php';
+$again = true;
+try {
+    $migration(Db::conn());
+} catch (\Throwable $e) {
+    $again = false;
+}
+check('Es pot tornar a aplicar sense petar', $again);
+
 echo "\n== 0014: el menú del web ==\n";
 
 check('Hi ha la taula del menú', Db::tableExists('menu_items'));

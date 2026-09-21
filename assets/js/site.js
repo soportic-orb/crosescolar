@@ -15,6 +15,12 @@
     });
   }
 
+  /* Confirmació abans d'una acció que no es pot desfer ---------------- */
+  document.addEventListener('submit', function (event) {
+    var form = event.target.closest ? event.target.closest('form[data-confirm]') : null;
+    if (form && !window.confirm(form.getAttribute('data-confirm'))) { event.preventDefault(); }
+  });
+
   /* Ombra de la capçalera en fer scroll ------------------------------ */
   var header = document.querySelector('.site-header');
   if (header) {

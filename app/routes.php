@@ -79,6 +79,7 @@ $router->post('/les-meves-inscripcions/tornar', [AccountController::class, 'rest
 $router->post('/les-meves-inscripcions/sortir', [AccountController::class, 'logout']);
 $router->get('/les-meves-inscripcions/{id}/modificar', [AccountController::class, 'edit']);
 $router->post('/les-meves-inscripcions/{id}/modificar', [AccountController::class, 'update']);
+$router->post('/les-meves-inscripcions/{id}/anullar', [AccountController::class, 'cancel']);
 $router->get('/resultats', [PageController::class, 'results']);
 $router->get('/resultats/pdf', [PageController::class, 'resultsPdf']);
 

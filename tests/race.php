@@ -299,6 +299,70 @@ check('Si es buida el camp, se n\'hi posa un de nou', $emptied['status'] === 302
     && preg_match('#name="bib_number" value="(\d+)"#', req('GET', $base . '/admin/inscripcions/' . $manualId)['body'], $after) === 1
     && (int) $after[1] > 0, 'ha de tenir dorsal igualment');
 
+echo "\n== Inscripcions anul·lades ==\n";
+[$baixaCode, $baixaBib, $baixaToken] = register($base, 'Baixa' . $unique, 'Vila', 2016);
+$baixaList = req('GET', $base . '/admin/inscripcions?q=Baixa' . $unique);
+preg_match('#/admin/inscripcions/(\d+)#', $baixaList['body'], $bm);
+$baixaId = (int) ($bm[1] ?? 0);
+check('La inscripció surt al panell', $baixaId > 0, $baixaList['status'] . '');
+
+$baixaForm = req('GET', $base . '/admin/inscripcions/' . $baixaId);
+check('L\'estat «Anul·lada» és una opció del panell', str_contains(text($baixaForm['body']), 'Anul·lada'));
+$cancel = req('POST', $base . '/admin/inscripcions/' . $baixaId,
+    array_merge(formData($baixaForm['body']), ['status' => 'cancelled']));
+check('Es pot anul·lar des del panell', $cancel['status'] === 302, 'estat ' . $cancel['status']);
+
+$fitxaBaixa = req('GET', $base . '/admin/inscripcions/' . $baixaId);
+check('La fitxa avisa que està anul·lada', str_contains(text($fitxaBaixa['body']), 'Inscripció anul·lada'));
+check('I que el dorsal queda reservat', str_contains(text($fitxaBaixa['body']), 'queda reservat'));
+check('La inscripció continua existint', str_contains($fitxaBaixa['body'], 'Baixa' . $unique));
+check('Conserva el número de dorsal', preg_match('#name="bib_number" value="' . (int) $baixaBib . '"#', $fitxaBaixa['body']) === 1);
+
+$llistat = req('GET', $base . '/admin/inscripcions?q=Baixa' . $unique);
+check('Per defecte el llistat no ensenya les anul·lades',
+    str_contains(text($llistat['body']), 'Cap inscripció amb aquests filtres'),
+    'la cerca no ha de retornar cap fila');
+$totes = req('GET', $base . '/admin/inscripcions?estat=totes&q=Baixa' . $unique);
+check('Amb el filtre «totes» hi torna a ser', str_contains($totes['body'], '/admin/inscripcions/' . $baixaId . '"'));
+check('I hi surt marcada', str_contains(text($totes['body']), 'Anul·lada'));
+check('Només les anul·lades també la troba',
+    str_contains(req('GET', $base . '/admin/inscripcions?estat=cancelled&q=Baixa' . $unique)['body'],
+        '/admin/inscripcions/' . $baixaId . '"'));
+
+$dorsalsPdf = req('GET', $base . '/admin/inscripcions/dorsals');
+check('Els dorsals per imprimir es continuen generant', $dorsalsPdf['status'] === 200 && isPdf($dorsalsPdf['body']));
+$dorsalsText = pdf_text($dorsalsPdf['body']);
+if ($dorsalsText !== null) {
+    check('Els dorsals per imprimir deixen fora els anul·lats',
+        !str_contains($dorsalsText, 'Baixa' . $unique));
+    check('I els dels qui corren hi continuen sent', str_contains($dorsalsText, 'Marta' . $unique));
+}
+check('La família ja no pot descarregar el dorsal anul·lat',
+    req('GET', $base . '/inscripcio/dorsal/' . $baixaToken, [], ['anon' => true])['status'] === 404);
+
+$metaCsrf = token(req('GET', $base . '/admin/resultats')['body']);
+$baixaArriba = req('POST', $base . '/admin/resultats/arribada', ['_token' => $metaCsrf, 'bib' => $baixaBib],
+    ['headers' => ['X-Requested-With: XMLHttpRequest']]);
+$baixaJson = json_decode($baixaArriba['body'], true);
+check('A meta no s\'accepta un dorsal anul·lat', ($baixaJson['status'] ?? '') === 'error', $baixaArriba['body']);
+check('I explica per què', str_contains((string) ($baixaJson['message'] ?? ''), 'anul·lat'), $baixaJson['message'] ?? '');
+
+// Tornar-la a activar la deixa com abans.
+$reactiva = req('POST', $base . '/admin/inscripcions/' . $baixaId,
+    array_merge(formData(req('GET', $base . '/admin/inscripcions/' . $baixaId)['body']), ['status' => 'confirmed']));
+check('Es pot tornar a activar', $reactiva['status'] === 302);
+$tornada = req('GET', $base . '/admin/inscripcions/' . $baixaId);
+check('Ja no diu que estigui anul·lada', !str_contains(text($tornada['body']), 'Inscripció anul·lada'));
+check('I torna a sortir al llistat de sempre',
+    str_contains(req('GET', $base . '/admin/inscripcions?q=Baixa' . $unique)['body'],
+        '/admin/inscripcions/' . $baixaId . '"'));
+check('Amb el mateix dorsal de sempre',
+    preg_match('#name="bib_number" value="' . (int) $baixaBib . '"#', $tornada['body']) === 1);
+
+// La deixa anul·lada perquè no surti als resultats de les proves següents.
+req('POST', $base . '/admin/inscripcions/' . $baixaId,
+    array_merge(formData(req('GET', $base . '/admin/inscripcions/' . $baixaId)['body']), ['status' => 'cancelled']));
+
 echo "\n== Recorreguts i voltes ==\n";
 $categoria = categoryId($base, 'Aleví');
 $fitxaCat = req('GET', $base . '/admin/contingut/categories/' . $categoria);

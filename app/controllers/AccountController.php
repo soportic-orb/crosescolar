@@ -205,7 +205,7 @@ class AccountController extends Controller
     public function edit(array $params): void
     {
         $this->ensureEnabled();
-        $this->editView($this->registrationOrFail((int) $params['id']), []);
+        $this->editView($this->activeOrFail((int) $params['id']), []);
     }
 
     /** Desa els canvis d'una inscripció. */
@@ -213,7 +213,7 @@ class AccountController extends Controller
     {
         $this->ensureEnabled();
         $this->checkCsrf();
-        $registration = $this->registrationOrFail((int) $params['id']);
+        $registration = $this->activeOrFail((int) $params['id']);
 
         $data = [
             'first_name' => (string) input('first_name'),
@@ -250,6 +250,34 @@ class AccountController extends Controller
             'acces' => self::email() !== '' ? 'codi' : 'acabada d\'inscriure',
         ]);
         flash('success', 'Hem desat els canvis de ' . $data['first_name'] . '.');
+        redirect('/les-meves-inscripcions');
+    }
+
+    /**
+     * Anul·la una inscripció.
+     *
+     * La inscripció no s'esborra: continua al panell de l'organització amb
+     * l'estat «Anul·lada» i es queda el seu número de dorsal, que ja no serà
+     * de ningú més. Per desfer-ho cal parlar amb l'organització.
+     */
+    public function cancel(array $params): void
+    {
+        $this->ensureEnabled();
+        $this->checkCsrf();
+        $registration = $this->registrationOrFail((int) $params['id']);
+        if (Registration::isCancelled($registration)) {
+            flash('info', 'Aquesta inscripció ja estava anul·lada.');
+            redirect('/les-meves-inscripcions');
+        }
+
+        Registration::cancel($registration, 'familia');
+        log_line('inscripcions', 'Inscripció anul·lada per la família', [
+            'id' => (int) $registration['id'],
+            'dorsal' => (int) ($registration['bib_number'] ?? 0),
+            'email' => (string) ($registration['tutor_email'] ?? ''),
+            'acces' => self::email() !== '' ? 'codi' : 'acabada d\'inscriure',
+        ]);
+        flash('success', 'Hem anul·lat la inscripció de ' . $registration['first_name'] . '.');
         redirect('/les-meves-inscripcions');
     }
 
@@ -295,6 +323,18 @@ class AccountController extends Controller
                 redirect('/les-meves-inscripcions');
             }
             abort(404, 'No hem trobat aquesta inscripció.');
+        }
+
+        return $registration;
+    }
+
+    /** Com registrationOrFail(), però una inscripció anul·lada ja no es toca. */
+    private function activeOrFail(int $id): array
+    {
+        $registration = $this->registrationOrFail($id);
+        if (Registration::isCancelled($registration)) {
+            flash('info', 'Aquesta inscripció està anul·lada i ja no es pot modificar.');
+            redirect('/les-meves-inscripcions');
         }
 
         return $registration;

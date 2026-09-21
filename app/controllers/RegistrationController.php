@@ -101,8 +101,11 @@ class RegistrationController extends Controller
         }
 
         // Evita duplicats exactes en pocs minuts
+        // Una inscripció anul·lada no compta: qui l'anul·la per error s'ha de
+        // poder tornar a inscriure de seguida.
         $duplicate = Db::val(
-            'SELECT 1 FROM registrations WHERE first_name = :f AND last_name = :l AND created_at > :since',
+            'SELECT 1 FROM registrations r WHERE r.first_name = :f AND r.last_name = :l AND r.created_at > :since
+             AND ' . Registration::ACTIVE,
             ['f' => $data['first_name'], 'l' => $data['last_name'], 'since' => date('Y-m-d H:i:s', time() - 300)]
         );
         if ($duplicate) {
@@ -130,6 +133,9 @@ class RegistrationController extends Controller
         if (!$registration) {
             abort(404, 'Aquest enllaç no és vàlid.');
         }
+        if (Registration::isCancelled($registration)) {
+            abort(404, 'Aquesta inscripció està anul·lada.');
+        }
         $this->sendBib([$registration], 'dorsal-' . Bib::number($registration) . '.pdf');
     }
 
@@ -149,8 +155,11 @@ class RegistrationController extends Controller
         if (!$registration) {
             abort(404, 'Aquest enllaç no és vàlid.');
         }
-        $rows = Registration::forEmail((string) $registration['tutor_email']);
+        $rows = Registration::forEmail((string) $registration['tutor_email'], true);
         if (!$rows) {
+            if (Registration::isCancelled($registration)) {
+                abort(404, 'Aquesta inscripció està anul·lada.');
+            }
             $rows = [$registration];
         }
         $this->sendBib($rows, 'dorsals.pdf');

@@ -99,6 +99,9 @@ img { max-width: 100%; }
 .badge--amber { background: #fdf1dd; color: #8a6114; }
 .badge--red { background: #fbe8e2; color: #a5401d; }
 .badge--blue { background: #e4eef8; color: #1f5480; }
+/* Inscripcions anul·lades: hi són, però no criden l'atenció. */
+.admin-table tr.is-cancelled > td { background: #fcf7f5; color: #8a7a74; }
+.admin-table tr.is-cancelled > td:first-child strong { text-decoration: line-through; }
 
 .table-wrap { overflow-x: auto; }
 table.admin-table { width: 100%; border-collapse: collapse; }

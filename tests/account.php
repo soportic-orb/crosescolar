@@ -192,6 +192,76 @@ $invalid = req('POST', $base . '/les-meves-inscripcions/' . $laia['id'] . '/modi
 check('Un nom buit no es desa', $invalid['status'] === 200 && str_contains($invalid['body'], 'field--error'));
 check('La inscripció manté el nom', (Registration::find((int) $laia['id'])['first_name'] ?? '') === 'Laieta' . $unique);
 
+echo "\n== Anul·lar una inscripció ==\n";
+$list = req('GET', $base . '/les-meves-inscripcions');
+check('Hi ha el botó d\'anul·lar', str_contains(text($list['body']), 'Anul·lar la inscripció'));
+check('Amb una confirmació abans de fer-ho', str_contains($list['body'], 'data-confirm'));
+check('I l\'acció apunta a la inscripció', str_contains($list['body'], '/' . $pau['id'] . '/anullar'));
+
+$bibBefore = (int) $pau['bib_number'];
+$emailsBefore = (int) Db::val('SELECT COUNT(*) FROM email_log', [], 0);
+$cancelled = req('POST', $base . '/les-meves-inscripcions/' . $pau['id'] . '/anullar', ['_token' => token($list['body'])]);
+check('S\'anul·la i torna al llistat', $cancelled['status'] === 302 && str_contains($cancelled['headers'], '/les-meves-inscripcions'));
+
+$row = Registration::find((int) $pau['id']);
+check('La inscripció no s\'esborra', $row !== null);
+check('Queda amb l\'estat anul·lada', (string) ($row['status'] ?? '') === 'cancelled', (string) ($row['status'] ?? 'cap'));
+check('Es desa quan s\'ha anul·lat', !empty($row['cancelled_at']));
+check('I que ho ha fet la família', (string) ($row['cancelled_by'] ?? '') === 'familia');
+check('Manté el número de dorsal', (int) ($row['bib_number'] ?? 0) === $bibBefore);
+check('S\'avisa per correu de l\'anul·lació',
+    (int) Db::val('SELECT COUNT(*) FROM email_log WHERE subject LIKE :s', ['s' => 'Inscripció anul·lada%'], 0) > 0,
+    'correus abans: ' . $emailsBefore);
+
+// El número no torna al sac: ningú més no el pot tenir.
+check('El següent dorsal lliure no és el seu', Registration::nextBib() !== $bibBefore);
+$nou = Registration::create([
+    'first_name' => 'Relleu' . $unique, 'last_name' => 'Prova', 'birth_year' => (string) ((int) date('Y') - 10),
+    'gender' => 'masculi', 'category_id' => '', 'school' => '', 'tutor_name' => 'Prova',
+    'tutor_email' => 'relleu' . strtolower($unique) . '@example.test', 'tutor_phone' => '',
+    'notes' => '', 'consent_data' => 1, 'consent_image' => 0,
+]);
+check('Una inscripció nova no hereta el dorsal anul·lat', (int) $nou['bib_number'] !== $bibBefore,
+    'dorsal ' . (int) $nou['bib_number']);
+check('Només hi ha un participant amb aquell número',
+    (int) Db::val('SELECT COUNT(*) FROM registrations WHERE bib_number = :b', ['b' => $bibBefore], 0) === 1);
+
+$after = req('GET', $base . '/les-meves-inscripcions');
+check('El llistat la marca com a anul·lada', str_contains(text($after['body']), 'Anul·lada'));
+check('Ja no es pot modificar des del llistat',
+    !str_contains($after['body'], '/les-meves-inscripcions/' . $pau['id'] . '/modificar'));
+check('Ni descarregar-ne el dorsal', !str_contains($after['body'], '/inscripcio/dorsal/' . $pau['token']));
+check('Però el participant hi continua sortint', str_contains($after['body'], 'Pau' . $unique));
+
+$editCancelled = req('GET', $base . '/les-meves-inscripcions/' . $pau['id'] . '/modificar');
+check('El formulari de modificació ja no s\'obre', $editCancelled['status'] === 302, 'estat ' . $editCancelled['status']);
+$saveCancelled = req('POST', $base . '/les-meves-inscripcions/' . $pau['id'] . '/modificar', [
+    '_token' => token($after['body']),
+    'first_name' => 'Canviat' . $unique, 'last_name' => 'Duran',
+    'birth_year' => (string) ((int) date('Y') - 11), 'tutor_name' => 'Anna Duran',
+]);
+check('Ni s\'hi desen canvis', $saveCancelled['status'] === 302
+    && (Registration::find((int) $pau['id'])['first_name'] ?? '') === 'Pau' . $unique);
+
+check('El dorsal d\'una inscripció anul·lada no es descarrega',
+    req('GET', $base . '/inscripcio/dorsal/' . $pau['token'])['status'] === 404);
+check('Anul·lar-la dues vegades no fa res estrany',
+    req('POST', $base . '/les-meves-inscripcions/' . $pau['id'] . '/anullar', ['_token' => token($after['body'])])['status'] === 302
+    && (string) (Registration::find((int) $pau['id'])['cancelled_by'] ?? '') === 'familia');
+
+check('No es pot anul·lar la inscripció d\'una altra família',
+    req('POST', $base . '/les-meves-inscripcions/' . $altri['id'] . '/anullar', ['_token' => token($after['body'])])['status'] === 404
+    && (string) (Registration::find((int) $altri['id'])['status'] ?? '') !== 'cancelled');
+
+// El que continua actiu no es veu afectat.
+check('La resta d\'inscripcions segueixen igual',
+    (string) (Registration::find((int) $laia['id'])['status'] ?? '') === 'confirmed');
+check('I l\'organització la torna a activar quan cal',
+    (string) (Registration::reopen((int) $pau['id'])['status'] ?? '') === 'confirmed'
+    && Registration::find((int) $pau['id'])['cancelled_at'] === null);
+Registration::cancel(Registration::find((int) $pau['id']), 'familia');
+Db::delete('registrations', 'id = :id', ['id' => (int) $nou['id']]);
+
 echo "\n== La categoria segueix l'any i el gènere ==\n";
 
 // Dues categories del mateix any: una de noies i una de nois.

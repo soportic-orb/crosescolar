@@ -166,6 +166,8 @@ ul, ol { padding-left: 1.2em; }
 .btn--block { width: 100%; }
 .btn--sm { padding: .5rem 1rem; font-size: .88rem; }
 .btn[disabled], .btn.is-disabled { opacity: .55; pointer-events: none; }
+.btn--danger { --btn-bg: transparent; --btn-color: #a5401d; --btn-border: rgba(165, 64, 29, .35); box-shadow: none; }
+.btn--danger:hover { --btn-bg: #fbe8e2; box-shadow: none; }
 
 /* ----------------------------------------------------------------- Hero */
 .hero {
@@ -239,6 +241,12 @@ ul, ol { padding-left: 1.2em; }
   padding: 1.5rem; box-shadow: var(--shadow-sm); transition: transform var(--transition), box-shadow var(--transition);
 }
 .card--hover:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+.card--muted { background: #f7f8f7; border-style: dashed; }
+.status-pill {
+  display: inline-flex; align-items: center; gap: .35rem; padding: .2rem .7rem; border-radius: 999px;
+  font-family: var(--font); font-size: .74rem; font-weight: 700; letter-spacing: .04em;
+  vertical-align: middle; background: #fbe8e2; color: #a5401d;
+}
 .card__icon {
   width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center;
   background: var(--green-100); color: var(--green-700); margin-bottom: 1rem;

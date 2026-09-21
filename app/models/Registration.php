@@ -12,6 +12,15 @@ class Registration
     /** Opcions de gènere admeses als formularis. */
     public const GENDERS = ['femeni' => 'Femení', 'masculi' => 'Masculí'];
 
+    /** Estats d'una inscripció. */
+    public const STATUSES = ['confirmed' => 'Confirmada', 'pending' => 'Pendent', 'cancelled' => 'Anul·lada'];
+
+    /** Condició SQL de les inscripcions que compten per a la cursa. */
+    public const ACTIVE = "r.status <> 'cancelled'";
+
+    /** Qui pot anul·lar una inscripció. */
+    public const CANCELLED_BY = ['familia' => 'La família', 'organitzacio' => 'L\'organització'];
+
 
     public static function create(array $data): array
     {
@@ -138,17 +147,88 @@ class Registration
         );
     }
 
-    /** Totes les inscripcions fetes amb la mateixa adreça de contacte. */
-    public static function forEmail(string $email): array
+    /**
+     * Totes les inscripcions fetes amb la mateixa adreça de contacte.
+     * @param bool $onlyActive deixa fora les anul·lades
+     */
+    public static function forEmail(string $email, bool $onlyActive = false): array
     {
         $email = mb_strtolower(trim($email));
         if ($email === '') {
             return [];
         }
         return Db::all(
-            self::WITH_CATEGORY . ' WHERE LOWER(r.tutor_email) = :email ORDER BY r.bib_number ASC, r.id ASC',
+            self::WITH_CATEGORY . ' WHERE LOWER(r.tutor_email) = :email'
+            . ($onlyActive ? ' AND ' . self::ACTIVE : '')
+            . ' ORDER BY r.bib_number ASC, r.id ASC',
             ['email' => $email]
         );
+    }
+
+    /** Aquesta inscripció està anul·lada? */
+    public static function isCancelled(array $registration): bool
+    {
+        return (string) ($registration['status'] ?? '') === 'cancelled';
+    }
+
+    /** Nom de l'estat tal com es mostra a les pantalles. */
+    public static function statusLabel(array $registration): string
+    {
+        $status = (string) ($registration['status'] ?? 'confirmed');
+
+        return self::STATUSES[$status] ?? $status;
+    }
+
+    /** Deixa només les inscripcions que no estan anul·lades. */
+    public static function active(array $registrations): array
+    {
+        return array_values(array_filter($registrations, static fn (array $row): bool => !self::isCancelled($row)));
+    }
+
+    /**
+     * Anul·la una inscripció sense esborrar-la.
+     *
+     * El registre es queda al panell amb l'estat «Anul·lada» i conserva el seu
+     * número de dorsal: aquell número no tornarà a ser de ningú més, de manera
+     * que un dorsal ja imprès no pot acabar en dues mans diferents.
+     *
+     * @param string $by 'familia' o 'organitzacio'
+     */
+    public static function cancel(array $registration, string $by = 'familia'): ?array
+    {
+        $id = (int) ($registration['id'] ?? 0);
+        if ($id <= 0) {
+            return null;
+        }
+        if (self::isCancelled($registration)) {
+            return self::find($id);
+        }
+        Db::update('registrations', [
+            'status' => 'cancelled',
+            'cancelled_at' => date('Y-m-d H:i:s'),
+            'cancelled_by' => isset(self::CANCELLED_BY[$by]) ? $by : 'familia',
+            'updated_at' => date('Y-m-d H:i:s'),
+        ], 'id = :id', ['id' => $id]);
+
+        $cancelled = self::find($id);
+        if ($cancelled) {
+            self::notifyCancelled($cancelled);
+        }
+
+        return $cancelled;
+    }
+
+    /** Torna a activar una inscripció anul·lada (només des del panell). */
+    public static function reopen(int $id, string $status = 'confirmed'): ?array
+    {
+        Db::update('registrations', [
+            'status' => isset(self::STATUSES[$status]) && $status !== 'cancelled' ? $status : 'confirmed',
+            'cancelled_at' => null,
+            'cancelled_by' => null,
+            'updated_at' => date('Y-m-d H:i:s'),
+        ], 'id = :id', ['id' => $id]);
+
+        return self::find($id);
     }
 
     /**
@@ -293,12 +373,30 @@ class Registration
         if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)) {
             Mailer::sendTemplate($email, 'Inscripció confirmada — ' . setting('site_name', 'Cros Escolar La Granada'), 'registration-confirmation', [
                 'registration' => $registration,
-                'siblings' => count(self::forEmail($email)),
+                'siblings' => count(self::forEmail($email, true)),
             ]);
         }
         $notify = (string) setting('mail_admin_notify', '');
         if (setting('registrations_notify', '1') === '1' && $notify !== '' && filter_var($notify, FILTER_VALIDATE_EMAIL)) {
             Mailer::sendTemplate($notify, 'Nova inscripció: ' . $registration['first_name'] . ' ' . $registration['last_name'], 'registration-admin', [
+                'registration' => $registration,
+            ]);
+        }
+    }
+
+    /** Avisa la família i l'organització que una inscripció s'ha anul·lat. */
+    private static function notifyCancelled(array $registration): void
+    {
+        $email = (string) ($registration['tutor_email'] ?? '');
+        if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            Mailer::sendTemplate($email, 'Inscripció anul·lada — ' . setting('site_name', 'Cros Escolar La Granada'), 'registration-cancelled', [
+                'registration' => $registration,
+                'remaining' => count(self::forEmail($email, true)),
+            ]);
+        }
+        $notify = (string) setting('mail_admin_notify', '');
+        if (setting('registrations_notify', '1') === '1' && $notify !== '' && filter_var($notify, FILTER_VALIDATE_EMAIL)) {
+            Mailer::sendTemplate($notify, 'Inscripció anul·lada: ' . $registration['first_name'] . ' ' . $registration['last_name'], 'registration-cancelled-admin', [
                 'registration' => $registration,
             ]);
         }
@@ -318,7 +416,7 @@ class Registration
         return Db::all(
             'SELECT r.bib_number, r.code, r.first_name, r.last_name, r.birth_year, r.gender, c.name AS category,
                     r.school, r.tutor_name, r.tutor_email, r.tutor_phone,
-                    r.notes, r.status, r.consent_data, r.consent_image, r.consent_rules, r.created_at
+                    r.notes, r.status, r.cancelled_at, r.consent_data, r.consent_image, r.consent_rules, r.created_at
              FROM registrations r LEFT JOIN categories c ON c.id = r.category_id
              ORDER BY r.created_at ASC'
         );

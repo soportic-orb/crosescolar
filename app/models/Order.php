@@ -233,7 +233,7 @@ class Order
             'orders_pending' => (int) Db::val('SELECT COUNT(*) FROM orders WHERE status = \'pending\'', [], 0),
             'tickets_total' => (int) Db::val('SELECT COUNT(*) FROM tickets t JOIN orders o ON o.id = t.order_id WHERE o.status = \'paid\'', [], 0),
             'tickets_used' => (int) Db::val('SELECT COUNT(*) FROM tickets WHERE status = \'used\'', [], 0),
-            'registrations' => (int) Db::val('SELECT COUNT(*) FROM registrations', [], 0),
+            'registrations' => (int) Db::val('SELECT COUNT(*) FROM registrations r WHERE ' . Registration::ACTIVE, [], 0),
         ];
     }
 }

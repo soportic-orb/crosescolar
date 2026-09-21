@@ -25,10 +25,12 @@
       </div>
     <?php else: ?>
       <?php foreach ($registrations as $registration): ?>
-        <div class="card" style="margin-bottom:1.2rem">
+        <?php $cancelled = \Cros\Models\Registration::isCancelled($registration); ?>
+        <div class="card<?= $cancelled ? ' card--muted' : '' ?>" style="margin-bottom:1.2rem">
           <div class="eyebrow">Dorsal <?= e(\Cros\Models\Bib::number($registration)) ?></div>
           <h3 style="margin:.2rem 0 .9rem">
             <?= e($registration['first_name'] . ' ' . $registration['last_name']) ?>
+            <?php if ($cancelled): ?><span class="status-pill">Anul·lada</span><?php endif; ?>
           </h3>
           <table class="data" style="min-width:0">
             <tbody>
@@ -41,21 +43,38 @@
               <tr><th>Contacte</th><td><?= e($registration['tutor_name']) ?> · <?= e($registration['tutor_phone'] ?? '') ?></td></tr>
             </tbody>
           </table>
-          <div class="flex" style="margin-top:1rem">
-            <a class="btn btn--sm" href="<?= e(url('/les-meves-inscripcions/' . (int) $registration['id'] . '/modificar')) ?>">
-              <?= \Cros\Core\Icons::svg('edit', 'icon', 16) ?> Modificar les dades
-            </a>
-            <?php if (!empty($registration['token']) && \Cros\Models\Bib::publicDownload()): ?>
-              <a class="btn btn--ghost btn--sm" href="<?= e(url('/inscripcio/dorsal/' . $registration['token'])) ?>">
-                <?= \Cros\Core\Icons::svg('download', 'icon', 16) ?> Descarregar el dorsal
+          <?php if ($cancelled): ?>
+            <p class="field__hint" style="margin:.2rem 0 0">
+              Aquest participant ja no consta a la sortida. El dorsal
+              <?= e(\Cros\Models\Bib::number($registration)) ?> queda reservat i no serà de ningú més.
+              Si ho voleu desfer, escriviu-nos a
+              <a href="mailto:<?= e(setting('contact_email', '')) ?>"><?= e(setting('contact_email', '')) ?></a>.
+            </p>
+          <?php else: ?>
+            <div class="flex" style="margin-top:1rem">
+              <a class="btn btn--sm" href="<?= e(url('/les-meves-inscripcions/' . (int) $registration['id'] . '/modificar')) ?>">
+                <?= \Cros\Core\Icons::svg('edit', 'icon', 16) ?> Modificar les dades
               </a>
-            <?php endif; ?>
-          </div>
+              <?php if (!empty($registration['token']) && \Cros\Models\Bib::publicDownload()): ?>
+                <a class="btn btn--ghost btn--sm" href="<?= e(url('/inscripcio/dorsal/' . $registration['token'])) ?>">
+                  <?= \Cros\Core\Icons::svg('download', 'icon', 16) ?> Descarregar el dorsal
+                </a>
+              <?php endif; ?>
+              <form method="post" action="<?= e(url('/les-meves-inscripcions/' . (int) $registration['id'] . '/anullar')) ?>"
+                    data-confirm="Voleu anul·lar la inscripció de <?= e($registration['first_name']) ?>? El participant no sortirà a la cursa i, per tornar-la a activar, haureu d'escriure a l'organització.">
+                <?= csrf_field() ?>
+                <button class="btn btn--danger btn--sm" type="submit">
+                  <?= \Cros\Core\Icons::svg('trash', 'icon', 16) ?> Anul·lar la inscripció
+                </button>
+              </form>
+            </div>
+          <?php endif; ?>
         </div>
       <?php endforeach; ?>
 
-      <?php if (count($registrations) > 1 && !empty($registrations[0]['token']) && \Cros\Models\Bib::publicDownload()): ?>
-        <a class="btn" href="<?= e(url('/inscripcio/dorsals/' . $registrations[0]['token'])) ?>">
+      <?php $actives = \Cros\Models\Registration::active($registrations); ?>
+      <?php if (count($actives) > 1 && !empty($actives[0]['token']) && \Cros\Models\Bib::publicDownload()): ?>
+        <a class="btn" href="<?= e(url('/inscripcio/dorsals/' . $actives[0]['token'])) ?>">
           <?= \Cros\Core\Icons::svg('download', 'icon', 18) ?> Tots els dorsals en un PDF
         </a>
       <?php endif; ?>
@@ -69,7 +88,8 @@
       </form>
     </div>
     <p class="field__hint" style="margin-top:1.2rem">
-      Per canviar l'adreça de contacte o anul·lar una inscripció, escriviu-nos a
+      Les inscripcions anul·lades es queden aquí, marcades, i conserven el número de dorsal.
+      Per canviar l'adreça de contacte o recuperar una inscripció anul·lada, escriviu-nos a
       <a href="mailto:<?= e(setting('contact_email', '')) ?>"><?= e(setting('contact_email', '')) ?></a>.
     </p>
   </div>

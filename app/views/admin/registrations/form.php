@@ -7,6 +7,15 @@
       <a class="btn btn--ghost btn--sm spacer" href="<?= e(url('/admin/inscripcions')) ?>">← Totes les inscripcions</a>
     </div>
     <div class="panel__body">
+      <?php if (!$isNew && \Cros\Models\Registration::isCancelled($row)): ?>
+        <div class="alert alert--warning">
+          <strong>Inscripció anul·lada</strong>
+          el <?= e(dt($row['cancelled_at'] ?? '', 'd/m/Y H:i')) ?>
+          <?= !empty($row['cancelled_by']) ? 'per ' . e(mb_strtolower(\Cros\Models\Registration::CANCELLED_BY[$row['cancelled_by']] ?? '')) : '' ?>.
+          El dorsal <?= e(\Cros\Models\Bib::number($row)) ?> queda reservat.
+          Per tornar-la a activar, poseu l'estat a «Confirmada» i deseu.
+        </div>
+      <?php endif; ?>
       <div class="form-grid form-grid--2">
         <div class="field"><label for="first_name">Nom *</label>
           <input type="text" id="first_name" name="first_name" value="<?= e($row['first_name'] ?? '') ?>" required>
@@ -58,10 +67,14 @@
         </div>
         <div class="field"><label for="status">Estat</label>
           <select id="status" name="status">
-            <?php foreach (['confirmed' => 'Confirmada', 'pending' => 'Pendent', 'cancelled' => 'Cancel·lada'] as $value => $label): ?>
+            <?php foreach (\Cros\Models\Registration::STATUSES as $value => $label): ?>
               <option value="<?= e($value) ?>" <?= (string) ($row['status'] ?? 'confirmed') === $value ? 'selected' : '' ?>><?= e($label) ?></option>
             <?php endforeach; ?>
           </select>
+          <span class="hint">
+            Una inscripció anul·lada no corre i no surt als dorsals per imprimir,
+            però es queda aquí i conserva el seu número, que no es donarà a ningú més.
+          </span>
         </div>
         <div class="field"><label for="school">Escola o club</label>
           <input type="text" id="school" name="school" value="<?= e($row['school'] ?? '') ?>"></div>
@@ -83,7 +96,7 @@
         <label class="switch"><input type="checkbox" name="consent_rules" value="1" <?= (int) ($row['consent_rules'] ?? 0) === 1 ? 'checked' : '' ?>> <span>Reglament acceptat</span></label>
       </div>
 
-      <?php if (!$isNew && !empty($row['bib_number'])): ?>
+      <?php if (!$isNew && !empty($row['bib_number']) && !\Cros\Models\Registration::isCancelled($row)): ?>
         <p class="mt-2"><a class="btn btn--ghost btn--sm" href="<?= e(url('/admin/inscripcions/' . $row['id'] . '/dorsal')) ?>">
           Descarregar el dorsal en PDF</a></p>
       <?php endif; ?>
@@ -101,7 +114,7 @@
 </form>
 
 <?php if (!$isNew): ?>
-  <form id="delete-registration" method="post" action="<?= e(url('/admin/inscripcions/' . $row['id'] . '/esborrar')) ?>" data-confirm="Esborrar aquesta inscripció?">
+  <form id="delete-registration" method="post" action="<?= e(url('/admin/inscripcions/' . $row['id'] . '/esborrar')) ?>" data-confirm="Esborrar aquesta inscripció del tot? Si voleu que el participant no corri però el dorsal es quedi reservat, poseu l'estat a «Anul·lada» i deseu.">
     <?= csrf_field() ?>
   </form>
 <?php endif; ?>
