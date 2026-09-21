@@ -536,6 +536,82 @@ saveSettings($base, 'rules', ['rules_consent' => '1']);
 check('I es pot tornar a demanar',
     str_contains(req('GET', $base . '/inscripcio', [], ['anon' => true])['body'], 'name="consent_rules"'));
 
+echo "\n== Menú del web ==\n";
+$menuPage = req('GET', $base . '/admin/menu');
+check('Hi ha la pantalla del menú',
+    $menuPage['status'] === 200 && str_contains(text($menuPage['body']), 'Menú del web'));
+check('Hi surten tots els apartats',
+    substr_count($menuPage['body'], 'name="active[]"') >= 10,
+    (string) substr_count($menuPage['body'], 'name="active[]"'));
+check('Amb fletxes per endreçar-los',
+    substr_count($menuPage['body'], 'name="direccio"') >= 20);
+check('I avisa dels que ara no es veuen', str_contains(text($menuPage['body']), 'ara no es veu'));
+
+$menuOrder = static function (string $html): array {
+    preg_match_all('#name="active\[\]" value="([a-z_]+)"#', $html, $m);
+    return $m[1];
+};
+$before = $menuOrder($menuPage['body']);
+check('L\'ordre de sortida comença per l\'inici', ($before[0] ?? '') === 'home', implode(', ', $before));
+
+// El web ensenya el que hi ha marcat.
+$navOf = static function (string $html): array {
+    if (!preg_match('#id="menu-principal".*?</nav>#s', $html, $nav)) {
+        return [];
+    }
+    preg_match_all('#<a href="[^"]*"[^>]*>([^<]+)</a>#', $nav[0], $links);
+    return array_values(array_filter(array_map('trim', $links[1])));
+};
+check('El menú del web surt del que hi ha configurat',
+    $navOf(req('GET', $base . '/', [], ['anon' => true])['body']) === ['Inici', 'Recorreguts', 'Categories i premis', 'Les meves inscripcions'],
+    implode(' · ', $navOf(req('GET', $base . '/', [], ['anon' => true])['body'])));
+
+// Activar-ne un de nou i canviar-li el nom.
+$saved = req('POST', $base . '/admin/menu', [
+    '_token' => token($menuPage['body']),
+    'active' => ['home', 'courses', 'categories', 'contact'],
+    'label' => ['contact' => 'Parla amb nosaltres'],
+]);
+check('Es desa el menú', $saved['status'] === 302);
+$nav = $navOf(req('GET', $base . '/', [], ['anon' => true])['body']);
+check('L\'apartat nou hi surt amb el nom que li hem posat',
+    in_array('Parla amb nosaltres', $nav, true), implode(' · ', $nav));
+check('I el que hem desmarcat en desapareix',
+    !in_array('Les meves inscripcions', $nav, true), implode(' · ', $nav));
+
+// Endreçar-los amb les fletxes.
+$menuPage = req('GET', $base . '/admin/menu');
+// «Categories i premis» i «Recorreguts» són veïns a la llista: en pujar-ne un,
+// el canvi es nota de seguida al web.
+$moved = req('POST', $base . '/admin/menu/categories/moure', [
+    '_token' => token($menuPage['body']),
+    'direccio' => 'puja',
+    'active' => ['home', 'courses', 'categories', 'contact'],
+    'label' => ['contact' => 'Parla amb nosaltres'],
+]);
+check('Es pot pujar un apartat', $moved['status'] === 302);
+$nav = $navOf(req('GET', $base . '/', [], ['anon' => true])['body']);
+check('I el web respecta el nou ordre',
+    array_search('Categories i premis', $nav, true) < array_search('Recorreguts', $nav, true),
+    implode(' · ', $nav));
+check('Moure\'l no fa perdre el nom canviat', in_array('Parla amb nosaltres', $nav, true));
+
+// Es deixa com estava.
+req('POST', $base . '/admin/menu', [
+    '_token' => token(req('GET', $base . '/admin/menu')['body']),
+    'active' => ['home', 'courses', 'categories', 'account'],
+    'label' => [],
+]);
+$menuPage = req('GET', $base . '/admin/menu');
+// Es desfà el canvi d'ordre de més amunt.
+req('POST', $base . '/admin/menu/courses/moure', [
+    '_token' => token($menuPage['body']), 'direccio' => 'puja',
+    'active' => ['home', 'courses', 'categories', 'account'], 'label' => [],
+]);
+check('El menú torna a ser el d\'abans',
+    $navOf(req('GET', $base . '/', [], ['anon' => true])['body'])
+        === ['Inici', 'Recorreguts', 'Categories i premis', 'Les meves inscripcions']);
+
 echo "\n== Requadre de recordatoris de la inscripció ==\n";
 check('Es pot editar des del panell',
     str_contains(text(req('GET', $base . '/admin/configuracio/registrations')['body']), 'Contingut del requadre'));

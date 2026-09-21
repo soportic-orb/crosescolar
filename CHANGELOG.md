@@ -3,6 +3,18 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.17.0] — 2026-09-21
+
+### Afegit
+- **Menú del web configurable**: nou apartat *Continguts → Menú del web*. S'hi tria quins
+  apartats surten al menú públic, s'endrecen amb fletxes i se'ls pot canviar el nom. Els
+  que depenen d'una altra cosa —els *Resultats* fins que no es publiquen, *Els meus
+  tiquets* sense venda en línia— hi surten marcats com a «ara no es veu» i apareixen sols
+  quan toca. El botó «Inscriu-te!» continua sempre al final.
+- Els apartats que abans no hi eren (*Reglament*, *Punt de recàrrega*, *Preguntes
+  freqüents*, *Contacte*, *Inscripció*) ara es poden afegir al menú sense tocar codi. En
+  actualitzar, el menú queda exactament com estava.
+
 ## [1.16.0] — 2026-09-21
 
 ### Afegit

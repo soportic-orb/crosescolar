@@ -232,3 +232,12 @@ input[type="color"] { width: 64px; height: 40px; padding: 2px; }
 /* --------------------------------------------------- Progrés d'un enviament */
 .progress { height: 10px; border-radius: 999px; background: var(--a-green-light); overflow: hidden; }
 .progress__bar { height: 100%; width: 0; background: var(--a-green); transition: width .3s ease; }
+
+/* Files d'una taula que ara no s'apliquen (per exemple, un apartat del menú
+   que encara no es veu al web). */
+.admin-table tr.is-muted td { opacity: .62; }
+
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}

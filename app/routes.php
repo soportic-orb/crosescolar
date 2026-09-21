@@ -8,6 +8,7 @@ use Cros\Controllers\Admin\AuthController;
 use Cros\Controllers\Admin\CrudController;
 use Cros\Controllers\Admin\DashboardController;
 use Cros\Controllers\Admin\MailingsController;
+use Cros\Controllers\Admin\MenuController;
 use Cros\Controllers\Admin\OrdersController;
 use Cros\Controllers\Admin\RegistrationsController;
 use Cros\Controllers\Admin\ResultsController;
@@ -113,6 +114,10 @@ $router->post('/admin/resultats/{id}/premi-local', [ResultsController::class, 'l
 $router->post('/admin/resultats/publicar', [ResultsController::class, 'publish']);
 $router->get('/admin/resultats/pdf', [ResultsController::class, 'pdf']);
 $router->get('/admin/resultats/csv', [ResultsController::class, 'csv']);
+
+$router->get('/admin/menu', [MenuController::class, 'index']);
+$router->post('/admin/menu', [MenuController::class, 'update']);
+$router->post('/admin/menu/{key}/moure', [MenuController::class, 'move']);
 
 $router->get('/admin/enviaments', [MailingsController::class, 'index']);
 $router->get('/admin/enviaments/nou', [MailingsController::class, 'create']);

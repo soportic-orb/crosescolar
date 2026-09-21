@@ -9,20 +9,9 @@ $favicon = (string) setting('favicon', '');
 $ogImage = (string) (setting('og_image', '') ?: setting('hero_image', ''));
 $eventDate = (string) setting('event_date', '');
 $path = $currentPath ?? '/';
-$navItems = [
-    '/' => 'Inici',
-    '/recorreguts' => 'Recorreguts',
-    '/categories-i-premis' => 'Categories i premis',
-    // La inscripció no surt a la llista: el botó destacat del menú ja hi porta.
-    // El contacte tampoc: és al peu de pàgina.
-];
-if (\Cros\Controllers\AccountController::enabled()) {
-    $navItems['/les-meves-inscripcions'] = 'Les meves inscripcions';
-}
-if (\Cros\Core\Settings::bool('results_published')) {
-    // Un cop publicats, els resultats passen a ser el primer que busca la gent.
-    $navItems = ['/' => 'Inici', '/resultats' => 'Resultats'] + $navItems;
-}
+// Quins apartats surten al menú i en quin ordre es configura al panell,
+// a Continguts → Menú del web.
+$navItems = \Cros\Models\Menu::visible();
 ?>
 <!doctype html>
 <html lang="ca">
@@ -93,8 +82,8 @@ if (\Cros\Core\Settings::bool('results_published')) {
       <?= \Cros\Core\Icons::svg('menu') ?>
     </button>
     <nav class="nav" id="menu-principal" aria-label="Menú principal">
-      <?php foreach ($navItems as $href => $label): ?>
-        <a href="<?= e(url($href)) ?>"<?= $path === $href ? ' class="is-active"' : '' ?>><?= e($label) ?></a>
+      <?php foreach ($navItems as $item): ?>
+        <a href="<?= e(url($item['url'])) ?>"<?= $path === $item['url'] ? ' class="is-active"' : '' ?>><?= e($item['title']) ?></a>
       <?php endforeach; ?>
       <a class="btn btn--accent btn--sm" href="<?= e(url('/inscripcio')) ?>">
         <?= \Cros\Core\Icons::svg('run', 'icon', 18) ?> Inscriu-te!

@@ -249,6 +249,31 @@ check('No es toca res si la columna ja hi era', (int) ($row['consent_rules'] ?? 
     'la migració ja aplicada no ha de tornar a marcar-les');
 Db::delete('registrations', 'id = :id', ['id' => $before]);
 
+echo "\n== 0014: el menú del web ==\n";
+
+check('Hi ha la taula del menú', Db::tableExists('menu_items'));
+$menuBefore = Db::all('SELECT * FROM menu_items');
+Db::conn()->exec('DELETE FROM menu_items');
+
+// Sense res configurat, el menú és el de sempre.
+check('Sense configurar, el menú és el de sempre',
+    array_column(\Cros\Models\Menu::visible(), 'title') === ['Inici', 'Recorreguts', 'Categories i premis', 'Les meves inscripcions'],
+    implode(' · ', array_column(\Cros\Models\Menu::visible(), 'title')));
+check('I al panell hi són tots', count(\Cros\Models\Menu::all()) >= 10,
+    (string) count(\Cros\Models\Menu::all()));
+
+// Un apartat que encara no es veu no surt al web encara que estigui marcat.
+\Cros\Models\Menu::save(['home', 'results'], []);
+$titles = array_column(\Cros\Models\Menu::visible(), 'title');
+check('Els apartats que encara no toquen no surten al web',
+    !in_array('Resultats', $titles, true) && in_array('Inici', $titles, true), implode(' · ', $titles));
+
+Db::conn()->exec('DELETE FROM menu_items');
+foreach ($menuBefore as $row) {
+    unset($row['id']);
+    Db::insert('menu_items', $row);
+}
+
 echo "\n== Les opcions noves d'una versió arriben amb el seu valor per defecte ==\n";
 
 $asideBefore = (string) Settings::get('registrations_aside_text', '');

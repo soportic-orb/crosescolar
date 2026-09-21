@@ -40,6 +40,7 @@ dels tiquets del punt de recàrrega amb Stripe.
   categoria; les famílies el reben per correu.
 - **Resultats**: registre de les arribades a meta per dorsal, classificació per categories,
   publicació al web i exportació en PDF (per categoria o per ordre d'arribada) i CSV.
+- **Menú del web**: quins apartats surten al menú públic, en quin ordre i amb quin nom.
 - **Enviaments**: correus a les persones inscrites amb editor visual, selector de destinataris
   (totes, per categories o adreces a mà) i enviament per tandes que es pot reprendre.
 - **Configuració**: credencials de Stripe (xifrades), correu SMTP, colors, SEO i textos legals.

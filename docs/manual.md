@@ -47,7 +47,24 @@ Amb les coordenades posades, a la portada hi surt el mapa amb el punt marcat (no
 connecta a OpenStreetMap quan el visitant hi fa clic) i el botó obre el mapa centrat
 sobre la sortida.
 
-### 1. Personalitzar la portada
+### 1. El menú del web
+**Menú del web** (al menú del panell, dins de *Continguts*) decideix **quins apartats
+surten al menú** del web i **en quin ordre**:
+
+- La casella **Visible** els fa sortir o els amaga.
+- Les fletxes **↑ ↓** els endrecen. Si hi canvieu un nom o una casella i premeu una
+  fletxa, no es perd res: es desa tot alhora.
+- A **Nom al menú** hi podeu posar un altre títol (per exemple, *Contacte* → *Parla amb
+  nosaltres*). Si el deixeu buit, s'hi posa el de sempre.
+
+Alguns apartats porten l'etiqueta **«ara no es veu»**: existeixen, però depenen d'una
+altra cosa — els *Resultats* només surten quan estan publicats, i *Els meus tiquets*
+només amb la venda en línia activada. Podeu deixar-los marcats i apareixeran sols quan
+toqui.
+
+El botó **«Inscriu-te!»** hi és sempre, al final del menú, i no es pot treure des d'aquí.
+
+### 2. Personalitzar la portada
 **Configuració → Portada**
 - *Imatge del banner*: fotografia horitzontal (1920×1080). Si no n'hi ha cap es mostra
   el fons il·lustrat de vinyes.
@@ -55,7 +72,7 @@ sobre la sortida.
 - Botons principals i compte enrere.
 - Textos de cada secció: introducció, recorreguts, programa, galeria, ubicació i patrocinadors.
 
-### 2. Recorreguts amb Wikiloc
+### 3. Recorreguts amb Wikiloc
 **Recorreguts → Afegir**
 - Enganxeu l'**URL de Wikiloc** de la ruta (per exemple
   `https://ca.wikiloc.com/rutes-senderisme/cros-la-granada-123456789`). El número
@@ -66,17 +83,17 @@ sobre la sortida.
 > Els mapes de Wikiloc només es carreguen quan la persona hi fa clic: així la pàgina
 > va més ràpida i no es comparteixen dades amb tercers sense consentiment.
 
-### 3. Categories i premis
+### 4. Categories i premis
 **Categories** — nom, anys de naixement, hora de sortida, distància i recorregut assignat.
 Si la categoria és d'un sol any, poseu el mateix any als dos camps: al web i als dorsals
 hi sortirà una sola vegada (*2020*, no *2020–2020*).
 **Premis** — targetes que es mostren a la pàgina de categories.
 
-### 4. Patrocinadors
+### 5. Patrocinadors
 **Patrocinadors → Afegir**: nom, logotip (PNG o SVG amb fons transparent), enllaç i tipus
 (institucional, principal, col·laborador). Arrossegueu les files per canviar-ne l'ordre.
 
-### 5. Inscripcions: amb formulari o només informació
+### 6. Inscripcions: amb formulari o només informació
 
 **Configuració → Inscripcions** decideix què veu la gent a la pàgina d'inscripció:
 
@@ -97,7 +114,7 @@ convé tenir present abans d'inscriure's. El títol i el contingut s'editen a
 HTML bàsic: llistes, negretes i enllaços), i l'interruptor *Mostrar el requadre de
 recordatoris* el treu de la pàgina si no el voleu.
 
-### 5.1. «Les meves inscripcions»
+### 6.1. «Les meves inscripcions»
 
 Les famílies poden revisar i corregir les dades que van posar sense haver d'escriure-us.
 A **Les meves inscripcions** del web escriuen la seva adreça electrònica, reben un
@@ -113,7 +130,7 @@ les feu vosaltres des del panell.
 Si preferiu que ningú no pugui tocar les seves dades, desactiveu
 **Configuració → Inscripcions → «Les meves inscripcions» actiu** i la pàgina desapareix.
 
-### 5.2. Recorreguts i voltes de cada categoria
+### 6.2. Recorreguts i voltes de cada categoria
 
 Una cursa pot fer més d'un recorregut: per exemple, **1 volta al circuit A i 2 voltes al
 circuit B**. A **Categories → editar → Recorreguts i voltes** s'hi afegeixen tants
@@ -128,7 +145,7 @@ fan. Les voltes sempre s'hi indiquen, també quan només n'hi ha una. Si deixeu 
 **distància** de la categoria en blanc, al web s'hi calcula la suma dels recorreguts per
 les voltes.
 
-### 6. Dorsals dels participants
+### 7. Dorsals dels participants
 
 Cada inscripció rep automàticament un **número de dorsal** (001, 002, 003…) i les
 famílies el poden descarregar en PDF des del correu de confirmació.
@@ -179,7 +196,7 @@ desa res. Si buideu el camp, se n'hi posa un de nou automàticament. El botó
 **«Assignar dorsals»** dona número a les inscripcions antigues que encara no en
 tinguin.
 
-### 7. Punt de recàrrega (tiquets)
+### 8. Punt de recàrrega (tiquets)
 **Tipus de tiquet**: nom, descripció, preu, existències i màxim per comanda.
 Deixeu les existències en blanc per no limitar-les.
 El **punt de recàrrega** és el servei de bar de la cursa: on els participants recuperen
