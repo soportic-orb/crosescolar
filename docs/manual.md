@@ -68,6 +68,8 @@ sobre la sortida.
 
 ### 3. Categories i premis
 **Categories** — nom, anys de naixement, hora de sortida, distància i recorregut assignat.
+Si la categoria és d'un sol any, poseu el mateix any als dos camps: al web i als dorsals
+hi sortirà una sola vegada (*2020*, no *2020–2020*).
 **Premis** — targetes que es mostren a la pàgina de categories.
 
 ### 4. Patrocinadors
@@ -153,6 +155,8 @@ els podeu imprimir igualment.
    l'orientació, reviseu aquestes posicions: el dorsal ja no té la mateixa forma.
    Amb **«Només el nom, sense cognoms»** al dorsal hi surt «Laia» en lloc de «Laia
    Ferrer Miró»: va bé quan el dorsal és petit o quan voleu que s'hi llegeixi de lluny.
+   A la línia de la categoria hi surten el nom, el gènere (si la categoria no és mixta) i
+   els anys de naixement: *Infantil masculí (2013–2014)*, *Prebenjamí femení (2020)*.
 4. Premeu **«Veure un dorsal de prova»** per comprovar com queda abans d'imprimir.
 
 Per imprimir-los tots: **Inscripcions → Dorsals en PDF** (un dorsal per pàgina, i es pot

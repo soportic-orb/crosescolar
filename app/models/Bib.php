@@ -99,7 +99,10 @@ class Bib
             'first_name' => 'Laia',
             'last_name' => 'Ferrer Miró',
             'bib_number' => 1,
-            'category_name' => 'Aleví (3r-4t)',
+            'category_name' => 'Aleví',
+            'category_gender' => 'femeni',
+            'category_year_from' => 2016,
+            'category_year_to' => 2017,
         ]]);
     }
 
@@ -208,10 +211,37 @@ class Bib
         return trim($first . ' ' . trim((string) ($registration['last_name'] ?? '')));
     }
 
+    /**
+     * La categoria tal com surt al dorsal: el nom, el gènere si no és mixta i
+     * els anys de naixement. Per exemple «Infantil masculí (2013–2014)» o
+     * «Prebenjamí femení (2020)».
+     */
+    public static function category(array $registration): string
+    {
+        $label = trim((string) ($registration['category_name'] ?? ''));
+        if ($label === '') {
+            return '';
+        }
+        $gender = Content::genderLabel($registration);
+        // Si el nom de la categoria ja diu el gènere, no cal repetir-lo.
+        if ($gender !== '' && mb_stripos($label, $gender) === false) {
+            $label .= ' ' . $gender;
+        }
+        $years = Content::years($registration);
+        if ($years === '') {
+            return $label;
+        }
+        // Si el nom ja acaba amb un parèntesi («Aleví (3r-4t)»), els anys hi van
+        // a continuació amb un punt volat: dos parèntesis seguits semblen una errada.
+        return str_ends_with($label, ')')
+            ? $label . ' · ' . $years
+            : $label . ' (' . $years . ')';
+    }
+
     private static function drawFields(Pdf $pdf, array $registration, float $pageWidth): void
     {
         $name = self::name($registration);
-        $category = (string) ($registration['category_name'] ?? '');
+        $category = self::category($registration);
 
         self::drawField($pdf, 'bib_number', self::number($registration), $pageWidth);
         self::drawField($pdf, 'bib_name', $name, $pageWidth);

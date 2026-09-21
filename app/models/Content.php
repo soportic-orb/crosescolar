@@ -170,6 +170,38 @@ class Content
         return Db::all('SELECT * FROM documents WHERE active = 1 ORDER BY sort_order ASC, id ASC');
     }
 
+    /**
+     * Anys de naixement d'una categoria: «2013–2014», o només «2020» quan
+     * la categoria és d'un sol any. Cadena buida si no en té cap.
+     *
+     * Les claus s'hi poden dir «year_from»/«year_to» o portar el prefix
+     * «category_», que és com arriben quan s'han consultat amb la inscripció.
+     */
+    public static function years(array $category, string $separator = '–'): string
+    {
+        $from = $category['year_from'] ?? $category['category_year_from'] ?? null;
+        $to = $category['year_to'] ?? $category['category_year_to'] ?? null;
+        if (empty($from) && empty($to)) {
+            return '';
+        }
+        $from = (int) ($from ?: $to);
+        $to = (int) ($to ?: $from);
+
+        return $from === $to ? (string) $from : min($from, $to) . $separator . max($from, $to);
+    }
+
+    /** Nom del gènere d'una categoria («masculí», «femení») o cadena buida si és mixta. */
+    public static function genderLabel(array $category, bool $feminine = false): string
+    {
+        $gender = (string) ($category['gender'] ?? $category['category_gender'] ?? 'mixt');
+
+        return match ($gender) {
+            'masculi' => $feminine ? 'Masculina' : 'masculí',
+            'femeni' => $feminine ? 'Femenina' : 'femení',
+            default => '',
+        };
+    }
+
     /** Identificador de Wikiloc extret de l'URL si cal. */
     public static function wikilocId(array $course): string
     {

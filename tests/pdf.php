@@ -13,6 +13,7 @@ use Cros\Core\Pdf;
 use Cros\Core\PdfImport;
 use Cros\Core\Settings;
 use Cros\Models\Bib;
+use Cros\Models\Content;
 
 $passed = 0;
 $failed = 0;
@@ -143,6 +144,49 @@ if ($short !== null) {
 Settings::set('bib_name_first_only', '0');
 check('En tornar-ho a desactivar, hi surt el nom sencer',
     Bib::name(['first_name' => 'Laia', 'last_name' => 'Ferrer Miró']) === 'Laia Ferrer Miró');
+
+echo "\n== La categoria del dorsal ==\n";
+check('Porta el gènere i els anys',
+    Bib::category(['category_name' => 'Infantil', 'category_gender' => 'masculi',
+        'category_year_from' => 2013, 'category_year_to' => 2014]) === 'Infantil masculí (2013–2014)',
+    Bib::category(['category_name' => 'Infantil', 'category_gender' => 'masculi',
+        'category_year_from' => 2013, 'category_year_to' => 2014]));
+check('Amb un sol any, no en repeteix dos',
+    Bib::category(['category_name' => 'Prebenjamí', 'category_gender' => 'femeni',
+        'category_year_from' => 2020, 'category_year_to' => 2020]) === 'Prebenjamí femení (2020)');
+check('Una categoria mixta no porta gènere',
+    Bib::category(['category_name' => 'Famílies', 'category_gender' => 'mixt',
+        'category_year_from' => 1950, 'category_year_to' => 2015]) === 'Famílies (1950–2015)');
+check('No repeteix el gènere si ja és al nom',
+    Bib::category(['category_name' => 'Infantil masculí', 'category_gender' => 'masculi',
+        'category_year_from' => 2013, 'category_year_to' => 2014]) === 'Infantil masculí (2013–2014)');
+check('Si el nom ja acaba amb parèntesi, els anys hi van amb un punt volat',
+    Bib::category(['category_name' => 'Aleví (3r-4t)', 'category_gender' => 'mixt',
+        'category_year_from' => 2016, 'category_year_to' => 2017]) === 'Aleví (3r-4t) · 2016–2017');
+check('Sense anys, només el nom',
+    Bib::category(['category_name' => 'Famílies', 'category_gender' => 'mixt']) === 'Famílies');
+check('Sense categoria, res', Bib::category([]) === '');
+
+$withYears = pdf_text(Bib::pdf([[
+    'first_name' => 'Ona', 'last_name' => 'Vila', 'bib_number' => 9,
+    'category_name' => 'Prebenjamí', 'category_gender' => 'femeni',
+    'category_year_from' => 2020, 'category_year_to' => 2020,
+]]));
+if ($withYears !== null) {
+    check('I al dorsal imprès hi surt tot', str_contains($withYears, 'Prebenjamí femení (2020)'),
+        trim(str_replace("\n", ' ', $withYears)));
+}
+
+echo "\n== Anys de les categories ==\n";
+check('Dos anys diferents es mostren tots dos',
+    Content::years(['year_from' => 2013, 'year_to' => 2014]) === '2013–2014');
+check('Un sol any es mostra un cop',
+    Content::years(['year_from' => 2020, 'year_to' => 2020]) === '2020');
+check('Els anys al revés es posen en ordre',
+    Content::years(['year_from' => 2014, 'year_to' => 2013]) === '2013–2014');
+check('Si només n\'hi ha un de posat, val per als dos',
+    Content::years(['year_from' => 2020, 'year_to' => null]) === '2020');
+check('Sense anys, cadena buida', Content::years(['year_from' => null, 'year_to' => null]) === '');
 
 // Amb maqueta
 $templatePath = CROS_ROOT . '/uploads/documents/maqueta-de-prova.pdf';

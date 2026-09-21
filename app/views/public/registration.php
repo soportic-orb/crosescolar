@@ -77,7 +77,8 @@ $externalLink = (bool) preg_match('#^https?://#i', $linkUrl);
                 <option value="">Assignar automàticament</option>
                 <?php foreach ($categories as $category): ?>
                   <option value="<?= (int) $category['id'] ?>" <?= (string) old('category_id') === (string) $category['id'] ? 'selected' : '' ?>>
-                    <?= e($category['name']) ?><?= $category['year_from'] ? ' (' . e(min((int) $category['year_from'], (int) $category['year_to'])) . '–' . e(max((int) $category['year_from'], (int) $category['year_to'])) . ')' : '' ?>
+                    <?php $years = \Cros\Models\Content::years($category); ?>
+                    <?= e($category['name']) ?><?= $years !== '' ? ' (' . e($years) . ')' : '' ?>
                   </option>
                 <?php endforeach; ?>
               </select>

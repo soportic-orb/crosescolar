@@ -124,8 +124,7 @@ class Registration
             return null;
         }
         return Db::one(
-            'SELECT r.*, c.name AS category_name FROM registrations r
-             LEFT JOIN categories c ON c.id = r.category_id WHERE r.token = :token',
+            self::WITH_CATEGORY . ' WHERE r.token = :token',
             ['token' => $token]
         );
     }
@@ -134,8 +133,7 @@ class Registration
     public static function findByBib(int $bib): ?array
     {
         return Db::one(
-            'SELECT r.*, c.name AS category_name FROM registrations r
-             LEFT JOIN categories c ON c.id = r.category_id WHERE r.bib_number = :bib',
+            self::WITH_CATEGORY . ' WHERE r.bib_number = :bib',
             ['bib' => $bib]
         );
     }
@@ -148,9 +146,7 @@ class Registration
             return [];
         }
         return Db::all(
-            'SELECT r.*, c.name AS category_name FROM registrations r
-             LEFT JOIN categories c ON c.id = r.category_id
-             WHERE LOWER(r.tutor_email) = :email ORDER BY r.bib_number ASC, r.id ASC',
+            self::WITH_CATEGORY . ' WHERE LOWER(r.tutor_email) = :email ORDER BY r.bib_number ASC, r.id ASC',
             ['email' => $email]
         );
     }
@@ -163,12 +159,20 @@ class Registration
             return null;
         }
         return Db::one(
-            'SELECT r.*, c.name AS category_name FROM registrations r
-             LEFT JOIN categories c ON c.id = r.category_id
-             WHERE r.id = :id AND LOWER(r.tutor_email) = :email',
+            self::WITH_CATEGORY . ' WHERE r.id = :id AND LOWER(r.tutor_email) = :email',
             ['id' => $id, 'email' => $email]
         );
     }
+
+    /**
+     * Consulta base de les inscripcions amb les dades de la seva categoria.
+     * El gènere i els anys porten el prefix «category_» perquè la inscripció
+     * també té el seu propi gènere.
+     */
+    public const WITH_CATEGORY = 'SELECT r.*, c.name AS category_name, c.gender AS category_gender,
+                   c.year_from AS category_year_from, c.year_to AS category_year_to
+            FROM registrations r
+            LEFT JOIN categories c ON c.id = r.category_id';
 
     /** Camps que la família pot canviar des del web. */
     public const EDITABLE = [
@@ -210,8 +214,7 @@ class Registration
     public static function find(int $id): ?array
     {
         return Db::one(
-            'SELECT r.*, c.name AS category_name FROM registrations r
-             LEFT JOIN categories c ON c.id = r.category_id WHERE r.id = :id',
+            self::WITH_CATEGORY . ' WHERE r.id = :id',
             ['id' => $id]
         );
     }

@@ -409,6 +409,22 @@ check('Els altres camps de la categoria no s\'han perdut',
     str_contains(req('GET', $base . '/categories-i-premis', [], ['anon' => true])['body'], '1.000 m'));
 saveCategory($base, $alevi, ['medals' => '1', 'winners' => '3']);
 
+echo "\n== Anys de la categoria ==\n";
+$prebenjami = categoryId($base, 'Prebenjamí');
+check('Es troba la categoria petita', $prebenjami > 0);
+saveCategory($base, $prebenjami, ['year_from' => '2020', 'year_to' => '2020']);
+$publicCats = text(req('GET', $base . '/categories-i-premis', [], ['anon' => true])['body']);
+check('Amb un sol any, la web no en mostra dos',
+    !str_contains($publicCats, '2020–2020') && preg_match('#Prebenjamí.*?2020#s', $publicCats) === 1);
+check('El panell tampoc',
+    !str_contains(text(req('GET', $base . '/admin/contingut/categories')['body']), '2020–2020'));
+check('El formulari d\'inscripció tampoc',
+    !str_contains(text(req('GET', $base . '/inscripcio', [], ['anon' => true])['body']), '2020–2020'));
+
+saveCategory($base, $prebenjami, ['year_from' => '2020', 'year_to' => '2021']);
+check('Amb dos anys diferents, es mostren tots dos',
+    str_contains(text(req('GET', $base . '/categories-i-premis', [], ['anon' => true])['body']), '2020–2021'));
+
 echo "\n== Premi «Primer local» ==\n";
 
 /** La fila d'un participant dins d'una taula de resultats. */

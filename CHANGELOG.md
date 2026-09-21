@@ -3,6 +3,18 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.14.0] — 2026-09-21
+
+### Canviat
+- **La categoria del dorsal porta els anys**: on abans hi deia només «Infantil», ara hi
+  surten el nom, el gènere (si la categoria no és mixta) i els anys de naixement —
+  *Infantil masculí (2013–2014)*, *Prebenjamí femení (2020)*. Si el nom de la categoria ja
+  diu el gènere, no es repeteix, i si ja acaba amb un parèntesi els anys hi van a
+  continuació amb un punt volat, per no encadenar dos parèntesis.
+- **Categories d'un sol any**: quan l'any inicial i el final són el mateix, ara es mostra
+  un cop (*2020*) en lloc de repetir-lo (*2020–2020*). Val per a la pàgina de categories,
+  el formulari d'inscripció, el llistat del panell i el dorsal.
+
 ## [1.13.0] — 2026-09-21
 
 ### Afegit

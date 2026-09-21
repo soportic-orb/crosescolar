@@ -33,8 +33,9 @@
                   <?php endif; ?>
                 </td>
                 <td>
-                  <?php if ($category['year_from'] && $category['year_to']): ?>
-                    <?= e(min((int) $category['year_from'], (int) $category['year_to'])) ?>–<?= e(max((int) $category['year_from'], (int) $category['year_to'])) ?>
+                  <?php $years = \Cros\Models\Content::years($category); ?>
+                  <?php if ($years !== ''): ?>
+                    <?= e($years) ?>
                   <?php else: ?>
                     <span class="text-soft">—</span>
                   <?php endif; ?>

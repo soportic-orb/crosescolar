@@ -51,8 +51,9 @@ $currency = (string) setting('payments_currency', 'EUR');
                     $value = $row[$column] ?? '';
                     $fieldType = $resource['fields'][$column]['type'] ?? 'text';
                     if ($column === 'years') {
-                        echo $row['year_from'] && $row['year_to']
-                            ? e(min((int) $row['year_from'], (int) $row['year_to']) . '–' . max((int) $row['year_from'], (int) $row['year_to']))
+                        $years = \Cros\Models\Content::years($row);
+                        echo $years !== ''
+                            ? e($years)
                             : '<span class="text-soft">—</span>';
                     } elseif ($column === 'winners') {
                         // Els premiats només tenen sentit si la categoria mostra medalles.

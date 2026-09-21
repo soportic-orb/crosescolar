@@ -36,8 +36,7 @@ class RegistrationsController extends Controller
 
         $total = (int) Db::val('SELECT COUNT(*) FROM registrations r' . $clause, $params, 0);
         $rows = Db::all(
-            'SELECT r.*, c.name AS category_name FROM registrations r
-             LEFT JOIN categories c ON c.id = r.category_id' . $clause . '
+            Registration::WITH_CATEGORY . $clause . '
              ORDER BY r.created_at DESC LIMIT ' . self::PER_PAGE . ' OFFSET ' . (($page - 1) * self::PER_PAGE),
             $params
         );
@@ -202,8 +201,7 @@ class RegistrationsController extends Controller
     {
         Auth::requireLogin();
         $categoryId = (int) input('categoria', 0);
-        $sql = 'SELECT r.*, c.name AS category_name FROM registrations r
-                LEFT JOIN categories c ON c.id = r.category_id';
+        $sql = Registration::WITH_CATEGORY;
         $params = [];
         if ($categoryId > 0) {
             $sql .= ' WHERE r.category_id = :cat';
