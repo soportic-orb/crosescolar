@@ -303,6 +303,11 @@ if ($text !== null) {
     check('I les dues amb el nom', substr_count($text, 'Laia Ferrer') === 2);
     check('Hi diu per on s\'ha de retallar', str_contains($text, 'Retalleu per aquí'));
     check('I la marca només surt un cop', substr_count($text, 'Retalleu per aquí') === 1);
+    // El text surt en ordre de dalt a baix: la marca ha de quedar entre les dues còpies.
+    $cut = mb_strpos($text, 'Retalleu per aquí');
+    check('La línia separa els dos dorsals',
+        $cut !== false && mb_strpos($text, '007') < $cut && mb_strrpos($text, '007') > $cut,
+        trim(str_replace("\n", ' ', $text)));
 }
 
 // Cada participant, el seu full.

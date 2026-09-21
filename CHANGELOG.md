@@ -8,7 +8,9 @@ i el versionatge semàntic.
 ### Canviat
 - **El dorsal que es descarrega la família porta dues còpies**: un full A4 vertical amb el
   mateix dorsal a dalt i a baix, apaïsats, separats per una línia de punts amb unes
-  tisores i el text «Retalleu per aquí». Amb un sol full en tenen un per al pit i un de
+  tisores i el text «Retalleu per aquí». Cada còpia se centra dins de la seva meitat i la
+  línia passa per una franja en blanc, de manera que els dos dorsals queden ben separats
+  encara que el disseny arribi fins a la vora. Amb un sol full en tenen un per al pit i un de
   recanvi. Si hi ha més d'un participant, cadascun té el seu full. Si el dorsal ocupa un
   A4 sencer i no es pot partir el full, se'n fan dues còpies en dos fulls.
 - El que s'imprimeix des del panell no canvia: un dorsal per pàgina, o dos de diferents

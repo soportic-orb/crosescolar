@@ -104,6 +104,13 @@ class Bib
             $pdf->resizePage($sheet['sheet']);
         }
 
+        // Cada dorsal se centra dins del seu espai del full: el que sobra queda
+        // com a marge, de manera que la línia de retallar passi per un tros en
+        // blanc i els dos dorsals es vegin separats de debò.
+        $slotHeight = $sheet['per_sheet'] > 1 ? $sheet['offset'] : $sheet['sheet'][1];
+        $inset = max(0.0, ($slotHeight - $size[1]) / 2);
+        $left = max(0.0, ($sheet['sheet'][0] - $size[0]) / 2);
+
         $first = $template !== null;
         $slot = 0;
         foreach ($registrations as $registration) {
@@ -112,16 +119,17 @@ class Bib
             } elseif ($slot === 0) {
                 $pdf->addPage($sheet['sheet']);
             }
-            $top = $slot * $sheet['offset'];
+            $top = $slot * $sheet['offset'] + $inset;
             if ($template !== null && $placement !== null) {
-                $pdf->useTemplate($template, $placement[0], $placement[1] + $top, $placement[2], $placement[3], $rotate);
+                $pdf->useTemplate($template, $placement[0] + $left, $placement[1] + $top, $placement[2], $placement[3], $rotate);
             }
-            self::drawFields($pdf, $registration, $size[0], $top);
-            // La línia de retallar va entre les dues meitats, un cop dibuixada la de dalt.
+            self::drawFields($pdf, $registration, $size[0], $top, $left);
+            $slot = ($slot + 1) % $sheet['per_sheet'];
+            // La marca de retallar es dibuixa quan el full ja té els dos dorsals:
+            // així no hi ha cap maqueta que li passi per sobre i l'amagui.
             if ($duplicate && $sheet['per_sheet'] > 1 && $slot === 0) {
                 self::cutMark($pdf, $sheet['offset'], $sheet['sheet'][0]);
             }
-            $slot = ($slot + 1) % $sheet['per_sheet'];
         }
         if (!$registrations) {
             $pdf->addPage($sheet['sheet']);
@@ -161,12 +169,19 @@ class Bib
      */
     private static function cutMark(Pdf $pdf, float $y, float $width): void
     {
+        // Una franja en blanc a banda i banda de la línia: encara que els dos
+        // dorsals s'acabin tocant, queden clarament separats i la línia no passa
+        // per sobre de cap disseny.
+        $band = 3.2;
+        $pdf->setColorHex('#ffffff');
+        $pdf->rect(0, $y - $band, $width, $band * 2, 'F');
+
         $pdf->setStrokeColor(120, 130, 122);
-        self::scissors($pdf, 14.0, $y, 2.1);
-        $pdf->dashedLine(20.0, $y, $width - 8.0, $y);
-        $pdf->setFont('helvetica', 7.5);
+        self::scissors($pdf, 13.0, $y, 2.0);
+        $pdf->dashedLine(19.0, $y, $width - 30.0, $y);
+        $pdf->setFont('helvetica', 7);
         $pdf->setColorHex('#78827a');
-        $pdf->text($width - 8.0, $y - 1.6, 'Retalleu per aquí', ['align' => 'right']);
+        $pdf->text($width - 8.0, $y + 1.2, 'Retalleu per aquí', ['align' => 'right']);
         $pdf->setStrokeColor(0, 0, 0);
     }
 
@@ -310,23 +325,23 @@ class Bib
         return Content::title($registration);
     }
 
-    private static function drawFields(Pdf $pdf, array $registration, float $pageWidth, float $top = 0.0): void
+    private static function drawFields(Pdf $pdf, array $registration, float $pageWidth, float $top = 0.0, float $left = 0.0): void
     {
-        self::drawField($pdf, 'bib_number', self::number($registration), $pageWidth, $top);
-        self::drawField($pdf, 'bib_name', self::name($registration), $pageWidth, $top);
-        self::drawField($pdf, 'bib_category', self::category($registration), $pageWidth, $top);
-        self::drawField($pdf, 'bib_school', trim((string) ($registration['school'] ?? '')), $pageWidth, $top);
+        self::drawField($pdf, 'bib_number', self::number($registration), $pageWidth, $top, $left);
+        self::drawField($pdf, 'bib_name', self::name($registration), $pageWidth, $top, $left);
+        self::drawField($pdf, 'bib_category', self::category($registration), $pageWidth, $top, $left);
+        self::drawField($pdf, 'bib_school', trim((string) ($registration['school'] ?? '')), $pageWidth, $top, $left);
     }
 
-    private static function drawField(Pdf $pdf, string $prefix, string $value, float $pageWidth, float $top = 0.0): void
+    private static function drawField(Pdf $pdf, string $prefix, string $value, float $pageWidth, float $top = 0.0, float $left = 0.0): void
     {
         // Sense valor per defecte explícit: així s'agafa el de l'esquema de configuració.
         if ($value === '' || $value === '—' || (string) setting($prefix . '_show') !== '1') {
             return;
         }
-        $x = (float) setting($prefix . '_x');
-        // Les posicions es configuren dins del dorsal; «top» diu on comença
-        // el dorsal dins del full quan n'hi ha més d'un.
+        // Les posicions es configuren dins del dorsal; «top» i «left» diuen on
+        // comença el dorsal dins del full quan no l'ocupa sencer.
+        $x = (float) setting($prefix . '_x') + $left;
         $y = (float) setting($prefix . '_y') + $top;
         $size = max(4.0, (float) setting($prefix . '_size'));
         $align = (string) setting($prefix . '_align');
