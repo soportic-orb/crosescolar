@@ -246,7 +246,7 @@
       }
     });
   });
-  /* Editor visual del cos dels correus ------------------------------- */
+  /* Editor visual dels textos del panell ------------------------------ */
   document.querySelectorAll('[data-editor]').forEach(function (editor) {
     var area = editor.querySelector('[data-editor-area]');
     var source = editor.querySelector('[data-editor-source]');
@@ -255,6 +255,15 @@
     // Amb JavaScript, l'HTML es veu format; el textarea queda de reserva.
     area.innerHTML = source.value.trim() || '<p><br></p>';
     editor.classList.add('editor--live');
+
+    // Clicar l'etiqueta del camp ha de portar a l'àrea on s'escriu, no al
+    // textarea de l'HTML, que amb JavaScript queda amagat.
+    var label = source.id ? document.querySelector('label[for="' + source.id + '"]') : null;
+    if (label) {
+      label.addEventListener('click', function (event) {
+        if (!editor.classList.contains('editor--source')) { event.preventDefault(); area.focus(); }
+      });
+    }
 
     // Etiquetes senzilles (<b>, <p>) en lloc d'estils dins de l'HTML: així el
     // correu es veu igual a tots els programes de correu.

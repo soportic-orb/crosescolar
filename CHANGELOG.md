@@ -3,6 +3,24 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.23.0] — 2026-09-21
+
+### Canviat
+- **Tots els textos del panell s'editen amb l'editor visual**, el mateix dels enviaments de
+  correu: el que s'escriu es veu tal com quedarà, amb negreta, cursiva, títols, llistes i
+  enllaços a la barra de dalt. Fins ara calia escriure-hi etiquetes HTML a mà. Afecta els
+  22 camps de text amb format del panell: la portada, el punt de recàrrega, les categories
+  i premis, el reglament, les inscripcions (introducció, requadre «Recorda», text de
+  tancament i de confirmació), els resultats, l'avís legal, la privacitat, el text del web
+  en preparació i les descripcions dels recorreguts, els premis, els blocs destacats i les
+  preguntes freqüents.
+- El botó **&lt;/&gt; HTML** de cada camp continua deixant veure i editar el codi, i sense
+  JavaScript el camp segueix sent la casella de text de sempre, de manera que res no depèn
+  del navegador. El text enganxat d'un altre web entra sense format i el que es desa passa
+  pel mateix filtre de seguretat d'abans.
+- Cada camp manté l'alçada que tenia configurada (el reglament surt alt; una introducció
+  curta, baixa) i clicar-ne el títol porta directament a on s'escriu.
+
 ## [1.22.0] — 2026-09-21
 
 ### Afegit

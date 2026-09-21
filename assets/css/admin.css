@@ -195,7 +195,7 @@ input[type="color"] { width: 64px; height: 40px; padding: 2px; }
 .laps__actions { display: flex; gap: .25rem; }
 .laps__actions .btn { padding: .3rem .55rem; line-height: 1; }
 
-/* ------------------------------------------------- Editor visual de correus */
+/* ---------------------------------------- Editor visual dels textos del web */
 .editor { border: 1px solid var(--a-line); border-radius: 12px; overflow: hidden; background: var(--a-surface); }
 .editor__bar {
   display: flex; flex-wrap: wrap; gap: .3rem; padding: .5rem;
@@ -214,7 +214,7 @@ input[type="color"] { width: 64px; height: 40px; padding: 2px; }
 .editor__area ul, .editor__area ol { padding-left: 1.4rem; margin: .6rem 0; }
 .editor__area p { margin: 0 0 .8rem; }
 .editor__area a { color: var(--a-green); }
-.editor__area:empty::before { content: 'Escriviu aquí el correu…'; color: var(--a-soft); }
+.editor__area:empty::before { content: attr(data-placeholder); color: var(--a-soft); }
 .editor__source {
   display: block; width: 100%; border: 0; border-radius: 0; resize: vertical;
   font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .85rem;

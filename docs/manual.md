@@ -115,7 +115,7 @@ celebrar-ho. Es pot apagar amb *Confeti en confirmar la inscripció*; qui tingui
 Al costat del formulari hi ha el **requadre de recordatoris** («Recorda»), amb el que
 convé tenir present abans d'inscriure's. El títol i el contingut s'editen a
 **Configuració → Inscripcions** (*Títol del requadre* i *Contingut del requadre*, amb
-HTML bàsic: llistes, negretes i enllaços), i l'interruptor *Mostrar el requadre de
+l'editor visual: llistes, negretes i enllaços), i l'interruptor *Mostrar el requadre de
 recordatoris* el treu de la pàgina si no el voleu.
 
 ### 6.1. «Les meves inscripcions»
@@ -435,8 +435,15 @@ queden antics.
 
 ## Consells
 
-- Els camps de text amb HTML admeten `<p>`, `<strong>`, `<em>`, `<ul>`, `<li>`,
-  `<a>`, `<h2>` i `<h3>`. Qualsevol codi perillós s'elimina automàticament.
+- **Els textos amb format s'escriuen amb l'editor visual** (el mateix dels enviaments de
+  correu): el que veieu mentre escriviu és com quedarà al web. La barra de dalt té
+  negreta, cursiva, títols, llistes i enllaços; el botó **&lt;/&gt; HTML** deixa veure i
+  tocar el codi per a qui s'hi vulgui posar, i el text enganxat d'un altre lloc entra
+  sense format. Hi són tots: la portada, el punt de recàrrega, les categories, el
+  reglament, les inscripcions, els resultats, l'avís legal i la privacitat, i també les
+  descripcions dels recorreguts, els premis, els blocs destacats i les preguntes
+  freqüents. Es desa com a HTML senzill —`<p>`, `<strong>`, `<em>`, `<ul>`, `<li>`,
+  `<a>`, `<h2>`, `<h3>`— i qualsevol codi perillós s'elimina automàticament.
 - Totes les llistes es poden **reordenar arrossegant** les files.
 - **Sistema → Registre** mostra qui ha fet cada canvi.
 - **Sistema → Correus** mostra els correus enviats i permet fer una prova d'enviament.

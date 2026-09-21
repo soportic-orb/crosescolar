@@ -31,8 +31,18 @@ $required = str_contains((string) ($field['rules'] ?? ''), 'required');
       <?php break; ?>
 
       <?php case 'html': ?>
-        <textarea id="<?= e($id) ?>" name="<?= e($name) ?>" rows="<?= (int) ($field['rows'] ?? 6) ?>" class="mono" style="font-size:.88rem"><?= e((string) $value) ?></textarea>
-        <span class="hint">Es permet HTML bàsic: &lt;p&gt;, &lt;strong&gt;, &lt;em&gt;, &lt;ul&gt;, &lt;li&gt;, &lt;a&gt;, &lt;h2&gt;, &lt;h3&gt;.</span>
+        <?= \Cros\Core\View::partial('admin/partials/editor', [
+            'name' => $name,
+            'value' => (string) $value,
+            'id' => $id,
+            'label' => $label,
+            'rows' => (int) ($field['rows'] ?? 6),
+            'placeholder' => $placeholder !== '' ? $placeholder : 'Escriviu aquí el contingut…',
+        ]) ?>
+        <span class="hint">
+          S'escriu tal com quedarà. Amb el botó <strong>&lt;/&gt; HTML</strong> podeu veure i editar el codi.
+          <?= $hint !== '' ? e($hint) : '' ?>
+        </span>
       <?php break; ?>
 
       <?php case 'select': ?>

@@ -52,6 +52,18 @@ function token(string $html): string
 }
 
 /** Text de la pàgina amb les entitats HTML descodificades (apòstrofs, accents…). */
+/** El tros del formulari que correspon a un camp, per mirar-lo a part. */
+function explodeField(string $html, string $name): string
+{
+    $start = strpos($html, 'name="' . $name . '"');
+    if ($start === false) {
+        return '';
+    }
+    $from = strrpos(substr($html, 0, $start), '<div class="field"');
+
+    return substr($html, $from === false ? max(0, $start - 400) : $from, 600);
+}
+
 function text(string $html): string
 {
     return html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
@@ -350,6 +362,30 @@ check('Sense coordenades, cerca l\'adreça de la cursa',
     str_contains($home, 'openstreetmap.org/search?query=') && str_contains(text($home), 'Zona esportiva'));
 check('I no incrusta cap mapa', !str_contains($home, 'export/embed.html'));
 $mapPost(['map_lat' => '41.376699', 'map_lng' => '1.713535']);
+
+echo "\n== Editor visual dels textos ==\n";
+$homeForm = req('GET', $base . '/admin/configuracio/home')['body'];
+check('Els textos del web s\'editen amb l\'editor visual', str_contains($homeForm, 'data-editor'));
+check('Amb la barra d\'eines', str_contains($homeForm, 'data-command="bold"') && str_contains($homeForm, 'data-command="link"'));
+check('I el botó per veure l\'HTML', str_contains($homeForm, 'data-command="source"'));
+check('El camp continua sent el mateix', str_contains($homeForm, 'name="intro_text"'));
+check('L\'etiqueta apunta a on s\'escriu', str_contains($homeForm, 'id="f_intro_text"'));
+$ticketsForm = req('GET', $base . '/admin/configuracio/tickets')['body'];
+check('Cada text de la pàgina té el seu editor', substr_count($ticketsForm, 'data-editor-area') >= 4,
+    (string) substr_count($ticketsForm, 'data-editor-area'));
+check('Els camps de text normal no en porten',
+    !str_contains(explodeField($homeForm, 'hero_subtitle'), 'data-editor'));
+
+// També a les fitxes de continguts, no només a la configuració.
+$faqForm = req('GET', $base . '/admin/contingut/preguntes/nou')['body'];
+check('Les fitxes de continguts també l\'utilitzen', str_contains($faqForm, 'data-editor-area'));
+check('I desen al camp de sempre', str_contains($faqForm, 'name="answer"'));
+
+// El text llarg del reglament també, amb prou alçada.
+$rulesForm = req('GET', $base . '/admin/configuracio/rules')['body'];
+check('El reglament s\'edita igual', str_contains($rulesForm, 'data-editor-area'));
+check('I el quadre és alt', preg_match('/min-height:(\d+)px/', $rulesForm, $mh) === 1 && (int) $mh[1] > 400,
+    $mh[1] ?? 'sense alçada');
 
 $xss = req('POST', $base . '/admin/configuracio/home', [
     '_token' => token(req('GET', $base . '/admin/configuracio/home')['body']),

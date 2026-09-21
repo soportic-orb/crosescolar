@@ -30,6 +30,9 @@ $audience = (string) ($row['audience'] ?? 'all');
         <?= \Cros\Core\View::partial('admin/partials/editor', [
             'name' => 'body',
             'value' => (string) ($row['body'] ?? ''),
+            'id' => 'body',
+            'label' => 'Cos del correu',
+            'placeholder' => 'Escriviu aquí el correu…',
         ]) ?>
         <span class="hint">
           Podeu escriure-hi marcadors que se substitueixen a cada correu:
