@@ -146,6 +146,7 @@ if (\Cros\Core\Settings::bool('results_published')) {
           <li><a href="<?= e(url('/recorreguts')) ?>">Recorreguts</a></li>
           <li><a href="<?= e(url('/categories-i-premis')) ?>">Categories i premis</a></li>
           <li><a href="<?= e(url('/inscripcio')) ?>">Inscripció</a></li>
+          <li><a href="<?= e(url('/reglament')) ?>"><?= e(setting('rules_title', 'Reglament de la cursa')) ?></a></li>
           <li><a href="<?= e(url('/punt-de-recarrega')) ?>">Punt de recàrrega</a></li>
           <?php if (\Cros\Controllers\AccountController::enabled()): ?>
             <li><a href="<?= e(url('/les-meves-inscripcions')) ?>">Les meves inscripcions</a></li>

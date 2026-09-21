@@ -6,6 +6,11 @@ i el versionatge semàntic.
 ## [1.12.0] — 2026-09-21
 
 ### Afegit
+- **Reglament de la cursa**: nou apartat *Configuració → Reglament* amb el text del
+  reglament, que es publica a `/reglament` i s'enllaça des del peu de pàgina. Al
+  formulari d'inscripció hi ha la casella **«Accepto el reglament de la cursa»**, el text
+  de la qual obre el reglament en una pestanya nova; l'acceptació queda desada amb la
+  inscripció. Es pot deixar de demanar sense retirar la pàgina.
 - **Premi «Primer local»**: cada categoria pot premiar el primer classificat de l'escola
   del poble. S'activa a *Categories → editar* i el guanyador es marca a mà des de
   *Resultats*, un per categoria; el panell assenyala amb l'etiqueta *local* qui hi pot
@@ -17,6 +22,11 @@ i el versionatge semàntic.
   guarden i quins drets hi ha). Hi admeten marcadors — `{{entitat}}`, `{{cursa}}`,
   `{{poble}}`, `{{correu}}`, `{{telefon}}` i `{{web}}` — que se substitueixen sols, de
   manera que no es queden antics quan canvia el contacte.
+
+### Corregit
+- El **botó «Inscriu-te!»** de la capçalera tenia el text gairebé negre sobre el fons
+  vermell, perquè el color del menú li passava al davant. Ara el text és blanc i, en
+  passar-hi per sobre, el botó enfosqueix el vermell en comptes de tornar-se verd clar.
 
 ### Canviat
 - El formulari d'inscripció ja no demana **la talla de samarreta** ni **el curs**. Els

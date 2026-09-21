@@ -30,6 +30,7 @@ class Registration
             'status' => 'confirmed',
             'consent_data' => (int) ($data['consent_data'] ?? 0),
             'consent_image' => (int) ($data['consent_image'] ?? 0),
+            'consent_rules' => (int) ($data['consent_rules'] ?? 0),
             'ip' => client_ip(),
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s'),
@@ -267,7 +268,7 @@ class Registration
         return Db::all(
             'SELECT r.bib_number, r.code, r.first_name, r.last_name, r.birth_year, r.gender, c.name AS category,
                     r.school, r.tutor_name, r.tutor_email, r.tutor_phone,
-                    r.notes, r.status, r.consent_data, r.consent_image, r.created_at
+                    r.notes, r.status, r.consent_data, r.consent_image, r.consent_rules, r.created_at
              FROM registrations r LEFT JOIN categories c ON c.id = r.category_id
              ORDER BY r.created_at ASC'
         );

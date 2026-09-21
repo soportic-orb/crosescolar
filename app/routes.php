@@ -30,6 +30,7 @@ $router->get('/categories-i-premis', [PageController::class, 'categories']);
 $router->get('/recorreguts', [PageController::class, 'courses']);
 $router->get('/recorreguts/{slug}', [PageController::class, 'course']);
 $router->get('/preguntes-frequents', [PageController::class, 'faqs']);
+$router->get('/reglament', [PageController::class, 'rules']);
 $router->get('/avis-legal', [PageController::class, 'legal']);
 $router->get('/privacitat', [PageController::class, 'privacy']);
 $router->get('/contacte', [PageController::class, 'contact']);

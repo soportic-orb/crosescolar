@@ -24,6 +24,7 @@ dels tiquets del punt de recàrrega amb Stripe.
 | Els meus tiquets | `/els-meus-tiquets` | Consulta dels tiquets comprats amb codi QR i versió imprimible |
 | Inscripció | `/inscripcio` | Formulari d'inscripció a les curses |
 | Les meves inscripcions | `/les-meves-inscripcions` | Les famílies hi entren amb un codi d'un sol ús que reben per correu i poden revisar i modificar les dades dels seus participants |
+| Reglament de la cursa | `/reglament` | Text editable des del panell; cal acceptar-lo per inscriure-s'hi |
 | Contacte, avís legal i privacitat | `/contacte`, `/avis-legal`, `/privacitat` | |
 
 ### Panell d'administració (`/admin`)

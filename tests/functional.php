@@ -57,6 +57,49 @@ function text(string $html): string
     return html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
 }
 
+function formData(string $html): array
+{
+    $data = [];
+    preg_match_all('/<input[^>]*>/i', $html, $inputs);
+    foreach ($inputs[0] as $tag) {
+        if (!preg_match('/name="([^"]+)"/', $tag, $name)) {
+            continue;
+        }
+        if (str_ends_with($name[1], '[]')) {
+            continue; // llistes (recorreguts i voltes): les posa qui crida la funció
+        }
+        if (preg_match('/type="(checkbox|file|radio)"/i', $tag, $type)) {
+            if (strtolower($type[1]) === 'checkbox' && str_contains($tag, 'checked')) {
+                $data[$name[1]] = '1';
+            }
+            continue;
+        }
+        preg_match('/value="([^"]*)"/', $tag, $value);
+        $data[$name[1]] = html_entity_decode($value[1] ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    }
+    preg_match_all('#<textarea[^>]*name="([^"]+)"[^>]*>(.*?)</textarea>#s', $html, $areas, PREG_SET_ORDER);
+    foreach ($areas as $area) {
+        $data[$area[1]] = html_entity_decode($area[2], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    }
+    preg_match_all('#<select[^>]*name="([^"]+)"[^>]*>(.*?)</select>#s', $html, $selects, PREG_SET_ORDER);
+    foreach ($selects as $select) {
+        if (str_ends_with($select[1], '[]')) {
+            continue;
+        }
+        if (preg_match('/<option value="([^"]*)"[^>]*selected/', $select[2], $option)) {
+            $data[$select[1]] = html_entity_decode($option[1], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        }
+    }
+    return $data;
+}
+
+/** Desa la configuració d'un grup canviant només el que s'indica. */
+function saveSettings(string $base, string $group, array $changes): array
+{
+    $form = req('GET', $base . '/admin/configuracio/' . $group);
+    return req('POST', $base . '/admin/configuracio/' . $group, array_merge(formData($form['body']), $changes));
+}
+
 function csrf_from(string $base): string
 {
     return token(req('GET', $base . '/admin')['body']);
@@ -94,6 +137,20 @@ check('La pàgina es diu «punt de recàrrega»', str_contains(text($tickets['bo
 $vella = req('GET', $base . '/esmorzar');
 check('L\'adreça antiga redirigeix a la nova',
     $vella['status'] === 301 && str_contains($vella['headers'], '/punt-de-recarrega'), 'estat ' . $vella['status']);
+
+echo "\n== Reglament de la cursa ==\n";
+$rules = req('GET', $base . '/reglament');
+check('Hi ha la pàgina del reglament', $rules['status'] === 200 && substr_count($rules['body'], '<h2>') >= 10);
+check('Porta el títol configurat', str_contains(text($rules['body']), 'Reglament de la cursa'));
+check('I els marcadors s\'hi substitueixen',
+    !str_contains($rules['body'], '{{') && str_contains(text($rules['body']), 'AFA Jacint Verdaguer de La Granada'));
+check('El peu de pàgina hi enllaça',
+    str_contains(req('GET', $base . '/')['body'], '/reglament">Reglament de la cursa'));
+
+$regForm = req('GET', $base . '/inscripcio');
+check('El formulari demana acceptar-lo', str_contains($regForm['body'], 'name="consent_rules"'));
+check('I el text de la casella hi enllaça',
+    preg_match('#name="consent_rules"[^>]*>\s*<span>\s*<a href="[^"]*/reglament"#s', $regForm['body']) === 1);
 
 echo "\n== Textos legals ==\n";
 $legal = req('GET', $base . '/avis-legal');
@@ -157,11 +214,22 @@ $registration = req('POST', $base . '/inscripcio', [
     'gender' => 'femeni',
     'category_id' => '',
     'school' => 'Escola La Granada',
+    'consent_rules' => '1',
     'tutor_name' => 'Marc Ferrer',
     'tutor_email' => 'families@example.test',
     'tutor_phone' => '600000000',
     'consent_data' => '1',
 ]);
+$withoutRules = req('POST', $base . '/inscripcio', [
+    '_token' => token(req('GET', $base . '/inscripcio')['body']),
+    'first_name' => 'Sense', 'last_name' => 'Reglament ' . $unique,
+    'birth_year' => (string) ((int) date('Y') - 9),
+    'tutor_name' => 'Marc Ferrer', 'tutor_email' => 'families@example.test', 'consent_data' => '1',
+]);
+check('Sense acceptar el reglament no es pot inscriure',
+    $withoutRules['status'] !== 302 || !str_contains($withoutRules['headers'], 'confirmada'));
+check('I l\'avís ho diu', str_contains(text($withoutRules['body']), 'Cal acceptar aquesta condició'));
+
 check('La inscripció es desa', $registration['status'] === 302 && str_contains($registration['headers'], '/inscripcio/confirmada/'), 'estat ' . $registration['status']);
 preg_match('#/inscripcio/confirmada/([A-Z0-9-]+)#', $registration['headers'], $m);
 $done = req('GET', $base . '/inscripcio/confirmada/' . ($m[1] ?? 'X'));
@@ -171,7 +239,8 @@ check('Assigna la categoria per any', str_contains($done['body'], 'Aleví'), 'ca
 $duplicate = req('POST', $base . '/inscripcio', [
     '_token' => token(req('GET', $base . '/inscripcio')['body']),
     'first_name' => 'Laia', 'last_name' => 'Ferrer ' . $unique, 'birth_year' => (string) ((int) date('Y') - 9),
-    'tutor_name' => 'Marc Ferrer', 'tutor_email' => 'families@example.test', 'consent_data' => '1',
+    'tutor_name' => 'Marc Ferrer', 'tutor_email' => 'families@example.test',
+    'consent_data' => '1', 'consent_rules' => '1',
 ]);
 check('Evita inscripcions duplicades', $duplicate['status'] === 302 && !str_contains($duplicate['headers'], 'confirmada'));
 
@@ -180,7 +249,8 @@ req('POST', $base . '/inscripcio', [
     '_token' => token(req('GET', $base . '/inscripcio')['body']),
     'first_name' => 'Nil', 'last_name' => 'Fora ' . $unique, 'birth_year' => (string) ((int) date('Y') - 10),
     'gender' => 'altre', 'class_group' => 'Batxillerat', 'shirt_size' => 'XXL',
-    'tutor_name' => 'Marc Ferrer', 'tutor_email' => 'families@example.test', 'consent_data' => '1',
+    'tutor_name' => 'Marc Ferrer', 'tutor_email' => 'families@example.test',
+    'consent_data' => '1', 'consent_rules' => '1',
 ]);
 
 echo "\n== Seguretat ==\n";
@@ -445,6 +515,17 @@ $regOpen = static function (array $values = []) use ($base) {
 $regOpen();
 $openPage = req('GET', $base . '/inscripcio', [], ['anon' => true]);
 check('En reactivar-lo torna a sortir el formulari', str_contains($openPage['body'], 'name="first_name"'));
+
+echo "\n== El reglament es pot deixar d'exigir ==\n";
+saveSettings($base, 'rules', ['rules_consent' => '0']);
+check('Es pot deixar de demanar l\'acceptació',
+    !str_contains(req('GET', $base . '/inscripcio', [], ['anon' => true])['body'], 'name="consent_rules"'));
+check('I la pàgina del reglament continua publicada',
+    req('GET', $base . '/reglament', [], ['anon' => true])['status'] === 200
+    && str_contains(req('GET', $base . '/', [], ['anon' => true])['body'], '/reglament">'));
+saveSettings($base, 'rules', ['rules_consent' => '1']);
+check('I es pot tornar a demanar',
+    str_contains(req('GET', $base . '/inscripcio', [], ['anon' => true])['body'], 'name="consent_rules"'));
 
 echo "\n== Requadre de recordatoris de la inscripció ==\n";
 check('Es pot editar des del panell',

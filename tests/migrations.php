@@ -226,6 +226,29 @@ foreach ($legalBefore as $key => $value) {
 }
 Settings::load(true);
 
+echo "\n== 0012: l'acceptació del reglament ==\n";
+
+check('Les inscripcions tenen el camp del reglament',
+    in_array('consent_rules', array_column(Db::all('PRAGMA table_info(registrations)'), 'name'), true));
+
+// Les inscripcions fetes abans que hi hagués la casella es donen per acceptades.
+$before = Db::insert('registrations', [
+    'code' => 'PREV-' . substr(bin2hex(random_bytes(3)), 0, 5),
+    'token' => bin2hex(random_bytes(8)),
+    'first_name' => 'Abans', 'last_name' => 'del reglament',
+    'birth_year' => (int) date('Y') - 10,
+    'tutor_name' => 'Prova', 'tutor_email' => 'abans@example.test',
+    'consent_data' => 1, 'consent_image' => 0, 'consent_rules' => 0,
+    'status' => 'confirmed', 'created_at' => date('Y-m-d H:i:s'),
+]);
+Db::conn()->exec('UPDATE registrations SET consent_rules = 0');
+$migration = require CROS_APP . '/migrations/0012_acceptacio_reglament.php';
+$migration(Db::conn());
+$row = Db::one('SELECT consent_rules FROM registrations WHERE id = :id', ['id' => $before]);
+check('No es toca res si la columna ja hi era', (int) ($row['consent_rules'] ?? -1) === 0,
+    'la migració ja aplicada no ha de tornar a marcar-les');
+Db::delete('registrations', 'id = :id', ['id' => $before]);
+
 echo "\n== Les opcions noves d'una versió arriben amb el seu valor per defecte ==\n";
 
 $asideBefore = (string) Settings::get('registrations_aside_text', '');

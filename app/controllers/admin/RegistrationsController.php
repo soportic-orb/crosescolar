@@ -64,7 +64,7 @@ class RegistrationsController extends Controller
         Auth::requireLogin();
         $this->adminView('registrations/form', [
             'title' => 'Nova inscripció',
-            'row' => ['id' => 0, 'status' => 'confirmed', 'consent_data' => 1, 'consent_image' => 0],
+            'row' => ['id' => 0, 'status' => 'confirmed', 'consent_data' => 1, 'consent_image' => 0, 'consent_rules' => 1],
             'categories' => Content::categories(),
             'errors' => [],
             'isNew' => true,
@@ -178,7 +178,7 @@ class RegistrationsController extends Controller
         header('Content-Disposition: attachment; filename="inscripcions-' . date('Y-m-d') . '.csv"');
         $out = fopen('php://output', 'w');
         fwrite($out, "\xEF\xBB\xBF");
-        fputcsv($out, ['Dorsal', 'Codi', 'Nom', 'Cognoms', 'Any', 'Gènere', 'Categoria', 'Escola', 'Tutor/a', 'Correu', 'Telèfon', 'Notes', 'Estat', 'Consent. dades', 'Consent. imatge', 'Data'], ';', '"', '\\');
+        fputcsv($out, ['Dorsal', 'Codi', 'Nom', 'Cognoms', 'Any', 'Gènere', 'Categoria', 'Escola', 'Tutor/a', 'Correu', 'Telèfon', 'Notes', 'Estat', 'Consent. dades', 'Consent. imatge', 'Reglament', 'Data'], ';', '"', '\\');
         foreach ($rows as $row) {
             fputcsv($out, array_values($row), ';', '"', '\\');
         }
@@ -274,6 +274,7 @@ class RegistrationsController extends Controller
             'status' => in_array((string) input('status'), ['confirmed', 'pending', 'cancelled'], true) ? (string) input('status') : 'confirmed',
             'consent_data' => input_bool('consent_data'),
             'consent_image' => input_bool('consent_image'),
+            'consent_rules' => input_bool('consent_rules'),
         ];
         $errors = $this->validate([
             'first_name' => 'required|max:100',

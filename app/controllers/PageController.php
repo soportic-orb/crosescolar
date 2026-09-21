@@ -95,6 +95,15 @@ class PageController extends Controller
         ]);
     }
 
+    /** Reglament de la cursa. */
+    public function rules(): void
+    {
+        $this->view('public/text-page', [
+            'title' => setting('rules_title', 'Reglament de la cursa'),
+            'body' => legal_html('rules_text'),
+        ]);
+    }
+
     public function legal(): void
     {
         $this->view('public/text-page', [

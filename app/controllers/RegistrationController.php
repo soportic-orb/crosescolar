@@ -21,6 +21,13 @@ class RegistrationController extends Controller
         return !($close !== '' && strtotime($close . ' 23:59:59') < time());
     }
 
+    /** Cal acceptar el reglament per inscriure's? */
+    public static function rulesConsent(): bool
+    {
+        return \Cros\Core\Settings::bool('rules_consent', true)
+            && trim(strip_tags((string) setting('rules_text', ''))) !== '';
+    }
+
     public function form(): void
     {
         $this->view('public/registration', [
@@ -56,6 +63,7 @@ class RegistrationController extends Controller
             'notes' => mb_substr((string) input('notes'), 0, 500),
             'consent_data' => input_bool('consent_data'),
             'consent_image' => input_bool('consent_image'),
+            'consent_rules' => input_bool('consent_rules'),
         ];
 
         // El gènere només pot portar una de les opcions del formulari.
@@ -63,7 +71,7 @@ class RegistrationController extends Controller
             $data['gender'] = '';
         }
 
-        $errors = $this->validate([
+        $rules = [
             'first_name' => 'required|max:100',
             'last_name' => 'required|max:150',
             'birth_year' => 'required|year',
@@ -71,7 +79,14 @@ class RegistrationController extends Controller
             'tutor_email' => 'required|email|max:190',
             'tutor_phone' => 'max:40',
             'consent_data' => 'accepted',
-        ], $data);
+        ];
+        // El reglament només és obligatori si se'n demana l'acceptació.
+        if (self::rulesConsent()) {
+            $rules['consent_rules'] = 'accepted';
+        } else {
+            $data['consent_rules'] = 0;
+        }
+        $errors = $this->validate($rules, $data);
 
         if ($errors) {
             set_old($data);

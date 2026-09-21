@@ -153,6 +153,7 @@ function register(string $base, string $first, string $last, int $year): array
         'tutor_name' => 'Tutor ' . $first,
         'tutor_email' => strtolower($first) . '@example.test',
         'consent_data' => '1',
+        'consent_rules' => '1',
     ], ['anon' => true]);
     preg_match('#/inscripcio/confirmada/([A-Z0-9-]+)#', $response['headers'], $m);
     $code = $m[1] ?? '';

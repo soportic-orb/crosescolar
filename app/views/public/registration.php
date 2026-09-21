@@ -116,6 +116,13 @@ $externalLink = (bool) preg_match('#^https?://#i', $linkUrl);
             <span><?= e(setting('registrations_consent', '')) ?> *</span>
           </label>
           <?php if (isset($errors['consent_data'])): ?><span class="field__error"><?= e($errors['consent_data']) ?></span><?php endif; ?>
+          <?php if (\Cros\Controllers\RegistrationController::rulesConsent()): ?>
+            <label class="checkbox<?= isset($errors['consent_rules']) ? ' field--error' : '' ?>">
+              <input type="checkbox" name="consent_rules" value="1" required>
+              <span><a href="<?= e(url('/reglament')) ?>" target="_blank" rel="noopener"><?= e(setting('rules_consent_label', 'Accepto el reglament de la cursa')) ?></a> *</span>
+            </label>
+            <?php if (isset($errors['consent_rules'])): ?><span class="field__error"><?= e($errors['consent_rules']) ?></span><?php endif; ?>
+          <?php endif; ?>
           <label class="checkbox">
             <input type="checkbox" name="consent_image" value="1">
             <span><?= e(setting('registrations_image_consent', '')) ?></span>

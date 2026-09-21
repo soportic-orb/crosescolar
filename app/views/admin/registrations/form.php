@@ -80,6 +80,7 @@
       <div class="flex mt-2">
         <label class="switch"><input type="checkbox" name="consent_data" value="1" <?= (int) ($row['consent_data'] ?? 0) === 1 ? 'checked' : '' ?>> <span>Consentiment de dades</span></label>
         <label class="switch"><input type="checkbox" name="consent_image" value="1" <?= (int) ($row['consent_image'] ?? 0) === 1 ? 'checked' : '' ?>> <span>Consentiment d'imatge</span></label>
+        <label class="switch"><input type="checkbox" name="consent_rules" value="1" <?= (int) ($row['consent_rules'] ?? 0) === 1 ? 'checked' : '' ?>> <span>Reglament acceptat</span></label>
       </div>
 
       <?php if (!$isNew && !empty($row['bib_number'])): ?>

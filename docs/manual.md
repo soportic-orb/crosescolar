@@ -267,6 +267,27 @@ Si us equivoqueu, des de la fitxa de la comanda podeu **restablir** un tiquet.
 - **Configuració → Punt de recàrrega**: tanqueu la venda de tiquets.
 - **Sistema → Actualitzacions**: feu una còpia de seguretat per arxivar l'edició.
 
+## Reglament de la cursa
+
+**Configuració → Reglament** conté el text del reglament, que es publica a `/reglament` i
+s'enllaça des del peu de pàgina (**La cursa**). Hi trobareu un reglament ja redactat amb
+dotze apartats —participació, inscripcions, dorsals, horaris, recorregut, premis,
+acompanyants, salut, canvis i suspensió, dades i acceptació—: llegiu-lo i adapteu-lo a com
+feu la cursa.
+
+Amb **«Demanar que s'accepti en inscriure's»** activat, al formulari d'inscripció hi
+apareix la casella **«Accepto el reglament de la cursa»** (el text es pot canviar), que
+és obligatòria i que enllaça al reglament: qui hi faci clic l'obre en una pestanya nova
+sense perdre el que ja ha escrit. L'acceptació queda desada amb la inscripció i la veieu a
+la fitxa del participant i a l'exportació CSV.
+
+Si desactiveu la casella, la pàgina del reglament continua publicada i enllaçada, però no
+es demana acceptar-lo. El text admet els mateixos marcadors que els textos legals
+(`{{entitat}}`, `{{cursa}}`, `{{poble}}`, `{{correu}}`, `{{telefon}}`, `{{web}}`).
+
+> Les inscripcions fetes abans d'activar la casella queden marcades com a acceptades: es
+> van fer quan encara no existia.
+
 ## Textos legals
 
 **Configuració → SEO i legal** conté l'**avís legal** i la **política de privacitat** que
