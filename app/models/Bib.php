@@ -164,6 +164,55 @@ class Bib
     }
 
     /**
+     * Com sortirà el PDF que es descarrega la família: quantes còpies del
+     * dorsal porta cada full i quina mida té el full.
+     *
+     * Serveix per explicar-ho al web abans de descarregar-lo, de manera que
+     * l'avís digui sempre el que el document porta de debò.
+     *
+     * @return array{per_sheet:int,sheet:array,name:string}
+     */
+    public static function familySheet(): array
+    {
+        // Es recorda mentre dura la petició per no haver de tornar a llegir la
+        // maqueta, però si el disseny canvia el resultat es torna a calcular.
+        static $cache = [];
+        $key = implode('|', [
+            (string) setting('bib_template', ''),
+            (string) setting('bib_template_page', '1'),
+            (string) setting('bib_page_size', 'a5'),
+            (string) setting('bib_orientation', 'auto'),
+            (string) setting('bib_template_rotate', '0'),
+        ]);
+        if (isset($cache[$key])) {
+            return $cache[$key];
+        }
+        $sheet = self::sheet(self::describe()['page'], true);
+
+        return $cache[$key] = [
+            'per_sheet' => $sheet['per_sheet'],
+            'sheet' => $sheet['sheet'],
+            'name' => self::sizeName($sheet['sheet']),
+        ];
+    }
+
+    /** Nom de la mida d'un full («A4», «A5»…) o les seves mides en mil·límetres. */
+    public static function sizeName(array $size): string
+    {
+        foreach (Pdf::SIZES as $key => $known) {
+            if (abs($size[0] - $known[0]) < 1 && abs($size[1] - $known[1]) < 1) {
+                return strtoupper($key);
+            }
+            // La mateixa mida girada: un A5 apaïsat continua sent un A5.
+            if (abs($size[0] - $known[1]) < 1 && abs($size[1] - $known[0]) < 1) {
+                return strtoupper($key);
+            }
+        }
+
+        return round($size[0]) . ' × ' . round($size[1]) . ' mm';
+    }
+
+    /**
      * Marca per on s'ha de retallar el full: una línia de punts d'una banda a
      * l'altra amb unes tisores al començament.
      */

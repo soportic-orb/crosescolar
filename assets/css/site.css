@@ -236,12 +236,25 @@ ul, ol { padding-left: 1.2em; }
 .grid--3 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr)); }
 .grid--4 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); }
 
+/* Files de botons i d'elements en línia: sempre amb aire entre ells, també
+   quan la fila es parteix en dues. */
+.flex { display: flex; flex-wrap: wrap; align-items: center; gap: .7rem; }
+.flex-between { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .7rem 1rem; }
+
 .card {
   background: var(--white); border: 1px solid var(--line); border-radius: var(--radius);
   padding: 1.5rem; box-shadow: var(--shadow-sm); transition: transform var(--transition), box-shadow var(--transition);
 }
 .card--hover:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
 .card--muted { background: #f7f8f7; border-style: dashed; }
+.modal { padding: 0; border: 0; border-radius: var(--radius); background: transparent; max-width: min(34rem, calc(100vw - 2rem)); }
+.modal::backdrop { background: rgba(16, 38, 22, .55); }
+.modal__box { background: var(--white); border-radius: var(--radius); padding: 1.6rem; box-shadow: var(--shadow); text-align: left; }
+.modal__title { margin: 0 0 .8rem; font-size: 1.3rem; }
+.modal__box p { margin: 0 0 .8rem; color: var(--ink-soft); }
+.modal__box p:last-of-type { margin-bottom: 1.2rem; }
+.modal__actions { display: flex; flex-wrap: wrap; align-items: center; gap: .7rem; }
+
 .status-pill {
   display: inline-flex; align-items: center; gap: .35rem; padding: .2rem .7rem; border-radius: 999px;
   font-family: var(--font); font-size: .74rem; font-weight: 700; letter-spacing: .04em;

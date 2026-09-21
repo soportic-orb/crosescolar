@@ -216,6 +216,10 @@ check('Els dorsals són consecutius', (int) $bib2 === (int) $bib1 + 1 && (int) $
 check('El dorsal té tres xifres', strlen($bib1) >= 3, $bib1);
 check('La confirmació dona l\'enllaç del dorsal', $token1 !== '');
 
+$done1 = req('GET', $base . '/inscripcio/confirmada/' . $code1, [], ['anon' => true]);
+check('La confirmació avisa de com s\'imprimeix el dorsal',
+    str_contains($done1['body'], 'id="bib-notice"') && str_contains($done1['body'], 'data-bib-notice'));
+
 $bibPdf = req('GET', $base . '/inscripcio/dorsal/' . $token1, [], ['anon' => true]);
 check('Es pot descarregar el dorsal', $bibPdf['status'] === 200 && isPdf($bibPdf['body']), 'estat ' . $bibPdf['status']);
 check('El dorsal és un PDF amb contingut', strlen($bibPdf['body']) > 600);
@@ -245,6 +249,7 @@ $done = req('GET', $base . '/inscripcio/confirmada/' . $code1, [], ['anon' => tr
 check('La confirmació no ofereix descarregar-lo',
     !str_contains($done['body'], '/inscripcio/dorsal/') && !str_contains(text($done['body']), 'Descarregar el dorsal'),
     'no n\'ha de quedar rastre');
+check('Ni l\'avís de com imprimir-lo', !str_contains($done['body'], 'id="bib-notice"'));
 check('...però el número del dorsal es continua veient', str_contains($done['body'], $bib1));
 check('El panell sí que el pot descarregar',
     req('GET', $base . '/admin/inscripcions/dorsals')['status'] === 200);

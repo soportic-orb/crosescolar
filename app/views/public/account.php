@@ -56,7 +56,8 @@
                 <?= \Cros\Core\Icons::svg('edit', 'icon', 16) ?> Modificar les dades
               </a>
               <?php if (!empty($registration['token']) && \Cros\Models\Bib::publicDownload()): ?>
-                <a class="btn btn--ghost btn--sm" href="<?= e(url('/inscripcio/dorsal/' . $registration['token'])) ?>">
+                <a class="btn btn--ghost btn--sm" data-bib-notice
+                   href="<?= e(url('/inscripcio/dorsal/' . $registration['token'])) ?>">
                   <?= \Cros\Core\Icons::svg('download', 'icon', 16) ?> Descarregar el dorsal
                 </a>
               <?php endif; ?>
@@ -74,10 +75,14 @@
 
       <?php $actives = \Cros\Models\Registration::active($registrations); ?>
       <?php if (count($actives) > 1 && !empty($actives[0]['token']) && \Cros\Models\Bib::publicDownload()): ?>
-        <a class="btn" href="<?= e(url('/inscripcio/dorsals/' . $actives[0]['token'])) ?>">
+        <a class="btn" data-bib-notice href="<?= e(url('/inscripcio/dorsals/' . $actives[0]['token'])) ?>">
           <?= \Cros\Core\Icons::svg('download', 'icon', 18) ?> Tots els dorsals en un PDF
         </a>
       <?php endif; ?>
+    <?php endif; ?>
+
+    <?php if (\Cros\Models\Bib::publicDownload()): ?>
+      <?= \Cros\Core\View::partial('partials/bib-notice') ?>
     <?php endif; ?>
 
     <div class="flex" style="margin-top:1.5rem;justify-content:space-between">

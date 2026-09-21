@@ -334,6 +334,12 @@ if ($text !== null) {
         substr_count($text, '007') === 1 && !str_contains($text, 'Retalleu'));
 }
 
+// L'avís del web ha de dir el que el document porta de debò.
+$sheet = Bib::familySheet();
+check('L\'avís sap que hi caben dos dorsals per full', $sheet['per_sheet'] === 2,
+    (string) $sheet['per_sheet']);
+check('I que el full és un A4', $sheet['name'] === 'A4', $sheet['name']);
+
 // Un dorsal que ocupa tot un A4 no es pot partir: dues còpies, dos fulls.
 Settings::setMany(['bib_page_size' => 'a4', 'bib_orientation' => 'portrait']);
 $big = Bib::familyPdf([$one]);
@@ -343,6 +349,16 @@ if ($text !== null) {
     check('Amb les dues còpies i sense línia de retallar',
         substr_count($text, '007') === 2 && !str_contains($text, 'Retalleu'));
 }
+
+// Amb un dorsal A5 vertical tampoc n'hi caben dos: l'avís ho ha de dir així.
+Settings::setMany(['bib_page_size' => 'a5', 'bib_orientation' => 'portrait']);
+$sheet = Bib::familySheet();
+check('Amb un dorsal que no es parteix, un per full', $sheet['per_sheet'] === 1,
+    (string) $sheet['per_sheet']);
+check('I l\'avís en diu la mida', $sheet['name'] === 'A5', $sheet['name']);
+check('Una mida que no és cap format estàndard es diu en mil·límetres',
+    Bib::sizeName([120.0, 180.0]) === '120 × 180 mm', Bib::sizeName([120.0, 180.0]));
+check('Un A5 apaïsat continua sent un A5', Bib::sizeName([210.0, 148.0]) === 'A5');
 
 Settings::setMany($familyBefore);
 

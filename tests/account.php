@@ -147,6 +147,34 @@ Settings::set('bib_public_download', '1');
 check('En tornar-ho a activar, hi torna a ser',
     str_contains(req('GET', $base . '/les-meves-inscripcions')['body'], '/inscripcio/dorsal/' . $laia['token']));
 
+echo "\n== Avís abans de descarregar el dorsal ==\n";
+$bibBefore = [];
+foreach (['bib_template', 'bib_page_size', 'bib_orientation'] as $key) {
+    $bibBefore[$key] = (string) Settings::get($key);
+}
+Settings::setMany(['bib_template' => '', 'bib_page_size' => 'a5', 'bib_orientation' => 'landscape']);
+$withNotice = req('GET', $base . '/les-meves-inscripcions');
+check('L\'enllaç del dorsal demana l\'avís', str_contains($withNotice['body'], 'data-bib-notice'));
+check('Hi ha el quadre de l\'avís', str_contains($withNotice['body'], 'id="bib-notice"'));
+check('Diu que s\'imprimeix en A4', str_contains(text($withNotice['body']), 'DIN A4'));
+check('I que cal retallar per la línia de punts',
+    str_contains(text($withNotice['body']), 'línia de punts'));
+check('El botó del quadre porta al PDF', str_contains($withNotice['body'], 'data-bib-notice-go'));
+
+// Amb un dorsal que no es parteix, l'avís diu el que toca: dues còpies, un full cadascuna.
+Settings::setMany(['bib_orientation' => 'portrait']);
+$single = req('GET', $base . '/les-meves-inscripcions');
+check('Amb un dorsal per full, l\'avís no parla de retallar',
+    !str_contains(text($single['body']), 'línia de punts'));
+check('Però sí de les dues còpies', str_contains(text($single['body']), 'dues còpies del dorsal'));
+
+// Sense descàrrega pública no hi ha ni enllaç ni avís.
+Settings::set('bib_public_download', '0');
+$noNotice = req('GET', $base . '/les-meves-inscripcions');
+check('Sense descàrrega no hi ha cap avís', !str_contains($noNotice['body'], 'id="bib-notice"'));
+Settings::set('bib_public_download', '1');
+Settings::setMany($bibBefore);
+
 echo "\n== Modificar les dades ==\n";
 $edit = req('GET', $base . '/les-meves-inscripcions/' . $laia['id'] . '/modificar');
 check('S\'obre el formulari de modificació', $edit['status'] === 200 && str_contains($edit['body'], 'Laia' . $unique));

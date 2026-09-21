@@ -3,7 +3,22 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
-## [1.21.0] — 2026-09-21
+## [1.22.0] — 2026-09-21
+
+### Afegit
+- **Avís abans de descarregar el dorsal**: en prémer «Descarregar el dorsal» (a la
+  confirmació de la inscripció i a *Les meves inscripcions*) surt un quadre que explica com
+  s'ha d'imprimir el document —en un full **DIN A4** vertical i a mida real— i que hi ha
+  **dos dorsals iguals** que cal separar **retallant el full per la línia de punts**. El
+  text es redacta sol segons el disseny configurat: si el dorsal no es pot partir en dos,
+  diu que són dues còpies en dos fulls i no parla de retallar. El correu de confirmació
+  porta la mateixa explicació.
+
+### Corregit
+- **Els botons ja no es toquen**: les files de botons del web públic (les meves
+  inscripcions, confirmació de la inscripció, resultats, categories, contacte…) es
+  dibuixaven sense separació perquè l'estil `.flex` només existia al panell. Ara hi ha
+  aire entre els botons i també entre les files quan n'hi ha més d'una.
 
 ### Afegit
 - **Les famílies poden anul·lar una inscripció**: a *Les meves inscripcions*, cada

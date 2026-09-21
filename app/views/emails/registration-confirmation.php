@@ -36,8 +36,15 @@
       </a>
     </p>
   <?php endif; ?>
+  <?php $sheet = \Cros\Models\Bib::familySheet(); ?>
   <p style="font-size:13px;color:#5a6b60;text-align:center;margin:0 0 8px">
-    Imprimiu-lo i porteu-lo posat el dia de la cursa.
+    <?php if ($sheet['per_sheet'] > 1): ?>
+      Imprimiu-lo en un full DIN A4 vertical, a mida real. Cada full porta dos dorsals iguals:
+      retalleu-lo per la línia de punts i porteu-ne un posat el dia de la cursa.
+    <?php else: ?>
+      Imprimiu-lo a mida real en fulls de mida <?= e($sheet['name']) ?>. Hi ha dues còpies del
+      dorsal, una per full: porteu-ne una posada el dia de la cursa i guardeu l'altra de recanvi.
+    <?php endif; ?>
   </p>
 <?php endif; ?>
 

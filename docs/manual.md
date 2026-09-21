@@ -216,6 +216,12 @@ de recanvi (o un per davant i un per darrere). Si tenen més d'un fill inscrit, 
 participant té el seu full. Quan el dorsal és massa gran per partir el full (un A4
 sencer), se'n fan dues còpies en dos fulls, sense línia de retallar.
 
+En prémer **«Descarregar el dorsal»**, abans de baixar-se'l, la família veu un avís que
+explica com s'ha d'imprimir: la mida del full, que hi ha dos dorsals iguals i que cal
+retallar el full per la línia de punts. L'avís es redacta sol segons com tingueu
+configurat el dorsal: si el disseny no es pot partir en dos, diu que són dues còpies en
+dos fulls i no parla de retallar. El mateix text surt al correu de confirmació.
+
 Per imprimir-los tots: **Inscripcions → Dorsals en PDF** (es pot filtrar per categoria).
 Aquí sí que va un dorsal per pàgina, o dos de diferents per full si heu activat l'opció. Cada fitxa d'inscripció també té el seu botó de descàrrega.
 

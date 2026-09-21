@@ -16,17 +16,18 @@
       </div>
       <?php if (!empty($registration['token']) && \Cros\Models\Bib::publicDownload()): ?>
         <div class="flex" style="justify-content:center;margin-top:1rem">
-          <a class="btn" href="<?= e(url('/inscripcio/dorsal/' . $registration['token'])) ?>">
+          <a class="btn" data-bib-notice href="<?= e(url('/inscripcio/dorsal/' . $registration['token'])) ?>">
             <?= \Cros\Core\Icons::svg('download', 'icon', 18) ?> Descarregar el dorsal (PDF)
           </a>
-          <?php $siblings = \Cros\Models\Registration::forEmail((string) $registration['tutor_email']); ?>
+          <?php $siblings = \Cros\Models\Registration::forEmail((string) $registration['tutor_email'], true); ?>
           <?php if (count($siblings) > 1): ?>
-            <a class="btn btn--ghost" href="<?= e(url('/inscripcio/dorsals/' . $registration['token'])) ?>">
+            <a class="btn btn--ghost" data-bib-notice href="<?= e(url('/inscripcio/dorsals/' . $registration['token'])) ?>">
               Tots els dorsals (<?= count($siblings) ?>)
             </a>
           <?php endif; ?>
         </div>
         <p class="field__hint" style="margin:.9rem 0 0">Imprimiu-lo i porteu-lo posat el dia de la cursa.</p>
+        <?= \Cros\Core\View::partial('partials/bib-notice') ?>
       <?php endif; ?>
     </div>
 

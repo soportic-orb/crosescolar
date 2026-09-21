@@ -21,6 +21,21 @@
     if (form && !window.confirm(form.getAttribute('data-confirm'))) { event.preventDefault(); }
   });
 
+  /* Avís abans de descarregar el dorsal ------------------------------- */
+  var bibNotice = document.getElementById('bib-notice');
+  if (bibNotice && typeof bibNotice.showModal === 'function') {
+    var bibGo = bibNotice.querySelector('[data-bib-notice-go]');
+    document.addEventListener('click', function (event) {
+      var link = event.target.closest ? event.target.closest('a[data-bib-notice]') : null;
+      if (!link || !bibGo) { return; }
+      event.preventDefault();
+      bibGo.setAttribute('href', link.getAttribute('href'));
+      bibNotice.showModal();
+    });
+    // En descarregar-lo, el diàleg es tanca i la pàgina es queda on era.
+    if (bibGo) { bibGo.addEventListener('click', function () { bibNotice.close(); }); }
+  }
+
   /* Ombra de la capçalera en fer scroll ------------------------------ */
   var header = document.querySelector('.site-header');
   if (header) {
