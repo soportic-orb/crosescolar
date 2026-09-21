@@ -3,6 +3,15 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.19.0] — 2026-09-21
+
+### Afegit
+- **Confeti en confirmar la inscripció**: en acabar d'inscriure algú, la pàgina de
+  confirmació celebra el moment amb una pluja de confeti dels colors del web. Dura uns
+  segons i desapareix sola. Es pot apagar a *Configuració → Inscripcions*, i qui tingui
+  activat «reduir el moviment» al seu dispositiu no el veu mai. Fet sense cap llibreria
+  externa: no afegeix cap pes ni cap connexió a tercers.
+
 ## [1.18.0] — 2026-09-21
 
 ### Afegit

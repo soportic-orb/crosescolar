@@ -243,6 +243,8 @@ check('Pàgina de confirmació', $done['status'] === 200 && str_contains($done['
 check('La confirmació ja no té el botó del punt de recàrrega',
     preg_match('#class="btn[^"]*" href="[^"]*/punt-de-recarrega"#', $done['body']) === 0);
 check('I porta a «Les meves inscripcions»', str_contains($done['body'], '/les-meves-inscripcions'));
+check('La confirmació engega el confeti', str_contains($done['body'], 'data-confetti'));
+check('I la resta de pàgines no', !str_contains(req('GET', $base . '/')['body'], 'data-confetti'));
 check('Assigna la categoria per any', str_contains($done['body'], 'Aleví'), 'categoria assignada automàticament');
 
 $duplicate = req('POST', $base . '/inscripcio', [
@@ -524,6 +526,36 @@ $regOpen = static function (array $values = []) use ($base) {
 $regOpen();
 $openPage = req('GET', $base . '/inscripcio', [], ['anon' => true]);
 check('En reactivar-lo torna a sortir el formulari', str_contains($openPage['body'], 'name="first_name"'));
+
+echo "\n== El confeti es pot apagar ==\n";
+$regOpenBase = [
+    'registrations_enabled' => '1', 'registrations_notify' => '1', 'registrations_selfservice' => '1',
+    'registrations_aside' => '1', 'registrations_aside_title' => 'Recorda',
+    'registrations_aside_text' => '<ul><li>Cal omplir un formulari per cada participant.</li></ul>',
+    'registrations_closed_link_label' => '', 'registrations_closed_link_url' => '',
+];
+$confirmUrl = static function () use ($base): string {
+    $form = req('GET', $base . '/inscripcio', [], ['anon' => true]);
+    $post = req('POST', $base . '/inscripcio', [
+        '_token' => token($form['body']),
+        'first_name' => 'Confeti', 'last_name' => 'Prova ' . bin2hex(random_bytes(3)),
+        'birth_year' => (string) ((int) date('Y') - 9),
+        'tutor_name' => 'Tutor', 'tutor_email' => 'confeti' . bin2hex(random_bytes(3)) . '@example.test',
+        'consent_data' => '1', 'consent_rules' => '1',
+    ], ['anon' => true]);
+    return preg_match('#/inscripcio/confirmada/([A-Z0-9-]+)#', $post['headers'], $m) ? $m[0] : '';
+};
+req('POST', $base . '/admin/configuracio/registrations', array_merge($regOpenBase, [
+    '_token' => token(req('GET', $base . '/admin/configuracio/registrations')['body']),
+]));
+check('Desactivat, la confirmació no en porta',
+    !str_contains(req('GET', $base . $confirmUrl(), [], ['anon' => true])['body'], 'data-confetti'));
+req('POST', $base . '/admin/configuracio/registrations', array_merge($regOpenBase, [
+    '_token' => token(req('GET', $base . '/admin/configuracio/registrations')['body']),
+    'registrations_confetti' => '1',
+]));
+check('I en tornar-lo a activar, sí',
+    str_contains(req('GET', $base . $confirmUrl(), [], ['anon' => true])['body'], 'data-confetti'));
 
 echo "\n== El reglament es pot deixar d'exigir ==\n";
 saveSettings($base, 'rules', ['rules_consent' => '0']);

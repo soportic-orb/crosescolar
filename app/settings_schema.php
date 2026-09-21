@@ -157,6 +157,8 @@ return [
             'registrations_closed_link_label' => ['label' => 'Botó opcional: text', 'type' => 'text', 'default' => '', 'placeholder' => 'Descarregar el full d\'inscripció'],
             'registrations_closed_link_url' => ['label' => 'Botó opcional: enllaç', 'type' => 'text', 'default' => '', 'placeholder' => 'https://…  o  /punt-de-recarrega',
                 'help' => 'Si ompliu els dos camps, sota el text hi apareixerà un botó (per exemple cap a un PDF o a un formulari extern).'],
+            'registrations_confetti' => ['label' => 'Confeti en confirmar la inscripció', 'type' => 'bool', 'default' => '1',
+                'help' => 'Un efecte de festa a la pàgina de confirmació. Qui tingui activat «reduir el moviment» al seu dispositiu no el veurà.'],
             'registrations_success_text' => ['label' => 'Text de confirmació', 'type' => 'html', 'rows' => 3, 'default' => '<p>Inscripció rebuda! Us hem enviat un correu de confirmació amb les dades. Ens veiem el dia de la cursa.</p>'],
             'registrations_selfservice' => ['label' => '«Les meves inscripcions» actiu', 'type' => 'bool', 'default' => '1',
                 'help' => 'Permet que les famílies entrin amb un codi que reben per correu per revisar i modificar les dades dels seus participants. Si ho desactiveu, la pàgina deixa d\'existir.'],

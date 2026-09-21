@@ -158,4 +158,89 @@
       if (alert) { alert.remove(); }
     });
   });
+  /* Confeti de la pàgina de confirmació ------------------------------- */
+  (function () {
+    var host = document.querySelector('[data-confetti]');
+    if (!host || typeof document.createElement('canvas').getContext !== 'function') { return; }
+    // Qui ha demanat menys moviment no vol veure res saltant per la pantalla.
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { return; }
+
+    var styles = getComputedStyle(document.documentElement);
+    var colors = ['--green-700', '--green-300', '--accent'].map(function (name) {
+      return (styles.getPropertyValue(name) || '').trim();
+    }).filter(Boolean).concat(['#e8c14a', '#ffffff']);
+
+    var canvas = document.createElement('canvas');
+    canvas.setAttribute('aria-hidden', 'true');
+    canvas.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:60';
+    document.body.appendChild(canvas);
+
+    var ctx = canvas.getContext('2d');
+    var ratio = Math.min(window.devicePixelRatio || 1, 2);
+    var width = 0;
+    var height = 0;
+    var resize = function () {
+      width = canvas.offsetWidth;
+      height = canvas.offsetHeight;
+      canvas.width = Math.round(width * ratio);
+      canvas.height = Math.round(height * ratio);
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    var total = width < 600 ? 70 : 130;
+    var pieces = [];
+    for (var i = 0; i < total; i++) {
+      pieces.push({
+        x: Math.random() * width,
+        y: -20 - Math.random() * height * 0.8,
+        w: 6 + Math.random() * 6,
+        h: 9 + Math.random() * 7,
+        color: colors[i % colors.length],
+        vx: -0.6 + Math.random() * 1.2,
+        vy: 1.6 + Math.random() * 2.4,
+        spin: -0.12 + Math.random() * 0.24,
+        angle: Math.random() * Math.PI * 2,
+        sway: 0.4 + Math.random() * 0.8
+      });
+    }
+
+    var started = 0;
+    var LIFE = 5200; // ms: prou per veure'l caure sense que es faci llarg
+
+    var frame = function (now) {
+      if (!started) { started = now; }
+      var elapsed = now - started;
+      var fade = elapsed > LIFE - 900 ? Math.max(0, (LIFE - elapsed) / 900) : 1;
+
+      ctx.clearRect(0, 0, width, height);
+      ctx.globalAlpha = fade;
+      for (var i = 0; i < pieces.length; i++) {
+        var p = pieces[i];
+        p.x += p.vx + Math.sin((elapsed / 600) + i) * p.sway;
+        p.y += p.vy;
+        p.angle += p.spin;
+        if (p.y > height + 30) {
+          // Torna a caure fins que s'acabi l'estona.
+          p.y = -20;
+          p.x = Math.random() * width;
+        }
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.angle);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      }
+
+      if (elapsed < LIFE) {
+        window.requestAnimationFrame(frame);
+        return;
+      }
+      window.removeEventListener('resize', resize);
+      canvas.remove();
+    };
+    window.requestAnimationFrame(frame);
+  })();
 })();

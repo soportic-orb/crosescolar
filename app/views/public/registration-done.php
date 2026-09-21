@@ -1,4 +1,7 @@
 <?php /** Confirmació d'inscripció. */ ?>
+<?php if (\Cros\Core\Settings::bool('registrations_confetti', true)): ?>
+  <div data-confetti hidden></div>
+<?php endif; ?>
 <?= \Cros\Core\View::partial('partials/page-header', ['title' => 'Inscripció confirmada', 'breadcrumb' => ['Inscripció' => '/inscripcio', 'Confirmada' => '']]) ?>
 <section class="section">
   <div class="container-narrow">

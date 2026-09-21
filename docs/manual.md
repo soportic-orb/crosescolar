@@ -108,6 +108,10 @@ El formulari també es tanca sol quan es passa la **data de tancament**; deixeu 
 buida si no en voleu posar cap. En tots dos casos, si algú prova d'enviar el formulari
 tot i estar tancat, la inscripció es rebutja.
 
+Quan algú acaba d'inscriure's, la pàgina de confirmació fa un **efecte de confeti** per
+celebrar-ho. Es pot apagar amb *Confeti en confirmar la inscripció*; qui tingui activat
+«reduir el moviment» al mòbil o a l'ordinador no el veu, encara que estigui activat.
+
 Al costat del formulari hi ha el **requadre de recordatoris** («Recorda»), amb el que
 convé tenir present abans d'inscriure's. El títol i el contingut s'editen a
 **Configuració → Inscripcions** (*Títol del requadre* i *Contingut del requadre*, amb
