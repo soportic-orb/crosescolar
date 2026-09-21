@@ -3,6 +3,21 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.18.0] — 2026-09-21
+
+### Afegit
+- **Imprimir els resultats d'una categoria**: a *Resultats* hi ha un selector **Imprimir**
+  que genera el PDF de la categoria triada (o de totes) directament, sense haver de
+  filtrar abans la pantalla. El selector **Veure**, que filtra el llistat, queda a part i
+  ara va etiquetat.
+
+### Canviat
+- **El PDF de resultats diu clarament de quina categoria és**: la categoria surt a la
+  franja verda de dalt i com a títol gran, amb el gènere i els anys de naixement quan en
+  té («Aleví femení (2016–2017)»), i just a sota hi consta quanta gent hi ha
+  classificada. També a les pàgines de continuació.
+- El nom del fitxer PDF porta el nom de la categoria en lloc del seu número intern.
+
 ## [1.17.0] — 2026-09-21
 
 ### Afegit

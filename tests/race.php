@@ -62,6 +62,20 @@ function check(string $name, bool $ok, string $detail = ''): void
     echo ($ok ? '  OK   ' : '  FALLA ') . $name . ($ok || $detail === '' ? '' : " → $detail") . "\n";
 }
 
+/** Text d'un PDF, o null si al sistema no hi ha poppler per llegir-lo. */
+function pdf_text(string $pdf): ?string
+{
+    if (trim((string) @shell_exec('command -v pdftotext 2>/dev/null')) === '') {
+        return null;
+    }
+    $file = sys_get_temp_dir() . '/cros-race-' . bin2hex(random_bytes(4)) . '.pdf';
+    file_put_contents($file, $pdf);
+    $output = (string) @shell_exec('pdftotext ' . escapeshellarg($file) . ' - 2>/dev/null');
+    @unlink($file);
+
+    return $output;
+}
+
 function isPdf(string $body): bool
 {
     return str_starts_with($body, '%PDF-');
@@ -516,6 +530,53 @@ req('POST', $base . '/admin/resultats/' . $jordiResult . '/premi-local',
 check('El nom del premi es pot canviar',
     str_contains(text(req('GET', $base . '/resultats', [], ['anon' => true])['body']), 'Primer del poble'));
 saveSettings($base, 'categories', ['prizes_local_label' => 'Primer local']);
+
+echo "\n== Imprimir una categoria ==\n";
+$panel = req('GET', $base . '/admin/resultats');
+check('Hi ha el selector del que s\'imprimeix',
+    str_contains($panel['body'], 'id="print_categoria"')
+    && preg_match('#<form[^>]*action="[^"]*/admin/resultats/pdf"#', $panel['body']) === 1);
+check('Amb totes les categories i la de «totes»',
+    substr_count($panel['body'], 'name="categoria"') >= 2
+    && str_contains(text($panel['body']), 'Totes les categories'));
+check('I les opcions porten els anys de cada categoria',
+    preg_match('#id="print_categoria".*?20\d\d–20\d\d.*?</select>#s', text($panel['body'])) === 1);
+
+$onePdf = req('GET', $base . '/admin/resultats/pdf?categoria=' . $alevi);
+check('El PDF d\'una categoria es descarrega', $onePdf['status'] === 200 && isPdf($onePdf['body']));
+check('I el fitxer es diu com la categoria',
+    preg_match('#filename="resultats-[a-z0-9-]*alevi[a-z0-9-]*-\d{4}-\d{2}-\d{2}\.pdf"#i', $onePdf['headers']) === 1,
+    $onePdf['headers']);
+
+$text = pdf_text($onePdf['body']);
+if ($text !== null) {
+    check('El PDF diu de quina categoria és', str_contains($text, 'Aleví'),
+        trim(str_replace("\n", ' ', substr($text, 0, 160))));
+    check('I ho diu a la part de dalt',
+        mb_strpos($text, 'Aleví') !== false && mb_strpos($text, 'Aleví') < mb_strpos($text, 'POSICIÓ'),
+        'ha de sortir abans que la taula');
+    check('Hi consta quanta gent hi ha classificada',
+        preg_match('#\d+ participants classificats|1 participant classificat#', $text) === 1);
+    check('I només hi surt aquesta categoria', !str_contains($text, 'Infantil'),
+        trim(str_replace("\n", ' ', $text)));
+}
+
+$allPdf = req('GET', $base . '/admin/resultats/pdf');
+$allText = pdf_text($allPdf['body']);
+if ($allText !== null) {
+    check('El PDF de totes les categories les porta totes',
+        str_contains($allText, 'Aleví') && str_contains($allText, 'Infantil'));
+    check('Cada categoria en un full, amb el seu títol',
+        substr_count($allText, 'participants classificats') + substr_count($allText, 'participant classificat') >= 2);
+}
+
+$arrivalPdf = req('GET', $base . '/admin/resultats/pdf?tipus=arribada');
+$arrivalText = pdf_text($arrivalPdf['body']);
+if ($arrivalText !== null) {
+    check('El d\'ordre d\'arribada ho diu clarament',
+        str_contains($arrivalText, 'Ordre d\'arribada') && str_contains($arrivalText, 'Totes les categories'),
+        trim(str_replace("\n", ' ', substr($arrivalText, 0, 160))));
+}
 
 echo "\n== Exportacions ==\n";
 $byCategory = req('GET', $base . '/admin/resultats/pdf');

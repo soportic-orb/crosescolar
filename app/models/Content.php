@@ -190,6 +190,37 @@ class Content
         return $from === $to ? (string) $from : min($from, $to) . $separator . max($from, $to);
     }
 
+    /**
+     * Com s'anomena una categoria allà on ha de quedar clara: el nom, el gènere
+     * si no és mixta i els anys de naixement. Per exemple «Infantil masculí
+     * (2013–2014)» o «Prebenjamí femení (2020)».
+     *
+     * Accepta les claus tal com surten de la taula («name», «gender»…) o amb el
+     * prefix «category_», que és com arriben quan s'han consultat amb una
+     * inscripció o un resultat.
+     */
+    public static function title(array $category): string
+    {
+        $label = trim((string) ($category['name'] ?? $category['category_name'] ?? ''));
+        if ($label === '') {
+            return '';
+        }
+        $gender = self::genderLabel($category);
+        // Si el nom de la categoria ja diu el gènere, no cal repetir-lo.
+        if ($gender !== '' && mb_stripos($label, $gender) === false) {
+            $label .= ' ' . $gender;
+        }
+        $years = self::years($category);
+        if ($years === '') {
+            return $label;
+        }
+        // Si el nom ja acaba amb un parèntesi («Aleví (3r-4t)»), els anys hi van
+        // a continuació amb un punt volat: dos parèntesis seguits semblen una errada.
+        return str_ends_with($label, ')')
+            ? $label . ' · ' . $years
+            : $label . ' (' . $years . ')';
+    }
+
     /** Nom del gènere d'una categoria («masculí», «femení») o cadena buida si és mixta. */
     public static function genderLabel(array $category, bool $feminine = false): string
     {

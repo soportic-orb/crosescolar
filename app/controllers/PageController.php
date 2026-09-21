@@ -79,9 +79,17 @@ class PageController extends Controller
             abort(404, 'La descàrrega dels resultats no està disponible.');
         }
         $categoryId = (int) input('categoria', 0);
-        $pdf = RaceResult::pdf($categoryId > 0 ? $categoryId : null, input('tipus') === 'arribada');
+        $arrival = input('tipus') === 'arribada';
+        $pdf = RaceResult::pdf($categoryId > 0 ? $categoryId : null, $arrival);
+        // El nom del fitxer diu què s'hi ha descarregat.
+        $name = 'resultats-' . (slugify((string) setting('site_name', 'cros')) ?: 'cros');
+        if ($arrival) {
+            $name .= '-ordre-arribada';
+        } elseif ($categoryId > 0 && ($slug = slugify(RaceResult::categoryTitle($categoryId))) !== '') {
+            $name .= '-' . $slug;
+        }
         header('Content-Type: application/pdf');
-        header('Content-Disposition: attachment; filename="resultats-cros-la-granada.pdf"');
+        header('Content-Disposition: attachment; filename="' . $name . '.pdf"');
         header('Content-Length: ' . strlen($pdf));
         echo $pdf;
         exit;

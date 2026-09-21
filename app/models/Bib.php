@@ -255,24 +255,7 @@ class Bib
      */
     public static function category(array $registration): string
     {
-        $label = trim((string) ($registration['category_name'] ?? ''));
-        if ($label === '') {
-            return '';
-        }
-        $gender = Content::genderLabel($registration);
-        // Si el nom de la categoria ja diu el gènere, no cal repetir-lo.
-        if ($gender !== '' && mb_stripos($label, $gender) === false) {
-            $label .= ' ' . $gender;
-        }
-        $years = Content::years($registration);
-        if ($years === '') {
-            return $label;
-        }
-        // Si el nom ja acaba amb un parèntesi («Aleví (3r-4t)»), els anys hi van
-        // a continuació amb un punt volat: dos parèntesis seguits semblen una errada.
-        return str_ends_with($label, ')')
-            ? $label . ' · ' . $years
-            : $label . ' (' . $years . ')';
+        return Content::title($registration);
     }
 
     private static function drawFields(Pdf $pdf, array $registration, float $pageWidth, float $top = 0.0): void

@@ -190,7 +190,9 @@ class RaceResult
         return 'SELECT res.*, r.first_name, r.last_name, r.bib_number, r.school, r.birth_year,
                        c.name AS category_name, c.sort_order AS category_order,
                        c.medals AS category_medals, c.winners AS category_winners,
-                       c.local_prize AS category_local_prize
+                       c.local_prize AS category_local_prize,
+                       c.gender AS category_gender, c.year_from AS category_year_from,
+                       c.year_to AS category_year_to
                 FROM results res
                 JOIN registrations r ON r.id = res.registration_id
                 LEFT JOIN categories c ON c.id = res.category_id';
@@ -225,6 +227,8 @@ class RaceResult
                 $grouped[$key] = [
                     'id' => $key,
                     'name' => $row['category_name'] ?? 'Sense categoria',
+                    // Amb el gènere i els anys: és el que va al capdamunt del PDF.
+                    'title' => Content::title($row) ?: 'Sense categoria',
                     // Medalles: cada categoria decideix si en mostra i a quants.
                     'medals' => (int) ($row['category_medals'] ?? 1) === 1,
                     'winners' => max(0, min(50, (int) ($row['category_winners'] ?? 3))),
@@ -278,27 +282,35 @@ class RaceResult
         $pdf = new Pdf(['title' => 'Resultats · ' . setting('site_name', 'Cros Escolar La Granada')]);
 
         if ($arrivalOrder) {
-            $rows = self::arrivals();
-            self::pdfSection($pdf, 'Ordre d\'arribada a meta', $rows, true);
+            self::pdfSection($pdf, 'Ordre d\'arribada a meta', 'Totes les categories', self::arrivals(), true);
             return $pdf->output();
         }
 
         $groups = self::byCategory($categoryId);
         if (!$groups) {
-            self::pdfSection($pdf, 'Resultats', [], false);
+            $name = $categoryId !== null ? self::categoryTitle($categoryId) : '';
+            self::pdfSection($pdf, $name !== '' ? $name : 'Resultats', $name !== '' ? $name : 'Totes les categories', [], false);
             return $pdf->output();
         }
         foreach ($groups as $group) {
-            self::pdfSection($pdf, $group['name'], $group['rows'], false);
+            self::pdfSection($pdf, $group['title'], $group['title'], $group['rows'], false);
         }
         return $pdf->output();
     }
 
     /** Dibuixa una pàgina (o més) amb una classificació. */
-    private static function pdfSection(Pdf $pdf, string $title, array $rows, bool $arrivalOrder): void
+    /** Nom d'una categoria per si no té cap arribada registrada. */
+    public static function categoryTitle(int $categoryId): string
+    {
+        $row = Db::one('SELECT * FROM categories WHERE id = :id', ['id' => $categoryId]);
+
+        return $row ? Content::title($row) : '';
+    }
+
+    private static function pdfSection(Pdf $pdf, string $title, string $category, array $rows, bool $arrivalOrder): void
     {
         $pdf->addPage('a4');
-        $y = self::pdfHeader($pdf, $title, count($rows));
+        $y = self::pdfHeader($pdf, $title, count($rows), $category);
 
         $columns = $arrivalOrder
             ? [['Arribada', 22, 'right'], ['Dorsal', 20, 'right'], ['Participant', 70, 'left'], ['Categoria', 42, 'left'], ['Pos. cat.', 20, 'right']]
@@ -309,7 +321,7 @@ class RaceResult
         foreach ($rows as $row) {
             if ($y > 275) {
                 $pdf->addPage('a4');
-                $y = self::pdfHeader($pdf, $title . ' (continuació)', count($rows));
+                $y = self::pdfHeader($pdf, $title . ' (continuació)', count($rows), $category);
                 $y = self::pdfTableHeader($pdf, $columns, $y);
                 $line = 0;
             }
@@ -351,7 +363,7 @@ class RaceResult
                 }
                 if ($y > 272) {
                     $pdf->addPage('a4');
-                    $y = self::pdfHeader($pdf, $title . ' (continuació)', count($rows));
+                    $y = self::pdfHeader($pdf, $title . ' (continuació)', count($rows), $category);
                 }
                 $pdf->setFont('helvetica-bold', 10);
                 $pdf->setColorHex('#2f6b3c');
@@ -362,7 +374,7 @@ class RaceResult
         }
     }
 
-    private static function pdfHeader(Pdf $pdf, string $title, int $total): float
+    private static function pdfHeader(Pdf $pdf, string $title, int $total, string $category = ''): float
     {
         $pdf->setColorHex('#2f6b3c');
         $pdf->rect(0, 0, 210, 26, 'F');
@@ -372,13 +384,20 @@ class RaceResult
         $pdf->setFont('helvetica', 9.5);
         $pdf->text(15, 19, ucfirst(ca_date(setting('event_date', ''), true)) . ' · ' . setting('event_place', ''));
         $pdf->setFont('helvetica', 9);
-        $pdf->text(195, 12, 'Classificació', ['align' => 'right']);
-        $pdf->text(195, 19, $total . ' participants', ['align' => 'right']);
+        $pdf->text(195, 12, 'Classificació', ['align' => 'right', 'max_width' => 80]);
+        // La categoria també a la franja: encara que el full es retalli o
+        // s'imprimeixi a mitges, se sap de quin llistat es tracta.
+        $pdf->text(195, 19, $category !== '' ? $category : 'Totes les categories',
+            ['align' => 'right', 'max_width' => 95]);
 
         $pdf->setFont('helvetica-bold', 17);
         $pdf->setColorHex('#12301c');
-        $pdf->text(15, 40, $title);
-        return 50.0;
+        $pdf->text(15, 40, $title, ['max_width' => 180]);
+        $pdf->setFont('helvetica', 10);
+        $pdf->setColorHex('#4a5b50');
+        $pdf->text(15, 46, $total === 1 ? '1 participant classificat' : $total . ' participants classificats');
+
+        return 54.0;
     }
 
     private static function pdfTableHeader(Pdf $pdf, array $columns, float $y): float

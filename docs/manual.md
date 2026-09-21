@@ -265,6 +265,13 @@ tenir una persona per categoria: si en marqueu una altra, la primera el perd. El
 surt al costat del seu nom a la classificació pública, al CSV i al peu del PDF de la
 categoria.
 
+**Imprimir una categoria.** A la barra de la classificació hi ha dos selectors: **Veure**
+filtra el que es mostra a la pantalla, i **Imprimir** tria què va al PDF — una categoria
+o totes. El PDF s'obre en una pestanya nova i porta la categoria **ben visible a dalt**:
+a la franja verda i com a títol gran, amb els anys de naixement i el gènere si la
+categoria en té («Aleví femení (2016–2017)»), i just a sota quanta gent hi ha
+classificada. El nom del fitxer també ho diu, per no confondre'ls a l'hora d'imprimir.
+
 **Exportacions** (botons de la mateixa pantalla):
 
 | Botó | Què genera |

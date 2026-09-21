@@ -80,17 +80,29 @@ $localLabel = RaceResult::localPrizeLabel();
     <h2>Classificació</h2>
     <div class="spacer"></div>
     <form method="get" class="filters">
-      <select name="categoria" onchange="this.form.submit()">
+      <label class="label" for="veure_categoria">Veure</label>
+      <select id="veure_categoria" name="categoria" onchange="this.form.submit()">
         <option value="0">Totes les categories</option>
         <?php foreach ($categories as $category): ?>
           <option value="<?= (int) $category['id'] ?>" <?= $categoryId === (int) $category['id'] ? 'selected' : '' ?>><?= e($category['name']) ?></option>
         <?php endforeach; ?>
       </select>
     </form>
-    <a class="btn btn--ghost btn--sm" href="<?= e(url('/admin/resultats/pdf', array_filter(['categoria' => $categoryId]))) ?>">
-      <?= Icons::svg('download', 'icon', 15) ?> PDF per categories
-    </a>
-    <a class="btn btn--ghost btn--sm" href="<?= e(url('/admin/resultats/pdf', ['tipus' => 'arribada'])) ?>">
+    <form method="get" action="<?= e(url('/admin/resultats/pdf')) ?>" class="filters" target="_blank">
+      <label class="label" for="print_categoria">Imprimir</label>
+      <select id="print_categoria" name="categoria">
+        <option value="0">Totes les categories</option>
+        <?php foreach ($categories as $category): ?>
+          <option value="<?= (int) $category['id'] ?>" <?= $categoryId === (int) $category['id'] ? 'selected' : '' ?>>
+            <?= e(\Cros\Models\Content::title($category)) ?>
+          </option>
+        <?php endforeach; ?>
+      </select>
+      <button class="btn btn--ghost btn--sm" type="submit">
+        <?= Icons::svg('download', 'icon', 15) ?> PDF
+      </button>
+    </form>
+    <a class="btn btn--ghost btn--sm" href="<?= e(url('/admin/resultats/pdf', ['tipus' => 'arribada'])) ?>" target="_blank">
       <?= Icons::svg('download', 'icon', 15) ?> PDF per ordre d'arribada
     </a>
     <a class="btn btn--ghost btn--sm" href="<?= e(url('/admin/resultats/csv')) ?>">CSV</a>
@@ -105,7 +117,7 @@ $localLabel = RaceResult::localPrizeLabel();
 
     <?php foreach ($groups as $group): ?>
       <h3 class="mt-3"><?= e($group['name']) ?> <span class="text-soft" style="font-weight:400">(<?= count($group['rows']) ?>)</span>
-        <a class="btn btn--ghost btn--sm" style="margin-left:.6rem"
+        <a class="btn btn--ghost btn--sm" style="margin-left:.6rem" target="_blank"
            href="<?= e(url('/admin/resultats/pdf', ['categoria' => $group['id']])) ?>">PDF d'aquesta categoria</a>
       </h3>
       <div class="table-wrap">

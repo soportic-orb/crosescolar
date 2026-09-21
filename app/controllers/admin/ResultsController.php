@@ -112,7 +112,13 @@ class ResultsController extends Controller
         $arrival = input('tipus') === 'arribada';
         $pdf = RaceResult::pdf($categoryId > 0 ? $categoryId : null, $arrival);
 
-        $name = $arrival ? 'ordre-arribada' : ($categoryId > 0 ? 'categoria-' . $categoryId : 'totes-les-categories');
+        // El nom del fitxer diu de quina categoria és, no el seu número.
+        $name = 'totes-les-categories';
+        if ($arrival) {
+            $name = 'ordre-arribada';
+        } elseif ($categoryId > 0) {
+            $name = slugify(RaceResult::categoryTitle($categoryId)) ?: 'categoria-' . $categoryId;
+        }
         header('Content-Type: application/pdf');
         header('Content-Disposition: attachment; filename="resultats-' . $name . '-' . date('Y-m-d') . '.pdf"');
         header('Content-Length: ' . strlen($pdf));
