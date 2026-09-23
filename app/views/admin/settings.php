@@ -62,6 +62,9 @@ use Cros\Core\Settings;
 
       <div class="form-grid form-grid--2">
         <?php foreach ($group['fields'] as $name => $field): ?>
+          <?php if (!empty($field['section'])): ?>
+            <h3 class="form-section"><?= e($field['section']) ?></h3>
+          <?php endif; ?>
           <?php $fullWidth = in_array($field['type'] ?? 'text', ['html', 'textarea'], true); ?>
           <div style="<?= $fullWidth ? 'grid-column:1/-1' : '' ?>">
             <?= \Cros\Core\View::partial('admin/partials/field', [

@@ -105,6 +105,16 @@ function formData(string $html): array
     return $data;
 }
 
+/** Desa la configuració d'un grup enviant-hi també un fitxer (imatge o document). */
+function saveSettingsWithFile(string $base, string $group, array $changes, string $field, string $file): array
+{
+    $form = req('GET', $base . '/admin/configuracio/' . $group);
+    $data = array_merge(formData($form['body']), $changes);
+    $data[$field] = new CURLFile($file, 'image/jpeg', basename($file));
+
+    return req('POST', $base . '/admin/configuracio/' . $group, [], ['raw' => $data]);
+}
+
 /** Desa la configuració d'un grup canviant només el que s'indica. */
 function saveSettings(string $base, string $group, array $changes): array
 {
@@ -362,6 +372,90 @@ check('Sense coordenades, cerca l\'adreça de la cursa',
     str_contains($home, 'openstreetmap.org/search?query=') && str_contains(text($home), 'Zona esportiva'));
 check('I no incrusta cap mapa', !str_contains($home, 'export/embed.html'));
 $mapPost(['map_lat' => '41.376699', 'map_lng' => '1.713535']);
+
+echo "\n== Avisos: barra de dalt i cartell de la portada ==\n";
+$anon = ['anon' => true];
+saveSettings($base, 'notices', ['topbar_enabled' => '0', 'popup_enabled' => '0']);
+$home = req('GET', $base . '/', [], $anon);
+check('Sense configurar res, no hi ha barra d\'avís', !str_contains($home['body'], 'id="topbar"'));
+check('Ni cap cartell emergent', !str_contains($home['body'], 'data-popup'));
+
+// Una barra sense missatge no és cap avís.
+saveSettings($base, 'notices', ['topbar_enabled' => '1', 'topbar_text' => '']);
+check('Activada però sense missatge, no surt',
+    !str_contains(req('GET', $base . '/', [], $anon)['body'], 'id="topbar"'));
+
+saveSettings($base, 'notices', [
+    'topbar_enabled' => '1', 'topbar_text' => 'Avís ' . $unique, 'topbar_url' => '/inscripcio',
+    'topbar_link_label' => 'Apunta-t\'hi', 'topbar_bg' => '#123456', 'topbar_color' => '#ffeedd',
+    'topbar_dismissible' => '1',
+]);
+$home = req('GET', $base . '/', [], $anon);
+check('La barra surt amb el missatge', str_contains($home['body'], 'Avís ' . $unique));
+check('Amb els colors triats',
+    str_contains($home['body'], 'background:#123456') && str_contains($home['body'], 'color:#ffeedd'));
+check('L\'enllaç s\'obre en una finestra nova',
+    preg_match('#<a class="topbar__link" href="[^"]*/inscripcio" target="_blank" rel="noopener">#', $home['body']) === 1);
+check('Amb el text que s\'hi ha posat', str_contains(text($home['body']), 'Apunta-t\'hi'));
+check('I es pot tancar', str_contains($home['body'], 'data-topbar-close'));
+check('La barra surt a totes les pàgines',
+    str_contains(req('GET', $base . '/recorreguts', [], $anon)['body'], 'Avís ' . $unique));
+
+saveSettings($base, 'notices', ['topbar_dismissible' => '0']);
+check('Es pot deixar sense creu per tancar-la',
+    !str_contains(req('GET', $base . '/', [], $anon)['body'], 'data-topbar-close'));
+
+// Una adreça que no ho és no arriba mai a l'enllaç.
+saveSettings($base, 'notices', ['topbar_url' => 'javascript:alert(1)']);
+$home = req('GET', $base . '/', [], $anon);
+check('Una adreça perillosa no es publica',
+    !str_contains($home['body'], 'javascript:alert') && !str_contains($home['body'], 'topbar__link'));
+check('...però el missatge es continua veient', str_contains($home['body'], 'Avís ' . $unique));
+
+saveSettings($base, 'notices', ['topbar_enabled' => '0']);
+check('Desactivada, desapareix', !str_contains(req('GET', $base . '/', [], $anon)['body'], 'id="topbar"'));
+
+// El cartell emergent.
+saveSettings($base, 'notices', [
+    'popup_enabled' => '1', 'popup_url' => '', 'popup_alt' => '', 'popup_image_remove' => '1',
+]);
+check('Un cartell sense imatge no surt',
+    !str_contains(req('GET', $base . '/', [], $anon)['body'], 'data-popup'));
+
+$poster = sys_get_temp_dir() . '/cros-cartell-' . $unique . '.jpg';
+$image = imagecreatetruecolor(600, 800);
+imagefilledrectangle($image, 0, 0, 600, 800, imagecolorallocate($image, 47, 107, 60));
+imagejpeg($image, $poster, 80);
+imagedestroy($image);
+$uploaded = saveSettingsWithFile($base, 'notices', [
+    'popup_enabled' => '1', 'popup_alt' => 'Cartell ' . $unique,
+    'popup_url' => 'https://example.test/cartell', 'popup_once' => '1',
+], 'popup_image', $poster);
+check('S\'hi puja la imatge del cartell', $uploaded['status'] === 302, 'estat ' . $uploaded['status']);
+@unlink($poster);
+
+$home = req('GET', $base . '/', [], $anon);
+check('El cartell surt a la portada', str_contains($home['body'], 'data-popup'));
+check('Amb la imatge pujada', preg_match('#<img src="[^"]*uploads/[^"]+" alt="Cartell ' . $unique . '">#', $home['body']) === 1,
+    'no s\'hi ha trobat la imatge');
+check('En clicar-la s\'obre en una finestra nova',
+    preg_match('#<a href="https://example.test/cartell" target="_blank" rel="noopener" data-popup-link>#', $home['body']) === 1);
+check('I es pot tancar', str_contains($home['body'], 'data-popup-close'));
+check('Només es veu un cop per visita', str_contains($home['body'], 'data-once="1"'));
+check('El cartell només és a la portada',
+    !str_contains(req('GET', $base . '/recorreguts', [], $anon)['body'], 'data-popup'));
+
+saveSettings($base, 'notices', ['popup_once' => '0']);
+check('Es pot demanar que surti sempre', str_contains(req('GET', $base . '/', [], $anon)['body'], 'data-once="0"'));
+
+saveSettings($base, 'notices', ['popup_enabled' => '0']);
+check('Desactivat, la portada torna a la normalitat',
+    !str_contains(req('GET', $base . '/', [], $anon)['body'], 'data-popup'));
+
+// I al panell hi ha l'apartat amb els dos blocs.
+$noticesForm = req('GET', $base . '/admin/configuracio/notices')['body'];
+check('El panell té l\'apartat d\'avisos', str_contains(text($noticesForm), 'Barra d\'avís, a dalt de tot')
+    && str_contains(text($noticesForm), 'Cartell emergent de la portada'));
 
 echo "\n== Editor visual dels textos ==\n";
 $homeForm = req('GET', $base . '/admin/configuracio/home')['body'];

@@ -7,6 +7,8 @@ $countdownTarget = $eventDate !== '' ? $eventDate . 'T' . ($eventTime !== '' ? $
 $salesOpen = \Cros\Controllers\TicketsController::salesOpen();
 ?>
 
+<?= \Cros\Core\View::partial('partials/popup') ?>
+
 <section class="hero<?= $heroImage === '' ? ' hero--plain' : '' ?>">
   <?php if ($heroImage !== ''): ?>
     <div class="hero__bg"><img src="<?= e(upload_url($heroImage)) ?>" alt="" fetchpriority="high"></div>

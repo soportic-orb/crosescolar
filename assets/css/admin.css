@@ -227,6 +227,13 @@ input[type="color"] { width: 64px; height: 40px; padding: 2px; }
 .editor--live.editor--source .editor__area { display: none; }
 .editor--live.editor--source .editor__source { display: block; }
 
+/* Títol que separa els blocs d'un mateix apartat de configuració. */
+.form-section {
+  grid-column: 1 / -1; margin: .6rem 0 0; padding-top: 1rem; border-top: 1px solid var(--a-line);
+  font-size: 1.02rem; color: var(--a-green);
+}
+.form-grid > .form-section:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+
 .form-stack { display: grid; gap: 1.3rem; align-content: start; }
 .form-stack .field { gap: .35rem; }
 

@@ -3,6 +3,27 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.24.0] — 2026-09-23
+
+### Afegit
+- **Barra d'avís a dalt de tot**: nou apartat *Configuració → Avisos*. S'activa quan
+  convingui, s'hi escriu el missatge i es trien el **color de fons** i el **color del
+  text**. Pot portar un enllaç amb el text que vulgueu —una pàgina del web o una de fora—
+  que s'obre en una finestra nova, i els visitants la poden tancar amb una creu: un cop
+  tancada no torna a sortir fins que canvieu el missatge. Surt a totes les pàgines, sobre
+  el menú. Una barra sense missatge no es mostra.
+- **Cartell emergent a la portada**: al mateix apartat es puja una **imatge** que surt
+  damunt de la portada en obrir-la. En clicar-la pot obrir l'**enllaç** que li poseu, en
+  una finestra nova. Es tanca amb la creu, clicant-hi fora o amb Esc, i per defecte només
+  es veu **un cop per visita**. Sense imatge no surt res, i la descripció de la imatge es
+  pot escriure per a qui no la pugui veure.
+- Els apartats de configuració poden tenir **títols que separen els blocs**, i el d'avisos
+  ja els porta.
+
+### Seguretat
+- Les adreces dels dos avisos es comproven abans de publicar-les: una que no sigui una
+  adreça de debò (per exemple `javascript:…`) no arriba mai a l'enllaç.
+
 ## [1.23.0] — 2026-09-21
 
 ### Canviat

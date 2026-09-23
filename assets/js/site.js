@@ -21,6 +21,40 @@
     if (form && !window.confirm(form.getAttribute('data-confirm'))) { event.preventDefault(); }
   });
 
+  /* Barra d'avís: es pot tancar i no torna durant la visita ----------- */
+  var topbar = document.getElementById('topbar');
+  if (topbar) {
+    var topbarClose = topbar.querySelector('[data-topbar-close]');
+    if (topbarClose) {
+      topbarClose.addEventListener('click', function () {
+        topbar.remove();
+        try { sessionStorage.setItem('cros_topbar_' + topbar.getAttribute('data-notice'), '1'); } catch (e) {}
+      });
+    }
+  }
+
+  /* Cartell emergent de la portada ------------------------------------ */
+  var popup = document.querySelector('[data-popup]');
+  if (popup && typeof popup.showModal === 'function') {
+    var popupKey = 'cros_popup_' + popup.getAttribute('data-notice');
+    var seen = false;
+    try { seen = popup.getAttribute('data-once') === '1' && sessionStorage.getItem(popupKey) === '1'; } catch (e) {}
+    if (!seen) {
+      popup.showModal();
+      try { sessionStorage.setItem(popupKey, '1'); } catch (e) {}
+    }
+    var closePopup = function () { popup.close(); };
+    var popupClose = popup.querySelector('[data-popup-close]');
+    if (popupClose) { popupClose.addEventListener('click', closePopup); }
+    // Clicar fora del cartell també el tanca.
+    popup.addEventListener('click', function (event) {
+      if (event.target === popup) { closePopup(); }
+    });
+    // Si la imatge porta enllaç, en obrir-lo el cartell es tanca.
+    var popupLink = popup.querySelector('[data-popup-link]');
+    if (popupLink) { popupLink.addEventListener('click', closePopup); }
+  }
+
   /* Avís abans de descarregar el dorsal ------------------------------- */
   var bibNotice = document.getElementById('bib-notice');
   if (bibNotice && typeof bibNotice.showModal === 'function') {

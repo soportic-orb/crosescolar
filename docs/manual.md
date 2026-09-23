@@ -72,6 +72,37 @@ El botó **«Inscriu-te!»** hi és sempre, al final del menú, i no es pot treu
 - Botons principals i compte enrere.
 - Textos de cada secció: introducció, recorreguts, programa, galeria, ubicació i patrocinadors.
 
+### 2.1. Avisos: la barra de dalt i el cartell emergent
+**Configuració → Avisos**
+
+Dues maneres d'anunciar una cosa puntual —un canvi d'horari, l'últim dia per
+inscriure-s'hi, el cartell de l'edició— sense tocar la resta del web. Totes dues venen
+apagades i es poden engegar i apagar quan convingui.
+
+**La barra d'avís** surt a dalt de tot, sobre el menú, a **totes les pàgines**:
+
+- *Missatge*: el text que es llegeix. Si el deixeu buit no surt res, encara que la barra
+  estigui activada.
+- *Enllaç* i *text de l'enllaç* (opcionals): fan sortir un botó a la barra que porta on
+  digueu —una pàgina d'aquest web (`/inscripcio`) o una de fora (`https://…`)— i s'obre
+  en una finestra nova.
+- *Color de fons* i *color del text*: trieu-los amb el selector de color perquè es
+  llegeixi bé. Recordeu que un text blanc sobre un fons clar no es veu.
+- *Els visitants la poden tancar*: hi surt una creu a la dreta. Un cop tancada no torna a
+  sortir fins que canvieu el missatge o el visitant torni a obrir el navegador.
+
+**El cartell emergent** surt damunt de la portada en obrir-la, i només a la portada:
+
+- *Imatge del cartell*: la que pugeu. **Sense imatge no surt res.** Es veu sencera, sense
+  retallar; qualsevol format habitual va bé (JPG, PNG o WEBP).
+- *Descripció de la imatge*: el que llegeix qui no la pot veure. Val la pena escriure-la.
+- *Enllaç en clicar la imatge* (opcional): s'obre en una finestra nova. Sense enllaç, la
+  imatge només es mostra.
+- *Ensenyar-lo un sol cop per visita*: recomanat, perquè qui torni a la portada durant la
+  mateixa visita no se'l torni a trobar. Si el desactiveu, surt cada vegada.
+
+El cartell es tanca amb la creu, clicant-hi fora o amb la tecla Esc.
+
 ### 3. Recorreguts amb Wikiloc
 **Recorreguts → Afegir**
 - Enganxeu l'**URL de Wikiloc** de la ruta (per exemple

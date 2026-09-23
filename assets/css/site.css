@@ -247,6 +247,27 @@ ul, ol { padding-left: 1.2em; }
 }
 .card--hover:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
 .card--muted { background: #f7f8f7; border-style: dashed; }
+/* --------------------------------------------- Barra d'avís de dalt de tot */
+.topbar { width: 100%; font-size: .95rem; }
+.topbar__inner { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; padding: .6rem 0; }
+.topbar__text { margin: 0; font-weight: 600; }
+.topbar__link {
+  color: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 3px;
+  border: 1px solid currentColor; border-radius: 999px; padding: .2rem .8rem; text-decoration: none;
+}
+.topbar__link:hover { color: inherit; background: rgba(255, 255, 255, .18); }
+.topbar__close {
+  margin-left: auto; border: 0; background: transparent; color: inherit; cursor: pointer;
+  font-size: 1.5rem; line-height: 1; padding: 0 .2rem; opacity: .8;
+}
+.topbar__close:hover { opacity: 1; }
+@media (max-width: 560px) {
+  .topbar__inner { padding: .55rem 0; }
+  .topbar__text { flex: 1 1 100%; order: 1; }
+  .topbar__close { order: 0; }
+  .topbar__link { order: 2; }
+}
+
 .modal { padding: 0; border: 0; border-radius: var(--radius); background: transparent; max-width: min(34rem, calc(100vw - 2rem)); }
 .modal::backdrop { background: rgba(16, 38, 22, .55); }
 .modal__box { background: var(--white); border-radius: var(--radius); padding: 1.6rem; box-shadow: var(--shadow); text-align: left; }
@@ -254,6 +275,18 @@ ul, ol { padding-left: 1.2em; }
 .modal__box p { margin: 0 0 .8rem; color: var(--ink-soft); }
 .modal__box p:last-of-type { margin-bottom: 1.2rem; }
 .modal__actions { display: flex; flex-wrap: wrap; align-items: center; gap: .7rem; }
+
+/* El cartell emergent: la imatge mana i la finestra s'hi adapta. */
+/* La finestra es fa de la mida de la imatge, sense estirar-la ni retallar-la. */
+.modal--popup { width: fit-content; max-width: min(46rem, calc(100vw - 2rem)); }
+.modal__box--bare { position: relative; padding: 0; overflow: hidden; line-height: 0; }
+.modal__box--bare img { display: block; width: auto; max-width: 100%; max-height: calc(100vh - 6rem); }
+.modal__close {
+  position: absolute; top: .5rem; right: .5rem; z-index: 2;
+  width: 2.2rem; height: 2.2rem; border-radius: 999px; border: 0; cursor: pointer;
+  background: rgba(16, 38, 22, .6); color: #fff; font-size: 1.5rem; line-height: 1;
+}
+.modal__close:hover { background: rgba(16, 38, 22, .85); }
 
 .status-pill {
   display: inline-flex; align-items: center; gap: .35rem; padding: .2rem .7rem; border-radius: 999px;

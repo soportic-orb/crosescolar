@@ -89,7 +89,8 @@ class Html
         }
     }
 
-    private static function safeUrl(?string $url): bool
+    /** L'adreça és segura per posar-la en un enllaç o en una imatge? */
+    public static function safeUrl(?string $url): bool
     {
         $url = trim((string) $url);
         if ($url === '') {
