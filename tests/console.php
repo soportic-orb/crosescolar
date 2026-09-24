@@ -91,6 +91,22 @@ file_put_contents($site . '/tenants/platform.php', "<?php return " . var_export(
 /* La base de dades de la plataforma, buida ---------------------------------- */
 $pdo = Platform::boot($site);
 Platform::migrate();
+
+// Per mirar les bases de dades dels clients cal qui les pugui veure: l'usuari
+// de la plataforma només té permisos sobre la seva, i information_schema no
+// ensenya el que no es pot tocar.
+$admin = new PDO(
+    sprintf('mysql:host=%s;port=%d;charset=utf8mb4', $db['host'], $db['port']),
+    $db['admin_user'],
+    $db['admin_pass'],
+    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+);
+$dbExists = static fn (string $name): bool => (bool) $admin->query(
+    'SELECT 1 FROM information_schema.schemata WHERE schema_name = ' . $admin->quote($name)
+)->fetchColumn();
+$dbTables = static fn (string $name): int => (int) $admin->query(
+    'SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = ' . $admin->quote($name)
+)->fetchColumn();
 foreach (['platform_activity', 'instance_requests', 'instances', 'clients', 'platform_users'] as $table) {
     $pdo->exec('DELETE FROM ' . $table);
 }
@@ -198,9 +214,8 @@ try {
     check('La carpeta de la instància hi és', is_file($site . '/tenants/santjordi/config.php'));
     check('Amb carpetes per als fitxers i els registres',
         is_dir($site . '/tenants/santjordi/uploads') && is_dir($site . '/tenants/santjordi/storage'));
-    check('La base de dades té les taules del cros',
-        (int) $pdo->query('SELECT COUNT(*) FROM information_schema.tables
-            WHERE table_schema = ' . $pdo->quote($prefix . 'santjordi'))->fetchColumn() > 20);
+    check('La base de dades té les taules del cros', $dbTables($prefix . 'santjordi') > 20,
+        $dbTables($prefix . 'santjordi') . ' taules');
     check('Neix sense estrenar', (string) ($instance['status'] ?? '') === 'new');
     check('I amagada al públic', (int) ($instance['published'] ?? 1) === 0);
 
@@ -668,9 +683,7 @@ try {
 
     check('Una instància activa no s\'esborra', !Provisioner::purge((int) $bosc['id'], $site));
     check('Una de donada de baixa, sí', Provisioner::purge($instanceId, $site));
-    check('La base de dades desapareix',
-        (int) $pdo->query('SELECT COUNT(*) FROM information_schema.schemata
-            WHERE schema_name = ' . $pdo->quote($prefix . 'santjordi'))->fetchColumn() === 0);
+    check('La base de dades desapareix', !$dbExists($prefix . 'santjordi'));
     check('I la carpeta també', !is_dir($site . '/tenants/santjordi'));
     check('La fitxa es queda, marcada com a esborrada',
         (string) Instance::find($instanceId)['status'] === 'purged');
@@ -691,12 +704,6 @@ try {
 
     // Les bases de dades i els usuaris que hagin quedat de les proves.
     try {
-        $admin = new PDO(
-            sprintf('mysql:host=%s;port=%d;charset=utf8mb4', $db['host'], $db['port']),
-            $db['admin_user'],
-            $db['admin_pass'],
-            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
-        );
         foreach (['santjordi', 'elbosc', 'lagranada'] as $slug) {
             $admin->exec('DROP DATABASE IF EXISTS `' . $prefix . $slug . '`');
             $drop = $admin->prepare('DROP USER IF EXISTS ?@?');
