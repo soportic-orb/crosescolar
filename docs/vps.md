@@ -13,6 +13,71 @@ dominis si són uns altres.
 
 ---
 
+## El camí curt: instal·lació guiada
+
+Hi ha dues maneres de fer-ho. Aquesta és la de sempre, i és la que va bé si no
+voleu pensar en res:
+
+```bash
+# 1. Al vostre ordinador: pugeu el paquet de la versió al servidor
+scp cros-escolar-1.25.1.zip root@LA-IP-DEL-VPS:/tmp/
+
+# 2. Al servidor
+ssh root@LA-IP-DEL-VPS
+mkdir -p /opt/cros && unzip -q /tmp/cros-escolar-1.25.1.zip -d /opt/cros
+cd /opt/cros && sudo bash tools/instalar-vps.sh
+```
+
+L'script pregunta els dominis i el correu, i després ho fa tot sol: instal·la
+nginx, MariaDB i PHP, crea les bases de dades i els seus usuaris amb
+contrasenyes generades, copia el codi a `/var/www/crosescolar` amb els permisos
+que toquen, escriu la configuració de l'nginx amb els vostres dominis, mira que
+el DNS apunti aquí, demana el certificat comodí i deixa el cron parat.
+
+En acabar us dona una adreça com aquesta:
+
+```
+https://crosescolar.cat/install-plataforma.php?clau=…
+```
+
+Obriu-la i **l'assistent web acaba la feina**: comprova el servidor, us deixa
+repassar els dominis, prova les dues connexions a la base de dades, configura el
+correu (amb un botó per enviar-vos una prova), crea el vostre compte de
+superadministració, engega la plataforma i us diu què queda per fer. En tancar-lo
+esborra la clau i les dades que havia deixat l'script.
+
+Després, esborreu l'assistent del servidor:
+
+```bash
+rm /var/www/crosescolar/install-plataforma.php
+```
+
+Opcions de l'script, per si en necessiteu alguna:
+
+| Opció | Per a què |
+| --- | --- |
+| `--dominis a.cat,b.com` | no preguntar els dominis |
+| `--correu adreça` | adreça per als avisos del certificat |
+| `--arrel /camí` | posar el codi en un altre lloc |
+| `--sense-paquets` | no tocar res amb apt (si ja ho teniu instal·lat) |
+| `--sense-certificat` | deixar el certificat per a més tard |
+| `--assaig` | dir què faria, sense tocar res |
+
+L'`--assaig` va bé per veure el pla abans de deixar-lo actuar.
+
+> **Per què dues peces i no una?** Un assistent web l'ha de servir un servidor
+> web, i en un VPS acabat de fer encara no n'hi ha cap. Per això la part de
+> sistema —que demana ser root— la fa l'script al terminal, i l'assistent web
+> només fa la part d'aplicació, que no necessita cap permís especial. Així no
+> queda cap porta oberta al servidor quan s'ha acabat d'instal·lar.
+
+---
+
+## El camí llarg: pas a pas a mà
+
+La resta de la guia explica el mateix, ordre per ordre, per si voleu fer-ho
+vosaltres o entendre què fa l'script.
+
 ## 0. Abans de començar
 
 Al DNS de **cada** domini, apuntant a la IP del VPS:

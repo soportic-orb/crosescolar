@@ -3,6 +3,28 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.26.0] — 2026-09-24
+
+### Afegit
+- **Instal·lació guiada en un servidor nou**, en dues peces que es passen la
+  feina. `sudo bash tools/instalar-vps.sh` deixa el VPS a punt: pregunta els
+  dominis, instal·la nginx, MariaDB i PHP, crea les bases de dades i els usuaris
+  amb contrasenyes generades, copia el codi amb els permisos que toquen, escriu la
+  configuració de l'nginx amb els vostres dominis, mira que el DNS hi apunti,
+  demana el certificat comodí, deixa el cron parat i obre l'assistent web.
+- **L'assistent web** (`install-plataforma.php`) acaba la part d'aplicació: repassa
+  el servidor, deixa revisar els dominis, prova les dues connexions a la base de
+  dades —inclòs que l'usuari d'altes pugui crear-ne de noves—, configura el correu
+  amb un botó per enviar-se una prova, crea el compte de superadministració, engega
+  la plataforma i diu què queda per fer. Hi entra qui porta la clau d'un sol ús que
+  dona l'script, i en tancar-lo esborra la clau i les dades que aquell havia deixat.
+- L'script es pot provar abans amb `--assaig`, que diu què faria sense tocar res,
+  i porta opcions per a servidors que ja tenen part de la feina feta
+  (`--sense-paquets`, `--sense-certificat`, `--dominis`, `--arrel`).
+- Bateria de proves nova (`tests/setup.php`) que recorre l'assistent sencer contra
+  un MySQL real, com ho faria qui instal·la: des de la clau fins a la plataforma en
+  marxa i l'assistent tancat.
+
 ## [1.25.1] — 2026-09-24
 
 ### Canviat
