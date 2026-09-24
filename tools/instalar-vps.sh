@@ -47,7 +47,16 @@ titol() { printf '\n\033[1m── %s ──────────────�
 fes()   { if [ "$ASSAIG" = "1" ]; then echo "   (assaig) $*"; else eval "$@"; fi; }
 clau()  { tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 28; }
 
-[ "$(id -u)" = "0" ] || { roig "Executeu-ho com a root: sudo bash $0"; exit 1; }
+# Un assaig no toca res, de manera que es pot mirar sense ser root: així es pot
+# llegir el pla abans de deixar-lo actuar.
+if [ "$(id -u)" != "0" ]; then
+    if [ "$ASSAIG" = "1" ]; then
+        groc "Assaig sense ser root: només es llegeix el pla, no es toca res."
+    else
+        roig "Executeu-ho com a root: sudo bash $0"
+        exit 1
+    fi
+fi
 
 ORIGEN="$(cd "$(dirname "$0")/.." && pwd)"
 [ -f "$ORIGEN/index.php" ] && [ -d "$ORIGEN/app/platform" ] || {

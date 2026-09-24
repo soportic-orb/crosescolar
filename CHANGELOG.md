@@ -18,7 +18,8 @@ i el versionatge semàntic.
   amb un botó per enviar-se una prova, crea el compte de superadministració, engega
   la plataforma i diu què queda per fer. Hi entra qui porta la clau d'un sol ús que
   dona l'script, i en tancar-lo esborra la clau i les dades que aquell havia deixat.
-- L'script es pot provar abans amb `--assaig`, que diu què faria sense tocar res,
+- L'script es pot provar abans amb `--assaig`, que diu què faria sense tocar res
+  —i que no demana ser root, justament perquè no en toca cap—,
   i porta opcions per a servidors que ja tenen part de la feina feta
   (`--sense-paquets`, `--sense-certificat`, `--dominis`, `--arrel`).
 - Bateria de proves nova (`tests/setup.php`) que recorre l'assistent sencer contra
