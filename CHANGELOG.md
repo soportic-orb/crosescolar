@@ -75,9 +75,20 @@ i el versionatge semàntic.
   d'hora al cron): mira que la base de dades de cada cros respongui i que la pàgina
   s'obri. Quan un cau —o quan torna— surt un correu, una sola vegada, i el panell ho
   ensenya a dalt de tot amb el motiu i des de quina hora.
+- **Còpies de seguretat de cada client** (`php tools/platform.php copies`, de
+  matinada al cron): el mateix ZIP que el client es pot descarregar, desat al servidor
+  a la carpeta del seu subdomini i guardant-ne les set últimes. A la fitxa surten amb
+  data i mida, se'n pot fer una a l'instant i descarregar-ne qualsevol; si una
+  instància fa tres dies que no es copia, el tauler ho avisa.
+- **Repàs abans de la cursa** al panell de cada cros: quan falten menys de 45 dies,
+  el tauler ensenya què encara no està a punt —data i hora, lloc i mapa, categories,
+  recorreguts, web publicat, correus que surten de debò, tancament de la inscripció i
+  maqueta del dorsal—, amb un botó per anar a cada cosa. Desapareix sol quan passa la
+  cursa o quan no queda res.
 - **Eina de consola de la plataforma** (`php tools/platform.php`): posar al dia la
   base de dades, crear superadministradors, llistar i repassar instàncies i esborrar
-  les baixes que ja han passat els 90 dies, actualitzar-les totes i vigilar-les.
+  les baixes que ja han passat els 90 dies, actualitzar-les totes, vigilar-les i
+  fer-ne les còpies.
 - **L'instal·lador es pot cridar des del codi**: tota la feina de posar en marxa un
   web (escriure la configuració, crear les taules, el compte d'administració, la
   configuració inicial i els continguts d'exemple) passa a la classe
@@ -96,10 +107,11 @@ i el versionatge semàntic.
   del codi, cadascuna amb les seves dades i el seu subdomini.
 - Bateria de proves nova (`tests/tenants.php`) que comprova que dues instal·lacions
   amb el mateix codi no es trepitgen els fitxers ni els registres.
+- Bateria de proves nova (`tests/readiness.php`) per al repàs previ a la cursa.
 - Bateria de proves nova (`tests/console.php`) que dona d'alta instàncies de debò
   contra un MySQL real i les serveix: accés al panell, alta, enllaços d'un sol ús,
-  publicació, actualització, vigilància, descàrrega de dades, aturada, baixa i
-  esborrat definitiu.
+  publicació, actualització, vigilància, còpies de seguretat, descàrrega de dades,
+  aturada, baixa i esborrat definitiu.
 
 ## [1.24.0] — 2026-09-23
 

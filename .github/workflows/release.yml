@@ -76,6 +76,9 @@ jobs:
       - name: Proves de la plataforma multi-instància
         run: php tests/tenants.php
 
+      - name: Proves del repàs abans de la cursa
+        run: php tests/readiness.php
+
       - name: Proves del mapa de la ubicació
         run: php tests/map.php
 

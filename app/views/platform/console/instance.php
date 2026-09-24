@@ -1,5 +1,6 @@
 <?php
 /** Fitxa d'una instància. */
+use Cros\Platform\Controllers\InstanceController;
 use Cros\Platform\Instance;
 
 $status = (string) $instance['status'];
@@ -56,6 +57,14 @@ $status = (string) $instance['status'];
           <?php endif; ?>
           <?php if (!empty($instance['health_checked_at'])): ?>
             <small class="text-soft">· mirat el <?= e(substr((string) $instance['health_checked_at'], 0, 16)) ?></small>
+          <?php endif; ?>
+        </td></tr>
+        <tr><th>Última còpia</th><td>
+          <?php if (!empty($instance['backup_at'])): ?>
+            <?= e(substr((string) $instance['backup_at'], 0, 16)) ?>
+            <small class="text-soft">· <?= e(InstanceController::size((int) $instance['backup_size'])) ?></small>
+          <?php else: ?>
+            <span class="text-soft">cap encara</span>
           <?php endif; ?>
         </td></tr>
         <tr><th>Últim repàs</th><td><?= $instance['synced_at'] ? e(substr((string) $instance['synced_at'], 0, 16)) : '<span class="text-soft">mai</span>' ?></td></tr>
@@ -171,6 +180,42 @@ $status = (string) $instance['status'];
     </div>
   </div>
 <?php endif; ?>
+
+<div class="panel mt-2">
+  <div class="panel__head">
+    <h2>Còpies de seguretat</h2>
+    <form class="spacer" method="post" action="<?= e(url('/instancies/' . (int) $instance['id'] . '/accio')) ?>">
+      <?= csrf_field() ?>
+      <input type="hidden" name="action" value="backup">
+      <button class="btn btn--sm" type="submit">Fer-ne una ara</button>
+    </form>
+  </div>
+  <div class="panel__body table-wrap">
+    <?php if (!$backups): ?>
+      <p class="text-soft" style="margin:0">
+        Encara no se n'ha fet cap. Es fan soles cada nit amb
+        <code>php tools/platform.php copies</code>.
+      </p>
+    <?php else: ?>
+      <table class="admin-table">
+        <thead><tr><th>Quan</th><th>Fitxer</th><th>Mida</th><th></th></tr></thead>
+        <tbody>
+        <?php foreach ($backups as $copy): ?>
+          <tr>
+            <td><?= e(date('d/m/Y H:i', $copy['time'])) ?></td>
+            <td><code><?= e($copy['name']) ?></code></td>
+            <td><?= e(InstanceController::size((int) $copy['size'])) ?></td>
+            <td class="text-right">
+              <a class="btn btn--ghost btn--sm"
+                 href="<?= e(url('/instancies/' . (int) $instance['id'] . '/copia', ['fitxer' => $copy['name']])) ?>">Descarregar</a>
+            </td>
+          </tr>
+        <?php endforeach; ?>
+        </tbody>
+      </table>
+    <?php endif; ?>
+  </div>
+</div>
 
 <?php if ($activity): ?>
   <div class="panel mt-2">

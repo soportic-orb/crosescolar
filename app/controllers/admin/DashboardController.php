@@ -6,6 +6,7 @@ namespace Cros\Controllers\Admin;
 use Cros\Core\Auth;
 use Cros\Core\Controller;
 use Cros\Core\Db;
+use Cros\Core\Readiness;
 use Cros\Core\Stripe;
 use Cros\Models\Order;
 use Cros\Models\TicketType;
@@ -31,6 +32,8 @@ class DashboardController extends Controller
                  ORDER BY r.created_at DESC LIMIT 8'
             ),
             'daysLeft' => $daysLeft,
+            'readiness' => Readiness::due() ? Readiness::pending() : [],
+            'readinessTotal' => count(Readiness::checks()),
             'stripeMode' => Stripe::mode(),
             'stripeReady' => Stripe::configured(),
             'salesOpen' => \Cros\Controllers\TicketsController::salesOpen(),

@@ -8,6 +8,7 @@
  *   php tools/platform.php repassar                   actualitza les dades de totes
  *   php tools/platform.php actualitzar                aplica els canvis pendents a totes
  *   php tools/platform.php vigilar [--sense-web]      mira que totes responguin i avisa dels canvis
+ *   php tools/platform.php copies                     fa la còpia de seguretat de totes
  *   php tools/platform.php purgar [--de-veritat]      esborra les baixes que ja han passat els 90 dies
  */
 declare(strict_types=1);
@@ -21,6 +22,7 @@ require $root . '/app/core/Tenancy.php';
 require $root . '/app/bootstrap.php';
 
 use Cros\Core\Db;
+use Cros\Platform\Backup;
 use Cros\Platform\Console;
 use Cros\Platform\Health;
 use Cros\Platform\Instance;
@@ -134,6 +136,16 @@ switch ($command) {
         }
         break;
 
+    case 'copies':
+        @set_time_limit(0);
+        $report = Backup::run($root);
+        echo count($report['done']) . " còpies fetes (" . round($report['bytes'] / 1048576, 1) . " MB).\n";
+        foreach ($report['failed'] as $slug => $error) {
+            echo "  $slug: ERROR $error\n";
+        }
+        echo 'Es guarden les ' . Backup::keep($root) . " últimes de cada instància.\n";
+        break;
+
     case 'purgar':
         $real = in_array('--de-veritat', $argv, true);
         $rows = Db::all(
@@ -156,5 +168,5 @@ switch ($command) {
         break;
 
     default:
-        echo "Ordres: migrar · usuari · instancies · repassar · actualitzar · vigilar · purgar\n";
+        echo "Ordres: migrar · usuari · instancies · repassar · actualitzar · vigilar · copies · purgar\n";
 }

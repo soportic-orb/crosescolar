@@ -478,6 +478,12 @@ queden antics.
 - Totes les llistes es poden **reordenar arrossegant** les files.
 - **Sistema → Registre** mostra qui ha fet cada canvi.
 - **Sistema → Correus** mostra els correus enviats i permet fer una prova d'enviament.
+- Quan falten menys de 45 dies per a la cursa, el **tauler** us ensenya un repàs del
+  que encara no està a punt: la data i l'hora, el lloc i el mapa, les categories i els
+  recorreguts, si el web encara està amagat, si els correus estan en mode d'assaig, si
+  la inscripció es tanca més tard que el mateix dia de la cursa i si heu pujat la
+  maqueta del dorsal. No és cap obligació: cada línia porta un botó per mirar-s'ho i,
+  si ja ho teniu decidit així, no cal fer-ne cas. Quan passa la cursa, desapareix.
 - Si perdeu la contrasenya, qui manté la plataforma us pot enviar un **enllaç per
   entrar** al correu: serveix un sol cop, caduca en un parell d'hores i en prémer-lo
   us podreu posar una contrasenya nova. Si algun dia hi entren des de la plataforma

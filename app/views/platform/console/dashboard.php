@@ -43,6 +43,14 @@ use Cros\Platform\Instance;
   </div>
 <?php endif; ?>
 
+<?php if ($unsaved && (int) $stats['instances'] > 0): ?>
+  <div class="alert alert--warning mt-2">
+    <strong><?= count($unsaved) === 1 ? 'Una instància fa dies que no es copia' : count($unsaved) . ' instàncies fa dies que no es copien' ?>:</strong>
+    <?= e(implode(', ', array_column($unsaved, 'slug'))) ?>.
+    Comproveu que el cron faci <code>php tools/platform.php copies</code> cada nit.
+  </div>
+<?php endif; ?>
+
 <?php if ((int) $stats['outdated'] > 0): ?>
   <div class="alert alert--warning mt-2 flex-between">
     <span>

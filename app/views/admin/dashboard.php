@@ -26,6 +26,36 @@ $currency = (string) setting('payments_currency', 'EUR');
   </div>
 </div>
 
+<?php if ($readiness): ?>
+  <div class="panel mt-2">
+    <div class="panel__head">
+      <h2>Falta poc: repasseu-ho</h2>
+      <span class="badge badge--amber spacer">
+        <?= count($readiness) ?> de <?= (int) $readinessTotal ?> per mirar
+      </span>
+    </div>
+    <div class="panel__body">
+      <p class="text-soft" style="margin:0 0 1rem">
+        <?= $daysLeft === 0 ? 'La cursa és avui.' : 'Queden ' . (int) $daysLeft . ' dies per a la cursa.' ?>
+        Això és el que encara no està a punt. Res no és obligatori: si ja ho teniu decidit, no en feu cas.
+      </p>
+      <table class="admin-table">
+        <tbody>
+        <?php foreach ($readiness as $check): ?>
+          <tr>
+            <td style="width:260px"><strong><?= e($check['label']) ?></strong></td>
+            <td><?= e($check['hint']) ?></td>
+            <td class="text-right">
+              <a class="btn btn--ghost btn--sm" href="<?= e(url($check['link'])) ?>">Mirar-ho</a>
+            </td>
+          </tr>
+        <?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<?php endif; ?>
+
 <?php if (\Cros\Core\Settings::bool('coming_soon')): ?>
   <div class="alert alert--warning mt-2 flex-between">
     <span>

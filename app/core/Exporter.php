@@ -39,17 +39,26 @@ class Exporter
      * Prepara el ZIP i en torna el camí. Qui el demana és qui l'ha d'esborrar
      * després d'enviar-lo.
      */
-    public static function create(?string $name = null): string
+    public static function create(?string $name = null, array $options = []): string
     {
         if (!class_exists(ZipArchive::class)) {
             throw new RuntimeException('Aquest servidor no té l\'extensió zip de PHP.');
         }
-        $dir = storage_path('exports');
+        // Normalment tot surt del web on som; la plataforma, en fer còpies de
+        // seguretat, diu d'on són les dades i on s'han de desar.
+        $dir = (string) ($options['dir'] ?? storage_path('exports'));
         if (!is_dir($dir) && !@mkdir($dir, 0775, true) && !is_dir($dir)) {
             throw new RuntimeException('No s\'ha pogut crear la carpeta on desar l\'exportació.');
         }
-        $slug = preg_replace('/[^a-z0-9]+/', '-', mb_strtolower((string) setting('site_name', 'cros'))) ?: 'cros';
-        $file = $dir . '/' . trim($slug, '-') . '-' . ($name ?? date('Y-m-d-His')) . '.zip';
+        $title = (string) ($options['site_name'] ?? setting('site_name', 'cros'));
+        $slug = preg_replace('/[^a-z0-9]+/', '-', mb_strtolower($title)) ?: 'cros';
+        $base = $dir . '/' . trim($slug, '-') . '-' . ($name ?? date('Y-m-d-His'));
+        // Si ja n'hi ha una amb aquest nom (dues còpies el mateix segon), se'n
+        // fa una de nova al costat en comptes d'esborrar la que hi havia.
+        $file = $base . '.zip';
+        for ($i = 2; is_file($file); $i++) {
+            $file = $base . '-' . $i . '.zip';
+        }
 
         $zip = new ZipArchive();
         if ($zip->open($file, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
@@ -57,13 +66,13 @@ class Exporter
         }
 
         $tables = self::tables();
-        $zip->addFromString('llegeix-me.txt', self::readme($tables));
+        $zip->addFromString('llegeix-me.txt', self::readme($tables, $title));
         foreach ($tables as $table) {
             $rows = Db::all('SELECT * FROM `' . $table . '`');
             $zip->addFromString('fulls/' . (self::NAMES[$table] ?? $table) . '.csv', self::csv($rows));
         }
         $zip->addFromString('base-de-dades.sql', self::dump($tables));
-        self::addUploads($zip);
+        self::addUploads($zip, (string) ($options['uploads'] ?? rtrim(upload_path(''), '/')));
         $zip->close();
 
         return $file;
@@ -151,9 +160,9 @@ class Exporter
     }
 
     /** Els fitxers pujats, tal com estan. */
-    private static function addUploads(ZipArchive $zip): void
+    private static function addUploads(ZipArchive $zip, string $root): void
     {
-        $root = rtrim(upload_path(''), '/');
+        $root = rtrim($root, '/');
         if (!is_dir($root)) {
             return;
         }
@@ -171,9 +180,9 @@ class Exporter
     }
 
     /** Què hi ha dins del ZIP, explicat. */
-    private static function readme(array $tables): string
+    private static function readme(array $tables, string $title = ''): string
     {
-        return "Dades de " . (string) setting('site_name', 'el cros') . "\n"
+        return "Dades de " . ($title !== '' ? $title : (string) setting('site_name', 'el cros')) . "\n"
             . str_repeat('=', 40) . "\n\n"
             . 'Exportació del ' . date('d/m/Y') . " a les " . date('H:i') . ".\n"
             . 'Versió del sistema: ' . app_version() . "\n\n"

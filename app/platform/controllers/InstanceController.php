@@ -8,6 +8,7 @@ use Cros\Core\Db;
 use Cros\Core\HttpException;
 use Cros\Core\Mailer;
 use Cros\Core\View;
+use Cros\Platform\Backup;
 use Cros\Platform\Client;
 use Cros\Platform\Console;
 use Cros\Platform\Instance;
@@ -163,6 +164,48 @@ class InstanceController extends Controller
         redirect('/instancies');
     }
 
+    /** Es descarrega una còpia de seguretat. */
+    public function backup(array $params): void
+    {
+        Console::requireLogin();
+        $instance = Instance::find((int) $params['id']);
+        if (!$instance) {
+            throw new HttpException(404, 'Aquesta instància no existeix.');
+        }
+        try {
+            $file = Backup::file((string) $instance['slug'], (string) ($_GET['fitxer'] ?? ''));
+        } catch (RuntimeException $e) {
+            throw new HttpException(404, $e->getMessage());
+        }
+        Console::log('backup_download', 'instance', (int) $instance['id'], [
+            'slug' => $instance['slug'],
+            'fitxer' => basename($file),
+        ]);
+
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+        header('Content-Type: application/zip');
+        header('Content-Disposition: attachment; filename="' . basename($file) . '"');
+        header('Content-Length: ' . (string) filesize($file));
+        header('X-Content-Type-Options: nosniff');
+        readfile($file);
+        exit;
+    }
+
+    /** Una mida en lletres. */
+    public static function size(int $bytes): string
+    {
+        $units = ['B', 'kB', 'MB', 'GB'];
+        $i = 0;
+        while ($bytes >= 1024 && $i < count($units) - 1) {
+            $bytes /= 1024;
+            $i++;
+        }
+
+        return number_format($bytes, $i === 0 ? 0 : 1, ',', '.') . ' ' . $units[$i];
+    }
+
     /** Fitxa d'una instància. */
     public function show(array $params): void
     {
@@ -182,6 +225,7 @@ class InstanceController extends Controller
             'instance' => $instance,
             'client' => $instance['client_id'] ? Client::find((int) $instance['client_id']) : null,
             'request' => Db::one('SELECT * FROM instance_requests WHERE instance_id = :id ORDER BY id DESC LIMIT 1', ['id' => $instance['id']]),
+            'backups' => Backup::all((string) $instance['slug']),
             'activity' => Db::all(
                 'SELECT * FROM platform_activity WHERE subject = :s AND subject_id = :id ORDER BY id DESC LIMIT 20',
                 ['s' => 'instance', 'id' => $instance['id']]
@@ -224,6 +268,17 @@ class InstanceController extends Controller
                 Console::log('instance_cancel', 'instance', $id, ['slug' => $instance['slug']]);
                 flash('success', 'Instància donada de baixa. Les dades es guarden '
                     . Instance::PURGE_DAYS . ' dies abans d\'esborrar-se.');
+                break;
+            case 'backup':
+                @set_time_limit(300);
+                $copy = Backup::create($id);
+                Console::log('instance_backup', 'instance', $id, ['slug' => $instance['slug'], 'ok' => $copy['ok']]);
+                flash(
+                    $copy['ok'] ? 'success' : 'error',
+                    $copy['ok']
+                        ? 'Còpia feta: ' . basename($copy['file']) . ' (' . self::size($copy['size']) . ').'
+                        : 'No s\'ha pogut fer la còpia: ' . $copy['error']
+                );
                 break;
             case 'link':
                 $link = Instance::accessLink($id, 'reset', null, 'Demanat des del panell de la plataforma');

@@ -51,6 +51,14 @@ return [
         'proxy' => '',
     ],
 
+    // Còpies de seguretat de cada client (php tools/platform.php copies).
+    'backups' => [
+        // On es desen. Si es deixa buit: storage/backups/<subdomini>/.
+        'dir' => '',
+        // Quantes se'n guarden de cada instància.
+        'keep' => 7,
+    ],
+
     // Correu de la plataforma (avisos de sol·licituds i claus dels clients).
     'mail' => [
         'from_name' => 'Cros Escolar',

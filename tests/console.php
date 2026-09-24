@@ -40,6 +40,7 @@ putenv('CROS_STORAGE');
 require $root . '/app/bootstrap.php';
 
 use Cros\Core\Db;
+use Cros\Platform\Backup;
 use Cros\Platform\Console;
 use Cros\Platform\Health;
 use Cros\Platform\Instance;
@@ -73,6 +74,7 @@ file_put_contents($site . '/tenants/platform.php', "<?php return " . var_export(
     'mail' => ['from_email' => 'hola@crosescolar.test', 'notify' => 'hola@crosescolar.test', 'transport' => 'log'],
     // A les proves no hi ha cap servidor a crosescolar.test: només es mira la base de dades.
     'monitor' => ['web' => false],
+    'backups' => ['keep' => 2],
     'db' => [
         'host' => $db['host'], 'port' => $db['port'], 'name' => $db['platform'],
         'user' => $db['user'], 'pass' => $db['pass'], 'charset' => 'utf8mb4', 'socket' => '',
@@ -418,6 +420,38 @@ try {
 
     $dashboard = $web('GET', '/');
     check('El tauler no dona l\'alarma si tot va bé', !str_contains($dashboard['body'], 'no responen'));
+
+    echo "\n== Còpies de seguretat ==\n";
+    $report = Backup::run($site);
+    check('Se\'n fa una de cada instància', in_array('santjordi', $report['done'], true));
+    check('I ocupa alguna cosa', $report['bytes'] > 0);
+    $copies = Backup::all('santjordi', $site);
+    check('Queda desada a la seva carpeta', count($copies) === 1);
+    check('Dins de la carpeta del client, no barrejada',
+        str_contains(Backup::dir($site, 'santjordi'), '/backups/santjordi'));
+    $instance = Instance::find($instanceId);
+    check('Queda apuntat quan s\'ha fet', !empty($instance['backup_at']));
+    check('I què ocupa', (int) $instance['backup_size'] > 0);
+
+    $copy = new ZipArchive();
+    $copy->open(Backup::dir($site, 'santjordi') . '/' . $copies[0]['name']);
+    check('La còpia porta la base de dades del client',
+        str_contains((string) $copy->getFromName('base-de-dades.sql'), 'Cros Escola Sant Jordi'));
+    $copy->close();
+
+    // Se'n guarden només les últimes.
+    Backup::create($instanceId, $site);
+    Backup::create($instanceId, $site);
+    check('Només es guarden les que s\'ha dit', count(Backup::all('santjordi', $site)) === 2);
+
+    $detail = $web('GET', '/instancies/' . $instanceId);
+    check('El panell les ensenya', str_contains($detail['body'], 'Còpies de seguretat'));
+    $name = Backup::all('santjordi', $site)[0]['name'];
+    $got = $web('GET', '/instancies/' . $instanceId . '/copia?fitxer=' . rawurlencode($name));
+    check('I se\'n pot descarregar una',
+        $got['status'] === 200 && str_contains($got['headers'], 'application/zip'), 'estat ' . $got['status']);
+    check('Un nom inventat no dona res',
+        $web('GET', '/instancies/' . $instanceId . '/copia?fitxer=' . rawurlencode('../../platform.php'))['status'] === 404);
 
     echo "\n== D'una sol·licitud a una instància ==\n";
     $home = $web('GET', '/', [], 'crosescolar.test');

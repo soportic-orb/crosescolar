@@ -58,6 +58,13 @@ class ConsoleController extends Controller
         $failing = Db::all(
             "SELECT * FROM instances WHERE health = 'error' AND status IN ('new', 'active') ORDER BY health_since"
         );
+        // Una instància en marxa sense còpia de fa més de tres dies vol dir que
+        // el cron no funciona: val més saber-ho abans de necessitar-la.
+        $unsaved = Db::all(
+            "SELECT * FROM instances WHERE status IN ('new', 'active')
+             AND (backup_at IS NULL OR backup_at < :limit) ORDER BY slug",
+            ['limit' => date('Y-m-d H:i:s', time() - 86400 * 3)]
+        );
         $upcoming = Db::all(
             'SELECT * FROM instances WHERE status = :s AND event_date >= :today ORDER BY event_date LIMIT 6',
             ['s' => 'active', 'today' => date('Y-m-d')]
@@ -70,6 +77,7 @@ class ConsoleController extends Controller
             'instances' => array_slice(Instance::all(), 0, 6),
             'upcoming' => $upcoming,
             'failing' => $failing,
+            'unsaved' => $unsaved,
             'activity' => Db::all('SELECT * FROM platform_activity ORDER BY id DESC LIMIT 8'),
         ], 'layouts/console');
     }

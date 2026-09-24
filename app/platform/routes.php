@@ -36,6 +36,7 @@ if (($mode ?? 'platform') === 'console') {
     $router->post('/instancies/actualitzar', [InstanceController::class, 'upgradeAll']);
     $router->get('/instancies/{id:\d+}', [InstanceController::class, 'show']);
     $router->post('/instancies/{id:\d+}/accio', [InstanceController::class, 'action']);
+    $router->get('/instancies/{id:\d+}/copia', [InstanceController::class, 'backup']);
 
     return $router;
 }

@@ -173,6 +173,7 @@ Altres ordres de la mateixa eina:
 | `php tools/platform.php repassar` | actualitza inscrits, data i estat de publicació de totes |
 | `php tools/platform.php actualitzar` | aplica els canvis pendents de la versió nova a totes |
 | `php tools/platform.php vigilar` | mira que totes responguin i avisa dels canvis |
+| `php tools/platform.php copies` | fa la còpia de seguretat de totes |
 | `php tools/platform.php purgar` | diu quines baixes ja han passat els 90 dies |
 | `php tools/platform.php purgar --de-veritat` | les esborra de debò (base de dades i carpeta) |
 
@@ -181,6 +182,7 @@ setmana:
 
 ```
 */15 * * * * cd /var/www/crosescolar && php tools/platform.php vigilar
+0 3 * * *    cd /var/www/crosescolar && php tools/platform.php copies
 30 4 * * *   cd /var/www/crosescolar && php tools/platform.php repassar
 15 5 * * 1   cd /var/www/crosescolar && php tools/platform.php purgar --de-veritat
 ```
@@ -205,6 +207,23 @@ la contrasenya. Des de la fitxa de la instància es pot:
 
 Tots els enllaços serveixen una sola vegada i al seu web només se'n desa l'empremta:
 qui miri la base de dades no en treu cap enllaç que funcioni.
+
+### Còpies de seguretat
+
+`php tools/platform.php copies` fa, de cada client, el mateix ZIP que ell es pot
+descarregar del seu panell —fulls de càlcul, còpia de la base de dades i fitxers
+pujats— i el desa a `storage/backups/<subdomini>/`. Cada client té la seva carpeta:
+no es barreja mai res de dos cros diferents. Es guarden les set últimes de cadascun
+(es canvia amb `backups.keep`) i, amb `backups.dir`, es poden desar en un altre disc
+o en un volum muntat.
+
+A la fitxa de cada instància surten les còpies que hi ha, amb data i mida, se'n pot
+fer una a l'instant i descarregar-ne qualsevol. Si alguna instància fa més de tres
+dies que no es copia, el tauler ho avisa: normalment vol dir que el cron ha deixat
+de funcionar.
+
+Les instàncies donades de baixa també es copien mentre es guardin les dades (els 90
+dies), que és justament quan és més probable que algú les demani.
 
 ### Actualitzar totes les instàncies
 
