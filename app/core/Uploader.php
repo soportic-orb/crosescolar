@@ -37,17 +37,17 @@ class Uploader
 
         if ($extension === 'svg') {
             $svg = self::sanitizeSvg((string) file_get_contents($file['tmp_name']));
-            file_put_contents(CROS_ROOT . '/uploads/' . $target, $svg);
+            file_put_contents(upload_path($target), $svg);
             return $target;
         }
 
-        if (!self::resize($file['tmp_name'], CROS_ROOT . '/uploads/' . $target, $extension, $maxWidth, $maxHeight)) {
-            if (!move_uploaded_file($file['tmp_name'], CROS_ROOT . '/uploads/' . $target)
-                && !rename($file['tmp_name'], CROS_ROOT . '/uploads/' . $target)) {
+        if (!self::resize($file['tmp_name'], upload_path($target), $extension, $maxWidth, $maxHeight)) {
+            if (!move_uploaded_file($file['tmp_name'], upload_path($target))
+                && !rename($file['tmp_name'], upload_path($target))) {
                 throw new \RuntimeException('No s\'ha pogut desar la imatge. Comproveu els permisos de la carpeta uploads.');
             }
         }
-        @chmod(CROS_ROOT . '/uploads/' . $target, 0644);
+        @chmod(upload_path($target), 0644);
         return $target;
     }
 
@@ -60,11 +60,11 @@ class Uploader
             throw new \RuntimeException('Només s\'admeten documents PDF.');
         }
         $target = self::targetPath($file['name'], $folder, self::DOC_TYPES[$mime]);
-        if (!move_uploaded_file($file['tmp_name'], CROS_ROOT . '/uploads/' . $target)
-            && !rename($file['tmp_name'], CROS_ROOT . '/uploads/' . $target)) {
+        if (!move_uploaded_file($file['tmp_name'], upload_path($target))
+            && !rename($file['tmp_name'], upload_path($target))) {
             throw new \RuntimeException('No s\'ha pogut desar el document.');
         }
-        @chmod(CROS_ROOT . '/uploads/' . $target, 0644);
+        @chmod(upload_path($target), 0644);
         return $target;
     }
 
@@ -74,8 +74,8 @@ class Uploader
         if (!$path) {
             return;
         }
-        $full = realpath(CROS_ROOT . '/uploads/' . ltrim($path, '/'));
-        $base = realpath(CROS_ROOT . '/uploads');
+        $full = realpath(upload_path($path));
+        $base = realpath(CROS_UPLOADS);
         if ($full && $base && str_starts_with($full, $base) && is_file($full)) {
             @unlink($full);
         }
@@ -122,7 +122,7 @@ class Uploader
     private static function targetPath(string $originalName, string $folder, string $extension): string
     {
         $folder = trim(preg_replace('/[^a-z0-9_\-\/]/i', '', $folder) ?? '', '/') ?: 'media';
-        $dir = CROS_ROOT . '/uploads/' . $folder;
+        $dir = upload_path($folder);
         if (!is_dir($dir) && !@mkdir($dir, 0775, true) && !is_dir($dir)) {
             throw new \RuntimeException('No s\'ha pogut crear la carpeta de destinació: uploads/' . $folder);
         }

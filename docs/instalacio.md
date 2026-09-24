@@ -39,6 +39,25 @@ find . -type f -exec chmod 644 {} \;
 chmod -R 775 uploads storage
 ```
 
+### Les carpetes de dades poden anar en una altra banda
+
+Per defecte, els fitxers que es pugen (`uploads/`) i el que el sistema escriu
+mentre funciona (`storage/`: registres, còpies de seguretat i temporals) van dins
+la carpeta del codi, i amb una instal·lació normal no cal fer-hi res.
+
+Si convé tenir-les fora —perquè diverses instal·lacions comparteixin la mateixa
+còpia del codi, o per posar les dades en un disc a part—, s'indiquen amb dues
+variables d'entorn:
+
+```nginx
+fastcgi_param CROS_UPLOADS /var/dades/elmeucros/uploads;
+fastcgi_param CROS_STORAGE /var/dades/elmeucros/storage;
+```
+
+Les dues carpetes han de ser escrivibles pel PHP i **no** han de quedar
+accessibles des del web (excepte `uploads/`, que s'ha de servir a `/uploads`).
+Si no s'hi diu res, tot continua com sempre.
+
 ## 4. Configurar nginx
 
 A **Sites → cros.afalagranada.cat → Vhost**, afegiu dins del bloc `server { … }`

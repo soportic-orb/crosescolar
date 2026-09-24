@@ -73,6 +73,9 @@ jobs:
       - name: Proves de les migracions
         run: php tests/migrations.php
 
+      - name: Proves de la plataforma multi-instància
+        run: php tests/tenants.php
+
       - name: Proves del mapa de la ubicació
         run: php tests/map.php
 

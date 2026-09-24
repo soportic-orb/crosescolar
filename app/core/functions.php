@@ -105,7 +105,15 @@ function upload_url(?string $path): string
 /** Ruta absoluta d'un fitxer pujat. */
 function upload_path(?string $path): string
 {
-    return CROS_ROOT . '/uploads/' . ltrim((string) $path, '/');
+    return CROS_UPLOADS . '/' . ltrim((string) $path, '/');
+}
+
+/** Ruta absoluta dins la carpeta de treball de la instal·lació (registres, còpies, temporals). */
+function storage_path(string $path = ''): string
+{
+    $path = ltrim($path, '/');
+
+    return $path === '' ? CROS_STORAGE : CROS_STORAGE . '/' . $path;
 }
 
 /** Versió actual de l'aplicació. */
@@ -359,7 +367,7 @@ function input_bool(string $key): int
 /** Escriu una línia al registre de l'aplicació. */
 function log_line(string $channel, string $message, array $context = []): void
 {
-    $dir = CROS_ROOT . '/storage/logs';
+    $dir = storage_path('logs');
     if (!is_dir($dir)) {
         @mkdir($dir, 0775, true);
     }

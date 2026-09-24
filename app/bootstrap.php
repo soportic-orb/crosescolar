@@ -12,6 +12,25 @@ if (defined('CROS_BOOTED')) {
 define('CROS_START', microtime(true));
 define('CROS_ROOT', dirname(__DIR__));
 define('CROS_APP', __DIR__);
+
+/**
+ * Les dades d'una instal·lació (els fitxers pujats i el que el sistema escriu
+ * mentre funciona) no han d'estar per força dins la carpeta del codi: amb
+ * diverses instal·lacions compartint el mateix codi, cadascuna té les seves.
+ *
+ * Si no es diu res, són les carpetes de tota la vida, de manera que una
+ * instal·lació normal no nota cap canvi.
+ */
+// Es fa amb una funció anònima i no amb una funció normal: aquest fitxer es
+// pot incloure més d'una vegada i una declaració de funció es faria dues.
+$crosDir = static function (string $variable, string $default): string {
+    $value = getenv($variable);
+
+    return is_string($value) && trim($value) !== '' ? rtrim(trim($value), '/') : $default;
+};
+define('CROS_UPLOADS', $crosDir('CROS_UPLOADS', CROS_ROOT . '/uploads'));
+define('CROS_STORAGE', $crosDir('CROS_STORAGE', CROS_ROOT . '/storage'));
+unset($crosDir);
 define('CROS_BOOTED', true);
 
 require __DIR__ . '/core/functions.php';

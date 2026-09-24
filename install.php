@@ -27,15 +27,15 @@ if (session_status() === PHP_SESSION_ACTIVE) {
 error_reporting(E_ALL);
 ignore_user_abort(true);
 
-$lockFile = CROS_ROOT . '/storage/installed.lock';
+$lockFile = storage_path('installed.lock');
 $configFile = CROS_APP . '/config.php';
-$tokenFile = CROS_ROOT . '/storage/install.token';
+$tokenFile = storage_path('install.token');
 $alreadyInstalled = is_file($lockFile) && is_file($configFile);
 
 /** Escriu una línia al registre d'instal·lació. */
 function install_log(string $message, array $context = []): void
 {
-    $dir = CROS_ROOT . '/storage/logs';
+    $dir = storage_path('logs');
     if (!is_dir($dir)) {
         @mkdir($dir, 0775, true);
     }
@@ -74,8 +74,8 @@ function requirements(): array
         ['Extensió ZIP (actualitzacions)', class_exists('ZipArchive'), 'zip', false],
         ['Extensió cURL (Stripe)', function_exists('curl_init'), 'curl', false],
         ['Carpeta app/ escrivible', $writable(CROS_APP . '/config.php'), 'app/', true],
-        ['Carpeta uploads/ escrivible', $writable(CROS_ROOT . '/uploads'), 'uploads/', true],
-        ['Carpeta storage/ escrivible', $writable(CROS_ROOT . '/storage'), 'storage/', true],
+        ['Carpeta dels fitxers pujats escrivible', $writable(CROS_UPLOADS), basename(CROS_UPLOADS) . '/', true],
+        ['Carpeta de treball escrivible', $writable(CROS_STORAGE), basename(CROS_STORAGE) . '/', true],
     ];
 }
 
@@ -141,10 +141,10 @@ function run_phase(string $phase, array &$data): array
             @chmod(CROS_APP . '/config.php', 0640);
 
             $token = bin2hex(random_bytes(16));
-            if (!is_dir(CROS_ROOT . '/storage')) {
-                @mkdir(CROS_ROOT . '/storage', 0775, true);
+            if (!is_dir(storage_path())) {
+                @mkdir(storage_path(), 0775, true);
             }
-            if (@file_put_contents(CROS_ROOT . '/storage/install.token', $token) === false) {
+            if (@file_put_contents(storage_path('install.token'), $token) === false) {
                 throw new RuntimeException('No s\'ha pogut escriure a la carpeta storage/. Doneu-hi permisos d\'escriptura (chmod 775 storage).');
             }
             $data['token'] = $token;
@@ -209,14 +209,14 @@ function run_phase(string $phase, array &$data): array
             break;
 
         case 'finish':
-            $lock = CROS_ROOT . '/storage/installed.lock';
+            $lock = storage_path('installed.lock');
             if (@file_put_contents($lock, json_encode([
                 'installed_at' => date('c'),
                 'version' => app_version(),
             ], JSON_PRETTY_PRINT)) === false) {
                 throw new RuntimeException('No s\'ha pogut crear storage/installed.lock. Reviseu els permisos de storage/.');
             }
-            @unlink(CROS_ROOT . '/storage/install.token');
+            @unlink(storage_path('install.token'));
             $message = 'Instal·lació completada.';
             break;
 

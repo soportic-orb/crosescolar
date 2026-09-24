@@ -405,11 +405,11 @@ class CrudController extends Controller
                 throw new \RuntimeException('El fitxer no sembla un GPX vàlid.');
             }
             $target = ($field['folder'] ?? 'documents') . '/' . slugify(pathinfo($name, PATHINFO_FILENAME)) . '-' . substr(bin2hex(random_bytes(4)), 0, 6) . '.gpx';
-            $dir = dirname(CROS_ROOT . '/uploads/' . $target);
+            $dir = dirname(upload_path($target));
             if (!is_dir($dir)) {
                 @mkdir($dir, 0775, true);
             }
-            file_put_contents(CROS_ROOT . '/uploads/' . $target, $content);
+            file_put_contents(upload_path($target), $content);
             return $target;
         }
         return Uploader::document($file, $field['folder'] ?? 'documents');

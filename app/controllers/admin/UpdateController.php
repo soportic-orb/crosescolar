@@ -78,7 +78,7 @@ class UpdateController extends Controller
             flash('error', 'Cal seleccionar un fitxer ZIP.');
             redirect('/admin/actualitzacions');
         }
-        $target = CROS_ROOT . '/storage/tmp/manual-' . date('YmdHis') . '.zip';
+        $target = storage_path('tmp') . '/manual-' . date('YmdHis') . '.zip';
         if (!is_dir(dirname($target))) {
             @mkdir(dirname($target), 0775, true);
         }
@@ -115,7 +115,7 @@ class UpdateController extends Controller
     {
         Auth::requireAdmin();
         $name = basename((string) $params['file']);
-        $path = CROS_ROOT . '/storage/backups/' . $name;
+        $path = storage_path('backups') . '/' . $name;
         if (!preg_match('/^backup-[\w.\-]+\.zip$/', $name) || !is_file($path)) {
             abort(404, 'Còpia no trobada.');
         }
@@ -128,7 +128,7 @@ class UpdateController extends Controller
 
     private function backups(): array
     {
-        $files = glob(CROS_ROOT . '/storage/backups/backup-*.zip') ?: [];
+        $files = glob(storage_path('backups') . '/backup-*.zip') ?: [];
         usort($files, fn ($a, $b) => filemtime($b) <=> filemtime($a));
         return array_map(fn ($file) => [
             'name' => basename($file),

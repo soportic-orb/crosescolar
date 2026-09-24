@@ -234,7 +234,7 @@ class Updater
             throw new \RuntimeException('El paquet descarregat és buit o massa petit.');
         }
 
-        $target = CROS_ROOT . '/storage/tmp/update-' . date('YmdHis') . '.zip';
+        $target = storage_path('tmp') . '/update-' . date('YmdHis') . '.zip';
         self::ensureDir(dirname($target));
         file_put_contents($target, $response['body']);
         if ($sha256 !== '' && !hash_equals(strtolower($sha256), hash_file('sha256', $target))) {
@@ -261,7 +261,7 @@ class Updater
             throw new \RuntimeException('La carpeta de l\'aplicació no té permisos d\'escriptura.');
         }
 
-        $workDir = CROS_ROOT . '/storage/tmp/extract-' . bin2hex(random_bytes(4));
+        $workDir = storage_path('tmp') . '/extract-' . bin2hex(random_bytes(4));
         self::ensureDir($workDir);
 
         $zip = new ZipArchive();
@@ -313,7 +313,7 @@ class Updater
     /** Còpia de seguretat de fitxers i base de dades. */
     public static function backup(): string
     {
-        $dir = CROS_ROOT . '/storage/backups';
+        $dir = storage_path('backups');
         self::ensureDir($dir);
         $stamp = date('Y-m-d-His');
         $file = $dir . '/backup-' . app_version() . '-' . $stamp . '.zip';
@@ -398,7 +398,7 @@ class Updater
     /** Activa o desactiva el mode manteniment. */
     public static function maintenance(bool $on): void
     {
-        $flag = CROS_ROOT . '/storage/maintenance.flag';
+        $flag = storage_path('maintenance.flag');
         if ($on) {
             self::ensureDir(dirname($flag));
             file_put_contents($flag, date('c'));
@@ -409,7 +409,7 @@ class Updater
 
     public static function inMaintenance(): bool
     {
-        return is_file(CROS_ROOT . '/storage/maintenance.flag');
+        return is_file(storage_path('maintenance.flag'));
     }
 
     /** Troba l'arrel real del paquet descomprimit. */

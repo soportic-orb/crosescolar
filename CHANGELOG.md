@@ -3,6 +3,19 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.25.0] — 2026-09-24
+
+### Afegit
+- **Les carpetes de dades es poden posar fora del codi**: amb les variables
+  d'entorn `CROS_UPLOADS` i `CROS_STORAGE` s'indica on van els fitxers pujats i el
+  que el sistema escriu mentre funciona (registres, còpies i temporals). Sense
+  indicar res, tot continua exactament on era, de manera que cap instal·lació
+  existent no nota el canvi.
+- És el primer pas perquè diverses instal·lacions puguin compartir la mateixa còpia
+  del codi, cadascuna amb les seves dades i el seu subdomini.
+- Bateria de proves nova (`tests/tenants.php`) que comprova que dues instal·lacions
+  amb el mateix codi no es trepitgen els fitxers ni els registres.
+
 ## [1.24.0] — 2026-09-23
 
 ### Afegit
