@@ -24,6 +24,66 @@ class Instance
     /** Dies que es guarden les dades d'una instància donada de baixa. */
     public const PURGE_DAYS = 90;
 
+    /** Adreça pública d'una instància, al domini que té assignat. */
+    public static function url(array $instance, ?string $root = null): string
+    {
+        return Platform::url((string) $instance['slug'], $root, (string) ($instance['domain'] ?? ''));
+    }
+
+    /** L'amfitrió d'una instància: subdomini i domini. */
+    public static function host(array $instance, ?string $root = null): string
+    {
+        return $instance['slug'] . '.' . Platform::validDomain((string) ($instance['domain'] ?? ''), $root);
+    }
+
+    /**
+     * Canvia el domini d'una instància (de .com a .cat, per exemple).
+     *
+     * Es toca la fitxa i el «base_url» de la seva configuració, que és el que
+     * fa servir el web per als enllaços i els correus. L'adreça vella continua
+     * funcionant: hi mena sola.
+     *
+     * @return array{ok:bool,host:string,error:string}
+     */
+    public static function moveTo(int $id, string $domain, ?string $root = null): array
+    {
+        $root = $root ?? CROS_ROOT;
+        $instance = self::find($id);
+        if (!$instance) {
+            return ['ok' => false, 'host' => '', 'error' => 'La instància no existeix.'];
+        }
+        $domain = Platform::validDomain($domain, $root);
+        if ($domain === '' || $domain === (string) ($instance['domain'] ?? '')) {
+            return ['ok' => false, 'host' => '', 'error' => 'Aquest domini no canvia res.'];
+        }
+        $dir = Tenancy::dir($root, (string) $instance['slug']);
+        $file = $dir . '/config.php';
+        if ($dir === '' || !is_file($file)) {
+            return ['ok' => false, 'host' => '', 'error' => 'No hi ha la configuració de la instància.'];
+        }
+
+        $config = (string) file_get_contents($file);
+        $url = Platform::url((string) $instance['slug'], $root, $domain);
+        $changed = preg_replace(
+            "/('base_url'\s*=>\s*)'[^']*'/",
+            "$1" . var_export($url, true),
+            $config,
+            1,
+            $count
+        );
+        if ($count !== 1 || $changed === null) {
+            return ['ok' => false, 'host' => '', 'error' => 'No s\'ha trobat l\'adreça a la configuració.'];
+        }
+        // Se'n guarda una còpia: tocar la configuració d'un client és seriós.
+        @copy($file, $file . '.bak');
+        if (@file_put_contents($file, $changed) === false) {
+            return ['ok' => false, 'host' => '', 'error' => 'No s\'ha pogut desar la configuració.'];
+        }
+        self::update($id, ['domain' => $domain]);
+
+        return ['ok' => true, 'host' => $instance['slug'] . '.' . $domain, 'error' => ''];
+    }
+
     /** Color amb què es pinta cada estat al panell. */
     public static function tone(string $status): string
     {
@@ -121,6 +181,7 @@ class Instance
         return Db::insert('instances', [
             'client_id' => !empty($data['client_id']) ? (int) $data['client_id'] : null,
             'slug' => $slug,
+            'domain' => Platform::validDomain((string) ($data['domain'] ?? '')),
             'site_name' => trim((string) $data['site_name']),
             'town' => trim((string) ($data['town'] ?? '')) ?: null,
             'language' => $language,
@@ -241,7 +302,7 @@ class Instance
             }
             $token = LoginLink::issue((int) $user['id'], $purpose, $note);
             $email = (string) $user['email'];
-            $url = LoginLink::urlFor((string) ($config['base_url'] ?? Platform::url((string) $instance['slug'], $root)), $token);
+            $url = LoginLink::urlFor((string) ($config['base_url'] ?? self::url($instance, $root)), $token);
         } catch (\Throwable $e) {
             $error = $e->getMessage();
             log_line('platform', 'No s\'ha pogut crear l\'enllaç d\'accés', ['slug' => $instance['slug'], 'error' => $error]);

@@ -55,7 +55,7 @@ class InstanceController extends Controller
             'title' => 'Nova instància',
             'request' => $request,
             'clients' => Client::all(),
-            'domain' => Platform::domain(),
+            'domains' => Platform::domains(),
         ], 'layouts/console');
     }
 
@@ -73,6 +73,7 @@ class InstanceController extends Controller
             'event_date' => trim((string) ($_POST['event_date'] ?? '')),
             'admin_name' => trim((string) ($_POST['admin_name'] ?? '')),
             'admin_email' => mb_strtolower(trim((string) ($_POST['admin_email'] ?? ''))),
+            'domain' => (string) ($_POST['domain'] ?? ''),
             'demo' => !empty($_POST['demo']),
             'listed' => !empty($_POST['listed']),
         ];
@@ -118,7 +119,8 @@ class InstanceController extends Controller
 
         // L'enllaç d'estrena només es veu un cop, just després de crear-la.
         $_SESSION['console_new_instance'] = ['id' => $result['instance_id'], 'link' => $result['link']];
-        flash('success', 'La instància ' . $data['slug'] . '.' . Platform::domain() . ' ja està en marxa.');
+        flash('success', 'La instància ' . $data['slug'] . '.'
+            . Platform::validDomain((string) $data['domain']) . ' ja està en marxa.');
         redirect('/instancies/' . $result['instance_id']);
     }
 
@@ -226,11 +228,12 @@ class InstanceController extends Controller
             'client' => $instance['client_id'] ? Client::find((int) $instance['client_id']) : null,
             'request' => Db::one('SELECT * FROM instance_requests WHERE instance_id = :id ORDER BY id DESC LIMIT 1', ['id' => $instance['id']]),
             'backups' => Backup::all((string) $instance['slug']),
+            'domains' => Platform::domains(),
             'activity' => Db::all(
                 'SELECT * FROM platform_activity WHERE subject = :s AND subject_id = :id ORDER BY id DESC LIMIT 20',
                 ['s' => 'instance', 'id' => $instance['id']]
             ),
-            'url' => Platform::url((string) $instance['slug']),
+            'url' => Instance::url($instance),
             'fresh' => $fresh,
         ], 'layouts/console');
     }
@@ -323,6 +326,20 @@ class InstanceController extends Controller
                     $synced
                         ? 'Dades actualitzades des del web del client.'
                         : 'No s\'ha pogut llegir la base de dades de la instància.'
+                );
+                break;
+            case 'domain':
+                $moved = Instance::moveTo($id, (string) ($_POST['domain'] ?? ''));
+                Console::log('instance_domain', 'instance', $id, [
+                    'slug' => $instance['slug'],
+                    'domini' => (string) ($_POST['domain'] ?? ''),
+                    'ok' => $moved['ok'],
+                ]);
+                flash(
+                    $moved['ok'] ? 'success' : 'error',
+                    $moved['ok']
+                        ? 'El web passa a ser ' . $moved['host'] . '. L\'adreça anterior hi mena sola.'
+                        : 'No s\'ha pogut canviar el domini: ' . $moved['error']
                 );
                 break;
             case 'save':

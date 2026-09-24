@@ -61,6 +61,7 @@ class Request
             'contact_email' => mb_strtolower(trim((string) $data['contact_email'])),
             'contact_phone' => trim((string) ($data['contact_phone'] ?? '')) ?: null,
             'slug' => mb_strtolower(trim((string) ($data['slug'] ?? ''))) ?: null,
+            'domain' => \Cros\Platform\Platform::validDomain((string) ($data['domain'] ?? '')),
             'language' => $language,
             'event_date' => !empty($data['event_date']) ? $data['event_date'] : null,
             'participants' => !empty($data['participants']) ? (int) $data['participants'] : null,

@@ -17,7 +17,7 @@ use Cros\Platform\Platform;
           <tr><th>Entitat</th><td><?= e($request['entity']) ?></td></tr>
           <?php if (!empty($request['town'])): ?><tr><th>Població</th><td><?= e($request['town']) ?></td></tr><?php endif; ?>
           <?php if (!empty($request['slug'])): ?>
-            <tr><th>Adreça demanada</th><td><?= e($request['slug'] . '.' . Platform::domain()) ?></td></tr>
+            <tr><th>Adreça demanada</th><td><?= e($request['slug'] . '.' . Platform::validDomain((string) ($request['domain'] ?? ''))) ?></td></tr>
           <?php endif; ?>
           <?php if (!empty($request['event_date'])): ?>
             <tr><th>Cursa prevista</th><td><?= e(ca_date($request['event_date'], true)) ?></td></tr>

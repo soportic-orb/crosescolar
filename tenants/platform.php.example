@@ -7,8 +7,13 @@
  * amb la configuració a app/config.php.
  */
 return [
-    // Domini on pengen les instàncies: granada.crosescolar.com, vilafranca.crosescolar.com…
-    'base_domain' => 'crosescolar.com',
+    // Domini principal: el de la plataforma i el que es dona per defecte.
+    'base_domain' => 'crosescolar.cat',
+
+    // Altres dominis on també es pot penjar un cros. El client tria quin vol
+    // en demanar-lo i el web es veu per tots: les adreces dels altres dominis
+    // menen soles a la que ha triat.
+    'domains' => ['crosescolar.com'],
 
     // Subdominis que obren el panell de superadministració.
     'console' => ['admin'],

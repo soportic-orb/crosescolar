@@ -46,6 +46,7 @@ class SiteController extends Controller
             'contact_email' => (string) input('contact_email'),
             'contact_phone' => (string) input('contact_phone'),
             'slug' => mb_strtolower(trim((string) input('slug'))),
+            'domain' => Platform::validDomain((string) input('domain')),
             'language' => (string) input('language'),
             'event_date' => (string) input('event_date'),
             'participants' => (string) input('participants'),

@@ -22,6 +22,31 @@ use Cros\Core\Settings;
 use Cros\Core\Updater;
 use Cros\Core\View;
 
+/**
+ * Cada web té una adreça bona i prou. Si la plataforma té més d'un domini
+ * (.cat i .com, posem per cas) o s'hi entra amb «www», la petició es queda
+ * igual però se n'envia una de sola: la de sempre.
+ */
+$crosCanonical = static function (string $canonical) use ($instance): void {
+    if ($canonical === '' || $canonical === $instance['host']) {
+        return;
+    }
+    $method = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+    if ($method !== 'GET' && $method !== 'HEAD') {
+        return; // un enviament de formulari no es pot moure sense perdre'l
+    }
+    $https = (!empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off')
+        || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+    // En desenvolupament l'adreça porta port; s'ha de mantenir.
+    $port = '';
+    if (preg_match('/:(\d+)$/', (string) ($_SERVER['HTTP_HOST'] ?? ''), $m)) {
+        $port = ':' . $m[1];
+    }
+    header('Location: ' . ($https ? 'https' : 'http') . '://' . $canonical . $port
+        . (string) ($_SERVER['REQUEST_URI'] ?? '/'), true, 301);
+    exit;
+};
+
 // Adreces que no són el web de cap client
 switch ($instance['mode']) {
     case 'unknown':
@@ -45,6 +70,10 @@ switch ($instance['mode']) {
 
     case 'platform':
     case 'console':
+        // La plataforma viu al domini principal: la resta hi mena.
+        $crosCanonical($instance['mode'] === 'console'
+            ? $instance['slug'] . '.' . Tenancy::primary(__DIR__)
+            : Tenancy::primary(__DIR__));
         // La pàgina pública de la plataforma i el panell de superadministració.
         try {
             \Cros\Platform\Platform::boot(__DIR__);
@@ -74,6 +103,12 @@ switch ($instance['mode']) {
         $platformRouter = require CROS_APP . '/platform/routes.php';
         $platformRouter->dispatch($_SERVER['REQUEST_METHOD'] ?? 'GET', Router::currentPath());
         exit;
+}
+
+// El web d'un client es pot demanar per qualsevol domini nostre, però el bo és
+// el que va triar: els altres hi menen, i així no hi ha dues adreces iguals.
+if ($instance['mode'] === 'tenant') {
+    $crosCanonical((string) (parse_url((string) config('base_url', ''), PHP_URL_HOST) ?: ''));
 }
 
 // Instal·lació pendent

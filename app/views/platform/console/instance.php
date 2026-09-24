@@ -32,7 +32,24 @@ $status = (string) $instance['status'];
   <div class="panel__body table-wrap">
     <table class="admin-table">
       <tbody>
-        <tr><th style="width:230px">Adreça</th><td><a href="<?= e($url) ?>" target="_blank" rel="noopener"><?= e($url) ?></a></td></tr>
+        <tr><th style="width:230px">Adreça</th><td>
+          <a href="<?= e($url) ?>" target="_blank" rel="noopener"><?= e($url) ?></a>
+          <?php if (count($domains) > 1): ?>
+            <form method="post" action="<?= e(url('/instancies/' . (int) $instance['id'] . '/accio')) ?>"
+                  style="display:inline-flex;gap:.4rem;margin-left:.6rem;align-items:center">
+              <?= csrf_field() ?>
+              <input type="hidden" name="action" value="domain">
+              <select name="domain" style="width:auto">
+                <?php foreach ($domains as $option): ?>
+                  <option value="<?= e($option) ?>"<?= (string) ($instance['domain'] ?? '') === $option ? ' selected' : '' ?>>
+                    .<?= e($option) ?>
+                  </option>
+                <?php endforeach; ?>
+              </select>
+              <button class="btn btn--ghost btn--sm" type="submit">Canviar de domini</button>
+            </form>
+          <?php endif; ?>
+        </td></tr>
         <tr><th>Client</th><td><?= $client ? e($client['name']) . ' · ' . e($client['contact_email']) : '<span class="text-soft">Sense fitxa de client</span>' ?></td></tr>
         <tr><th>Administrador</th><td><?= e((string) ($instance['admin_email'] ?? '—')) ?></td></tr>
         <tr><th>Cursa</th><td><?= $instance['event_date'] ? e(ca_date((string) $instance['event_date'], true)) : '—' ?></td></tr>

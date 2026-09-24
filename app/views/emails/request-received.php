@@ -12,7 +12,7 @@
       <tr><td style="color:#5a6b60;padding:4px 0">Entitat</td><td><?= e($request['entity']) ?></td></tr>
       <?php if (!empty($request['town'])): ?><tr><td style="color:#5a6b60;padding:4px 0">Població</td><td><?= e($request['town']) ?></td></tr><?php endif; ?>
       <?php if (!empty($request['slug'])): ?>
-        <tr><td style="color:#5a6b60;padding:4px 0">Adreça demanada</td><td><?= e($request['slug'] . '.' . ($domain ?? '')) ?></td></tr>
+        <tr><td style="color:#5a6b60;padding:4px 0">Adreça demanada</td><td><?= e($request['slug'] . '.' . \Cros\Platform\Platform::validDomain((string) ($request['domain'] ?? ''))) ?></td></tr>
       <?php endif; ?>
       <?php if (!empty($request['event_date'])): ?>
         <tr><td style="color:#5a6b60;padding:4px 0">Cursa prevista</td><td><?= e(ca_date($request['event_date'], true)) ?></td></tr>

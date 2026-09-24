@@ -8,6 +8,7 @@ use Cros\Core\Icons;
 use Cros\Platform\Platform;
 
 $domain = Platform::domain();
+$domains = Platform::domains();
 $old = static fn (string $key, string $default = ''): string => (string) old($key, $default);
 ?>
 <section class="platform-hero">
@@ -39,7 +40,8 @@ $old = static fn (string $key, string $default = ''): string => (string) old($ke
       <div class="cros-grid">
         <?php foreach ($instances as $cros): ?>
           <?php
-          $url = 'https://' . $cros['slug'] . '.' . $domain;
+          $crosDomain = \Cros\Platform\Platform::validDomain((string) ($cros['domain'] ?? ''));
+          $url = 'https://' . $cros['slug'] . '.' . $crosDomain;
           $date = (string) ($cros['event_date'] ?? '');
           $days = $date !== '' ? (int) floor((strtotime($date) - strtotime('today')) / 86400) : null;
           $state = $days === null ? 'Data per confirmar'
@@ -54,7 +56,7 @@ $old = static fn (string $key, string $default = ''): string => (string) old($ke
                 <?= Icons::svg('calendar', 'icon', 15) ?>
                 <?= $date !== '' ? e(ca_date($date, true)) : 'data per confirmar' ?>
               </span>
-              <span class="cros-card__url"><?= e($cros['slug'] . '.' . $domain) ?></span>
+              <span class="cros-card__url"><?= e($cros['slug'] . '.' . $crosDomain) ?></span>
             </span>
           </a>
         <?php endforeach; ?>
@@ -151,9 +153,20 @@ $old = static fn (string $key, string $default = ''): string => (string) old($ke
           <label for="slug">Adreça que voleu</label>
           <div class="slug-field">
             <input type="text" id="slug" name="slug" value="<?= e($old('slug')) ?>" placeholder="elvostrecros">
-            <span>.<?= e($domain) ?></span>
+            <?php if (count($domains) > 1): ?>
+              <select name="domain" aria-label="Domini">
+                <?php foreach ($domains as $option): ?>
+                  <option value="<?= e($option) ?>"<?= $old('domain', $domains[0]) === $option ? ' selected' : '' ?>>.<?= e($option) ?></option>
+                <?php endforeach; ?>
+              </select>
+            <?php else: ?>
+              <span>.<?= e($domain) ?></span>
+            <?php endif; ?>
           </div>
-          <span class="field__hint">Lletres, números i guions. Us direm si ja està agafada.</span>
+          <span class="field__hint">
+            Lletres, números i guions. Us direm si ja està agafada.
+            <?= count($domains) > 1 ? 'Podeu triar el domini: totes dues adreces són equivalents i el web es veurà per les dues.' : '' ?>
+          </span>
           <?php if (isset($errors['slug'])): ?><span class="field__error"><?= e($errors['slug']) ?></span><?php endif; ?>
         </div>
         <div class="field">

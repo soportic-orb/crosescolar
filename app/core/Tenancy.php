@@ -27,8 +27,8 @@ final class Tenancy
     /** Com es diu el fitxer que hi ha a la carpeta d'una instància aturada. */
     public const SUSPENDED = 'suspended';
 
-    /** @var array{mode:string,slug:string,host:string,dir:string} */
-    private static array $current = ['mode' => 'single', 'slug' => '', 'host' => '', 'dir' => ''];
+    /** @var array{mode:string,slug:string,host:string,dir:string,domain:string} */
+    private static array $current = ['mode' => 'single', 'slug' => '', 'host' => '', 'dir' => '', 'domain' => ''];
 
     /**
      * Mira per on entra la petició i, si és el web d'un client, deixa
@@ -42,46 +42,102 @@ final class Tenancy
      *   suspended  el web d'un client aturat
      *   unknown    un subdomini que no és de ningú
      *
-     * @return array{mode:string,slug:string,host:string,dir:string}
+     * @return array{mode:string,slug:string,host:string,dir:string,domain:string}
      */
     public static function boot(string $root, ?string $host = null): array
     {
         $settings = self::settings($root);
-        $base = (string) ($settings['base_domain'] ?? '');
-        if ($base === '') {
-            return self::$current = ['mode' => 'single', 'slug' => '', 'host' => '', 'dir' => ''];
+        $domains = self::domains($root);
+        if ($domains === []) {
+            return self::$current = ['mode' => 'single', 'slug' => '', 'host' => '', 'dir' => '', 'domain' => ''];
         }
 
         $host = self::host($host);
-        $base = strtolower(trim(trim($base), '.'));
+        // La plataforma pot tenir més d'un domini (.cat i .com, posem per cas)
+        // i el mateix web s'ha de poder servir per tots dos.
+        $base = self::domainOf($host, $domains);
+        if ($base === '') {
+            // Una adreça que no penja de cap domini nostre no és de ningú: val
+            // més dir-ho que no pas ensenyar-li el web d'algú altre.
+            return self::$current = ['mode' => 'unknown', 'slug' => '', 'host' => $host, 'dir' => '', 'domain' => ''];
+        }
 
         // El domini de la plataforma (amb «www» o sense) és la pàgina pública.
         if ($host === $base || $host === 'www.' . $base) {
-            return self::$current = ['mode' => 'platform', 'slug' => '', 'host' => $host, 'dir' => ''];
+            return self::$current = ['mode' => 'platform', 'slug' => '', 'host' => $host, 'dir' => '', 'domain' => $base];
         }
-        // Una adreça que no penja del domini de la plataforma no és de ningú:
-        // val més dir-ho que no pas ensenyar-li el web d'algú altre.
-        if (!str_ends_with($host, '.' . $base)) {
-            return self::$current = ['mode' => 'unknown', 'slug' => '', 'host' => $host, 'dir' => ''];
-        }
+
         $slug = self::slug($host, $base);
         if (in_array($slug, (array) ($settings['console'] ?? ['admin']), true)) {
-            return self::$current = ['mode' => 'console', 'slug' => $slug, 'host' => $host, 'dir' => ''];
+            return self::$current = ['mode' => 'console', 'slug' => $slug, 'host' => $host, 'dir' => '', 'domain' => $base];
         }
 
         $dir = self::dir($root, $slug);
         if (!self::valid($slug) || $dir === '' || !is_file($dir . '/config.php')) {
-            return self::$current = ['mode' => 'unknown', 'slug' => $slug, 'host' => $host, 'dir' => ''];
+            return self::$current = ['mode' => 'unknown', 'slug' => $slug, 'host' => $host, 'dir' => '', 'domain' => $base];
         }
         if (is_file($dir . '/' . self::SUSPENDED)) {
-            return self::$current = ['mode' => 'suspended', 'slug' => $slug, 'host' => $host, 'dir' => $dir];
+            return self::$current = ['mode' => 'suspended', 'slug' => $slug, 'host' => $host, 'dir' => $dir, 'domain' => $base];
         }
 
         putenv('CROS_CONFIG=' . $dir . '/config.php');
         putenv('CROS_UPLOADS=' . $dir . '/uploads');
         putenv('CROS_STORAGE=' . $dir . '/storage');
 
-        return self::$current = ['mode' => 'tenant', 'slug' => $slug, 'host' => $host, 'dir' => $dir];
+        return self::$current = ['mode' => 'tenant', 'slug' => $slug, 'host' => $host, 'dir' => $dir, 'domain' => $base];
+    }
+
+    /**
+     * Dominis de la plataforma, el principal primer.
+     * @return array<int,string>
+     */
+    public static function domains(string $root): array
+    {
+        $settings = self::settings($root);
+        $list = array_merge(
+            [(string) ($settings['base_domain'] ?? '')],
+            array_map('strval', (array) ($settings['domains'] ?? []))
+        );
+        $clean = [];
+        foreach ($list as $domain) {
+            $domain = strtolower(trim(trim($domain), '.'));
+            if ($domain !== '' && !in_array($domain, $clean, true)) {
+                $clean[] = $domain;
+            }
+        }
+
+        return $clean;
+    }
+
+    /** El domini principal: el que es fa servir si no es diu res. */
+    public static function primary(string $root): string
+    {
+        return self::domains($root)[0] ?? '';
+    }
+
+    /**
+     * De quin dels nostres dominis penja aquest amfitrió, o '' si de cap.
+     * Es mira primer el més llarg, per si un domini penja de l'altre.
+     *
+     * @param array<int,string> $domains
+     */
+    public static function domainOf(string $host, array $domains): string
+    {
+        $host = self::host($host);
+        usort($domains, static fn (string $a, string $b): int => strlen($b) <=> strlen($a));
+        foreach ($domains as $domain) {
+            if ($host === $domain || $host === 'www.' . $domain || str_ends_with($host, '.' . $domain)) {
+                return $domain;
+            }
+        }
+
+        return '';
+    }
+
+    /** Domini pel qual ha entrat la petició. */
+    public static function domain(): string
+    {
+        return (string) (self::$current['domain'] ?? '');
     }
 
     /** El que ha decidit boot() en aquesta petició. */

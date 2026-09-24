@@ -50,7 +50,7 @@ class Health
 
         if ($web) {
             $problem = self::web(
-                (string) ($config['base_url'] ?? Platform::url((string) $instance['slug'], $root)),
+                (string) ($config['base_url'] ?? Instance::url($instance, $root)),
                 $proxy
             );
             if ($problem !== '') {
@@ -158,7 +158,7 @@ class Health
             'instance' => $instance,
             'error' => $error,
             'recovered' => $recovered,
-            'url' => Platform::url((string) $instance['slug'], $root),
+            'url' => Instance::url($instance, $root),
         ]);
     }
 }

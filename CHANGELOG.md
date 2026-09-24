@@ -32,14 +32,22 @@ i el versionatge semàntic.
   no perd la seva pròpia connexió.
 - **El llistat públic de cros** surt d'aquí: només els que ja han publicat el web i
   volen sortir-hi, amb les curses que vénen primer i les passades al final.
-- **La pàgina pública de la plataforma** (`crosescolar.com`): el llistat dels cros que
+- **La pàgina pública de la plataforma** (`crosescolar.cat`): el llistat dels cros que
   ja hi corren —cada targeta porta al seu subdomini—, com funciona i el formulari per
   demanar-ne un de nou, amb el botó **«Crea la web per al teu cros»** al menú.
 - En enviar el formulari, la sol·licitud queda desada amb un número i surten **dos
   correus**: la confirmació a qui l'ha demanada i l'avís a la superadministració.
 - El formulari comprova el subdomini abans d'acceptar-lo, no deixa que una adreça
   n'enviï més de tres al dia i té un parany per a robots.
-- **El panell de superadministració** (`admin.crosescolar.com`), amb els seus propis
+- **La plataforma pot tenir més d'un domini** (`crosescolar.cat` i
+  `crosescolar.com`, per exemple): qui demana un cros tria en quin el vol, i des de
+  la seva fitxa se li pot canviar després sense tocar res més. Tots els dominis
+  serveixen tot, però cada web té una adreça bona i prou: les altres hi menen amb
+  una redirecció permanent, i el mateix fan el `www` i els dominis secundaris de la
+  pàgina pública i del panell. Un subdomini és d'un sol client encara que hi hagi
+  dos dominis, de manera que equivocar-se de terminació porta igualment al cros que
+  es buscava.
+- **El panell de superadministració** (`admin.crosescolar.cat`), amb els seus propis
   comptes, a part dels administradors de cada cros: tauler amb les instàncies i les
   sol·licituds pendents, llistes de sol·licituds, instàncies i clients, la fitxa de
   cadascuna i el registre d'activitat.

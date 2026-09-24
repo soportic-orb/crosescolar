@@ -28,7 +28,9 @@ $tones = ['pending' => 'amber', 'info' => 'blue', 'approved' => 'green', 'reject
             <td><strong><?= e($request['code']) ?></strong></td>
             <td><?= e($request['entity']) ?><?php if ($request['town']): ?><br><small class="text-soft"><?= e($request['town']) ?></small><?php endif; ?></td>
             <td><?= e($request['contact_name']) ?><br><small class="text-soft"><?= e($request['contact_email']) ?></small></td>
-            <td><?= $request['slug'] ? '<code>' . e($request['slug']) . '</code>' : '<span class="text-soft">—</span>' ?></td>
+            <td><?= $request['slug']
+              ? '<code>' . e($request['slug'] . '.' . \Cros\Platform\Platform::validDomain((string) ($request['domain'] ?? ''))) . '</code>'
+              : '<span class="text-soft">—</span>' ?></td>
             <td><span class="badge badge--<?= e($tones[$request['status']] ?? '') ?>"><?= e(Request::STATUSES[$request['status']] ?? $request['status']) ?></span></td>
             <td><?= e(ca_date(substr((string) $request['created_at'], 0, 10))) ?></td>
             <td class="text-right"><a class="btn btn--ghost btn--sm" href="<?= e(url('/sollicituds/' . (int) $request['id'])) ?>">Obrir</a></td>

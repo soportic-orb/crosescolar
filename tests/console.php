@@ -69,6 +69,7 @@ copy($root . '/index.php', $site . '/index.php');
 @unlink($site . '/app/config.php');
 file_put_contents($site . '/tenants/platform.php', "<?php return " . var_export([
     'base_domain' => 'crosescolar.test',
+    'domains' => ['crosescolar.example'],
     'name' => 'Cros Escolar',
     'console' => ['admin'],
     'mail' => ['from_email' => 'hola@crosescolar.test', 'notify' => 'hola@crosescolar.test', 'transport' => 'log'],
@@ -459,12 +460,14 @@ try {
         '_token' => $token($home['body']),
         'entity' => 'AFA Escola del Bosc', 'town' => 'Reus', 'contact_name' => 'Pau Roca',
         'contact_email' => 'pau@example.cat', 'contact_phone' => '600333444',
-        'slug' => 'elbosc', 'language' => 'ca', 'consent' => '1',
+        'slug' => 'elbosc', 'domain' => 'crosescolar.example', 'consent' => '1',
     ], 'crosescolar.test');
     $request = Db::one("SELECT * FROM instance_requests WHERE contact_email = 'pau@example.cat'");
     check('La sol·licitud arriba al panell', $request !== null);
+    check('Amb el domini que ha demanat', (string) $request['domain'] === 'crosescolar.example');
     $list = $web('GET', '/sollicituds');
     check('I surt a la llista', str_contains($list['body'], 'AFA Escola del Bosc'));
+    check('Amb l\'adreça sencera', str_contains($list['body'], 'elbosc.crosescolar.example'));
 
     $prefilled = $web('GET', '/instancies/nova?peticio=' . (int) $request['id']);
     check('El formulari ve omplert amb les seves dades',
@@ -473,7 +476,7 @@ try {
     $web('POST', '/instancies/nova', [
         '_token' => $token($prefilled['body']), 'request_id' => (int) $request['id'],
         'slug' => 'elbosc', 'site_name' => 'Cros Escola del Bosc', 'town' => 'Reus',
-        'language' => 'ca', 'admin_name' => 'Pau Roca', 'admin_email' => 'pau@example.cat',
+        'domain' => 'crosescolar.example', 'admin_name' => 'Pau Roca', 'admin_email' => 'pau@example.cat',
         'client_id' => '0', 'listed' => '1',
     ]);
     $bosc = Db::one("SELECT * FROM instances WHERE slug = 'elbosc'");
@@ -483,6 +486,38 @@ try {
     $clientRow = Db::one("SELECT * FROM clients WHERE contact_email = 'pau@example.cat'");
     check('S\'ha creat la fitxa del client', $clientRow !== null);
     check('I la instància és seva', (int) $bosc['client_id'] === (int) $clientRow['id']);
+
+    echo "\n== Més d'un domini ==\n";
+    check('La instància es queda al domini demanat', (string) $bosc['domain'] === 'crosescolar.example');
+    $boscConfig = (string) file_get_contents($site . '/tenants/elbosc/config.php');
+    check('I el seu web ho sap',
+        str_contains($boscConfig, "'base_url' => 'https://elbosc.crosescolar.example'"));
+
+    $other = $web('GET', '/', [], 'elbosc.crosescolar.test');
+    check('Demanat per l\'altre domini, hi mena',
+        $other['status'] === 301 && str_contains($other['headers'], 'elbosc.crosescolar.example'),
+        'estat ' . $other['status']);
+    check('La portada de la plataforma surt pels dos dominis',
+        $web('GET', '/', [], 'crosescolar.test')['status'] === 200);
+    $secondary = $web('GET', '/', [], 'crosescolar.example');
+    check('I el domini secundari mena al principal',
+        $secondary['status'] === 301 && str_contains($secondary['headers'], 'crosescolar.test'));
+
+    // Canviar de domini un web que ja funciona.
+    $detail = $web('GET', '/instancies/' . (int) $bosc['id']);
+    check('La fitxa deixa triar el domini', str_contains($detail['body'], 'Canviar de domini'));
+    $moved = $web('POST', '/instancies/' . (int) $bosc['id'] . '/accio', [
+        '_token' => $token($detail['body']), 'action' => 'domain', 'domain' => 'crosescolar.test',
+    ]);
+    $bosc = Instance::find((int) $bosc['id']);
+    check('Es pot canviar de domini', $moved['status'] === 302 && (string) $bosc['domain'] === 'crosescolar.test');
+    check('I la seva configuració canvia',
+        str_contains((string) file_get_contents($site . '/tenants/elbosc/config.php'),
+            "'base_url' => 'https://elbosc.crosescolar.test'"));
+    check('Amb còpia de la configuració anterior', is_file($site . '/tenants/elbosc/config.php.bak'));
+    $back = $web('GET', '/', [], 'elbosc.crosescolar.example');
+    check('Ara és l\'adreça vella la que hi mena',
+        $back['status'] === 301 && str_contains($back['headers'], 'elbosc.crosescolar.test'));
 
     echo "\n== Desestimar una sol·licitud ==\n";
     $home = $web('GET', '/', [], 'crosescolar.test');

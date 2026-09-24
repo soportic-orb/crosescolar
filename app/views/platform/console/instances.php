@@ -45,7 +45,7 @@ $tabs = ['' => 'Totes'] + Instance::STATUSES;
               <?php if ($row['town']): ?><br><small class="text-soft"><?= e($row['town']) ?></small><?php endif; ?>
             </td>
             <td>
-              <a href="<?= e(Platform::url((string) $row['slug'])) ?>" target="_blank" rel="noopener"><?= e($row['slug']) ?></a>
+              <a href="<?= e(Instance::url($row)) ?>" target="_blank" rel="noopener"><?= e(Instance::host($row)) ?></a>
               <?php if (!$row['published']): ?><br><small class="text-soft">en preparació</small><?php endif; ?>
             </td>
             <td><?= $row['event_date'] ? e(ca_date((string) $row['event_date'])) : '<span class="text-soft">—</span>' ?></td>

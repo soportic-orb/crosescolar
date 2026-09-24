@@ -137,11 +137,13 @@ check('Sense plataforma, una sola instal·lació',
 // Un servidor amb la plataforma engegada.
 $server = sys_get_temp_dir() . '/cros-plataforma-' . bin2hex(random_bytes(3));
 @mkdir($server . '/tenants', 0775, true);
-file_put_contents($server . '/tenants/platform.php', "<?php return ['base_domain' => 'crosescolar.com', 'console' => ['admin'], 'reserved' => ['premsa']];\n");
+file_put_contents($server . '/tenants/platform.php', "<?php return ['base_domain' => 'crosescolar.cat', "
+    . "'domains' => ['crosescolar.com'], 'console' => ['admin'], 'reserved' => ['premsa']];\n");
 
 $mode = static fn (string $host): string => Tenancy::boot($server, $host)['mode'];
 
-check('El domini sol és la pàgina pública', $mode('crosescolar.com') === 'platform');
+check('El domini principal és la pàgina pública', $mode('crosescolar.cat') === 'platform');
+check('I el segon domini, també', $mode('crosescolar.com') === 'platform');
 check('Amb «www», també', $mode('www.crosescolar.com') === 'platform');
 check('«admin» és el panell de superadministració', $mode('admin.crosescolar.com') === 'console');
 check('Un subdomini sense instal·lar no existeix', $mode('ningu.crosescolar.com') === 'unknown');
@@ -178,6 +180,20 @@ check('En reactivar-la, torna', $mode('granada.crosescolar.com') === 'tenant');
 check('Les instàncies instal·lades es poden llistar',
     Tenancy::all($server) === ['granada', 'vilafranca'],
     implode(', ', Tenancy::all($server)));
+
+echo "\n== Més d'un domini ==\n";
+check('El principal és el primer de la llista', Tenancy::primary($server) === 'crosescolar.cat');
+check('I se saben tots', Tenancy::domains($server) === ['crosescolar.cat', 'crosescolar.com']);
+check('Un cros es pot demanar pels dos dominis',
+    $mode('granada.crosescolar.cat') === 'tenant' && $mode('granada.crosescolar.com') === 'tenant');
+check('I se sap per quin ha entrat',
+    Tenancy::boot($server, 'granada.crosescolar.cat')['domain'] === 'crosescolar.cat'
+    && Tenancy::boot($server, 'granada.crosescolar.com')['domain'] === 'crosescolar.com');
+check('Les dues adreces porten a les mateixes dades',
+    Tenancy::boot($server, 'granada.crosescolar.com')['dir'] === $server . '/tenants/granada');
+check('El panell també respon pels dos', $mode('admin.crosescolar.cat') === 'console'
+    && $mode('admin.crosescolar.com') === 'console');
+check('Un domini de fora continua sense ser de ningú', $mode('granada.crosescolar.org') === 'unknown');
 
 echo "\n== Subdominis que no valen ==\n";
 

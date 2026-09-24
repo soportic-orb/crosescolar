@@ -31,7 +31,17 @@ $slug = $prefill('slug', (string) ($request['slug'] ?? ''));
           <div style="display:flex;align-items:center;gap:.4rem">
             <input type="text" id="slug" name="slug" value="<?= e($slug) ?>" required maxlength="40"
                    pattern="[a-z0-9-]+" autocomplete="off" placeholder="lagranada">
-            <span class="text-soft">.<?= e($domain) ?></span>
+            <?php if (count($domains) > 1): ?>
+              <?php $chosen = $prefill('domain', (string) ($request['domain'] ?? $domains[0])); ?>
+              <select name="domain" style="width:auto">
+                <?php foreach ($domains as $option): ?>
+                  <option value="<?= e($option) ?>"<?= $chosen === $option ? ' selected' : '' ?>>.<?= e($option) ?></option>
+                <?php endforeach; ?>
+              </select>
+            <?php else: ?>
+              <span class="text-soft">.<?= e($domains[0] ?? '') ?></span>
+              <input type="hidden" name="domain" value="<?= e($domains[0] ?? '') ?>">
+            <?php endif; ?>
           </div>
           <p class="hint">Només lletres minúscules, números i guions. No es pot canviar després.</p>
         </div>

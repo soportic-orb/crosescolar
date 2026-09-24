@@ -91,16 +91,34 @@ class Platform
         return trim((string) ($settings['base_domain'] ?? '')) !== '';
     }
 
-    /** Domini on pengen les instàncies. */
+    /** Domini principal de la plataforma. */
     public static function domain(?string $root = null): string
     {
-        return (string) (Tenancy::settings($root ?? CROS_ROOT)['base_domain'] ?? '');
+        return Tenancy::primary($root ?? CROS_ROOT);
     }
 
-    /** Adreça pública d'una instància. */
-    public static function url(string $slug, ?string $root = null): string
+    /**
+     * Dominis on es pot penjar un cros, el principal primer.
+     * @return array<int,string>
+     */
+    public static function domains(?string $root = null): array
     {
-        return 'https://' . $slug . '.' . self::domain($root);
+        return Tenancy::domains($root ?? CROS_ROOT);
+    }
+
+    /** Un domini que sigui nostre; si no ho és, el principal. */
+    public static function validDomain(string $domain, ?string $root = null): string
+    {
+        $domain = strtolower(trim(trim($domain), '.'));
+        $domains = self::domains($root);
+
+        return in_array($domain, $domains, true) ? $domain : ($domains[0] ?? '');
+    }
+
+    /** Adreça pública d'una instància, al domini que hagi triat. */
+    public static function url(string $slug, ?string $root = null, string $domain = ''): string
+    {
+        return 'https://' . $slug . '.' . self::validDomain($domain, $root);
     }
 
     /**

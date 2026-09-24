@@ -123,10 +123,31 @@ mateixa còpia del codi atén tots els subdominis d'un domini:
 
 | Adreça | Què s'hi serveix |
 | --- | --- |
-| `granada.crosescolar.com` | el web d'aquell cros |
-| `crosescolar.com` i `www.` | la pàgina pública de la plataforma |
-| `admin.crosescolar.com` | el panell de superadministració |
+| `granada.crosescolar.cat` | el web d'aquell cros |
+| `crosescolar.cat` i `www.` | la pàgina pública de la plataforma |
+| `admin.crosescolar.cat` | el panell de superadministració |
 | un subdomini sense instal·lar | una pàgina que diu que l'adreça no existeix |
+
+### Més d'un domini
+
+La plataforma pot tenir-ne uns quants: `base_domain` és el principal i a
+`domains` s'hi posen els altres.
+
+```php
+'base_domain' => 'crosescolar.cat',
+'domains' => ['crosescolar.com'],
+```
+
+Tots els dominis serveixen tot, però cada web té una adreça bona i prou: el
+client tria el domini quan demana el cros —o se li canvia després des de la seva
+fitxa— i les adreces dels altres dominis hi menen amb una redirecció permanent.
+El mateix passa amb la pàgina pública i el panell, que viuen al domini principal,
+i amb el `www`. Els subdominis són d'un sol amo: `granada` no el poden tenir dos
+clients, ni que fos cadascun en un domini, perquè qui s'equivoqui de terminació hi
+arribi igualment.
+
+Al servidor cal el registre comodí i el certificat de **cada** domini; vegeu
+[`docs/nginx-plataforma.conf`](nginx-plataforma.conf).
 
 Cada instància viu a `tenants/<subdomini>/` amb el seu `config.php`, la seva
 carpeta `uploads/` i la seva `storage/`, i té la seva pròpia base de dades. El codi
@@ -137,10 +158,11 @@ Per aturar una instància temporalment, es crea un fitxer buit
 `tenants/<subdomini>/suspended`: el web contesta que no està disponible i es torna
 a engegar esborrant-lo.
 
-Al servidor calen tres coses: un registre **A** per al domini i un de **comodí**
-`*.crosescolar.com`, un certificat de **Let's Encrypt amb comodí** (validació
-DNS-01) i el bloc d'nginx de [`docs/nginx-plataforma.conf`](nginx-plataforma.conf),
-que serveix els fitxers pujats de cada instància des de la seva carpeta.
+Al servidor calen tres coses per a cada domini: un registre **A** per al domini i
+un de **comodí** (`*.crosescolar.cat`), un certificat de **Let's Encrypt amb
+comodí** (validació DNS-01, que és l'única que serveix per als comodins) i el bloc
+d'nginx de [`docs/nginx-plataforma.conf`](nginx-plataforma.conf), que serveix els
+fitxers pujats de cada instància des de la seva carpeta.
 
 ### Posar en marxa el panell de superadministració
 

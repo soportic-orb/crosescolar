@@ -40,6 +40,7 @@ class Provisioner
     {
         $root = $root ?? CROS_ROOT;
         $slug = mb_strtolower(trim((string) $data['slug']));
+        $domain = Platform::validDomain((string) ($data['domain'] ?? ''), $root);
         $problem = Instance::slugProblem($slug, null, $root);
         if ($problem !== '') {
             throw new RuntimeException($problem);
@@ -74,7 +75,7 @@ class Provisioner
                 'db_user' => $names['user'],
                 'db_pass' => $dbPassword,
                 'db_socket' => (string) ($provision['db_socket'] ?? ''),
-                'base_url' => Platform::url($slug, $root),
+                'base_url' => Platform::url($slug, $root, $domain),
                 'site_name' => (string) $data['site_name'],
                 'event_date' => (string) ($data['event_date'] ?? ''),
                 'admin_name' => (string) $data['admin_name'],
@@ -97,6 +98,7 @@ class Provisioner
             $created['instance'] = Instance::create([
                 'client_id' => $data['client_id'] ?? null,
                 'slug' => $slug,
+                'domain' => $domain,
                 'site_name' => (string) $data['site_name'],
                 'town' => (string) ($data['town'] ?? ''),
                 'language' => (string) ($data['language'] ?? 'ca'),
@@ -112,7 +114,7 @@ class Provisioner
             // gestionarà el cros entra amb un enllaç i se'n posa una de seva.
             $access = Instance::accessLink($created['instance'], 'welcome', $root, 'Alta de la instància');
             $link = $access['ok'] ? $access['url'] : '';
-            self::welcome($data, $slug, $link, $root);
+            self::welcome($data, $slug, $link, $root, $domain);
             $steps['welcome'] = $link !== ''
                 ? 'Enllaç d\'accés enviat a ' . $data['admin_email'] . '.'
                 : 'No s\'ha pogut crear l\'enllaç d\'accés: ' . $access['error'];
@@ -242,7 +244,7 @@ class Provisioner
     }
 
     /** Avisa qui gestionarà el cros, amb l'adreça i l'enllaç per entrar-hi. */
-    private static function welcome(array $data, string $slug, string $link, string $root): void
+    private static function welcome(array $data, string $slug, string $link, string $root, string $domain = ''): void
     {
         $email = (string) $data['admin_email'];
         if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -251,7 +253,7 @@ class Provisioner
         Mailer::sendTemplate($email, 'Ja teniu el web del vostre cros', 'instance-welcome', [
             'name' => (string) $data['admin_name'],
             'site_name' => (string) $data['site_name'],
-            'url' => Platform::url($slug, $root),
+            'url' => Platform::url($slug, $root, $domain),
             'email' => $email,
             'link' => $link,
         ]);
