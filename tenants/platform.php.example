@@ -1,0 +1,30 @@
+<?php
+/**
+ * Configuració de la plataforma multi-instància.
+ *
+ * Copieu aquest fitxer a «tenants/platform.php» per engegar-la. Mentre no hi
+ * sigui, el codi funciona com una instal·lació de tota la vida: un sol web,
+ * amb la configuració a app/config.php.
+ */
+return [
+    // Domini on pengen les instàncies: granada.crosescolar.com, vilafranca.crosescolar.com…
+    'base_domain' => 'crosescolar.com',
+
+    // Subdominis que obren el panell de superadministració.
+    'console' => ['admin'],
+
+    // Subdominis que no es poden donar a cap client, a més dels que ja hi ha
+    // reservats al codi (www, correu, api, cdn…).
+    'reserved' => [],
+
+    // Base de dades de la plataforma (clients, instàncies i sol·licituds).
+    'db' => [
+        'host' => 'localhost',
+        'port' => 3306,
+        'name' => 'cros_platform',
+        'user' => 'cros_platform',
+        'pass' => '',
+        'charset' => 'utf8mb4',
+        'socket' => '',
+    ],
+];

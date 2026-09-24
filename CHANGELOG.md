@@ -6,6 +6,21 @@ i el versionatge semàntic.
 ## [1.25.0] — 2026-09-24
 
 ### Afegit
+- **Un mateix codi pot servir molts cros**: el sistema mira per on entra la petició
+  i decideix què hi ha de sortir. `granada.crosescolar.com` és el web d'aquell cros,
+  amb la seva configuració, les seves dades i els seus fitxers; el domini sol és la
+  pàgina pública de la plataforma; `admin.` n'és el panell; i un subdomini que no és
+  de ningú contesta que aquella adreça no existeix, sense ensenyar el web d'un altre.
+- Una instància es pot **aturar temporalment** (un fitxer `suspended` a la seva
+  carpeta): el web diu que no està disponible i torna quan s'esborra.
+- Els subdominis es comproven abans de donar-los: lletres, números i guions, ni
+  massa curts ni massa llargs, i mai un dels reservats (`www`, `admin`, `correu`,
+  `api`, `cdn`…). Un nom que vulgui sortir de la seva carpeta no arriba enlloc.
+- Configuració d'nginx per al servidor de la plataforma
+  ([`docs/nginx-plataforma.conf`](docs/nginx-plataforma.conf)), amb el domini comodí
+  i els fitxers pujats de cada instància.
+- Sense el fitxer `tenants/platform.php`, res d'això s'engega: una instal·lació de
+  sempre continua funcionant exactament igual.
 - **L'instal·lador es pot cridar des del codi**: tota la feina de posar en marxa un
   web (escriure la configuració, crear les taules, el compte d'administració, la
   configuració inicial i els continguts d'exemple) passa a la classe

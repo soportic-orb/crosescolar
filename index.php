@@ -5,6 +5,15 @@
  */
 declare(strict_types=1);
 
+// Qui atén la petició es decideix abans d'arrencar res: amb una instal·lació de
+// sempre no canvia res, i amb la plataforma en marxa diu de quin client és el
+// web que s'ha demanat i on són les seves dades.
+require __DIR__ . '/app/core/Tenancy.php';
+
+use Cros\Core\Tenancy;
+
+$instance = Tenancy::boot(__DIR__);
+
 require __DIR__ . '/app/bootstrap.php';
 
 use Cros\Core\Auth;
@@ -12,6 +21,39 @@ use Cros\Core\Router;
 use Cros\Core\Settings;
 use Cros\Core\Updater;
 use Cros\Core\View;
+
+// Adreces que no són el web de cap client
+switch ($instance['mode']) {
+    case 'unknown':
+        http_response_code(404);
+        View::render('errors/instance-unknown', [
+            'title' => 'Aquesta adreça no existeix',
+            'host' => $instance['host'],
+            'noindex' => true,
+        ], 'layouts/minimal');
+        exit;
+
+    case 'suspended':
+        http_response_code(503);
+        header('Retry-After: 3600');
+        View::render('errors/instance-suspended', [
+            'title' => 'Aquest web no està disponible',
+            'host' => $instance['host'],
+            'noindex' => true,
+        ], 'layouts/minimal');
+        exit;
+
+    case 'platform':
+    case 'console':
+        // La plataforma encara no hi és: s'hi treballa al pas següent.
+        http_response_code(503);
+        View::render('errors/platform-soon', [
+            'title' => 'Cros Escolar · Plataforma',
+            'console' => $instance['mode'] === 'console',
+            'noindex' => true,
+        ], 'layouts/minimal');
+        exit;
+}
 
 // Instal·lació pendent
 if (!is_installed()) {

@@ -1,0 +1,4 @@
+# Les instàncies i la configuració de la plataforma són de cada servidor.
+*
+!.gitignore
+!platform.php.example

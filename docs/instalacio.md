@@ -116,6 +116,32 @@ a HTTPS des de CloudPanel.
 6. **Configuració → Pagaments**: credencials de Stripe ([guia](stripe.md)).
 7. **Configuració → Correu**: remitent i, si cal, servidor SMTP.
 
+## Plataforma multi-instància (diversos cros amb el mateix codi)
+
+Amb el fitxer `tenants/platform.php` (copieu-hi `tenants/platform.php.example`), la
+mateixa còpia del codi atén tots els subdominis d'un domini:
+
+| Adreça | Què s'hi serveix |
+| --- | --- |
+| `granada.crosescolar.com` | el web d'aquell cros |
+| `crosescolar.com` i `www.` | la pàgina pública de la plataforma |
+| `admin.crosescolar.com` | el panell de superadministració |
+| un subdomini sense instal·lar | una pàgina que diu que l'adreça no existeix |
+
+Cada instància viu a `tenants/<subdomini>/` amb el seu `config.php`, la seva
+carpeta `uploads/` i la seva `storage/`, i té la seva pròpia base de dades. El codi
+mira la capçalera `Host`, en treu el subdomini i apunta les tres coses abans
+d'arrencar; a partir d'aquí l'aplicació funciona com sempre.
+
+Per aturar una instància temporalment, es crea un fitxer buit
+`tenants/<subdomini>/suspended`: el web contesta que no està disponible i es torna
+a engegar esborrant-lo.
+
+Al servidor calen tres coses: un registre **A** per al domini i un de **comodí**
+`*.crosescolar.com`, un certificat de **Let's Encrypt amb comodí** (validació
+DNS-01) i el bloc d'nginx de [`docs/nginx-plataforma.conf`](nginx-plataforma.conf),
+que serveix els fitxers pujats de cada instància des de la seva carpeta.
+
 ## Resolució de problemes
 
 | Símptoma | Solució |

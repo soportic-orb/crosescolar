@@ -121,5 +121,99 @@ foreach ([$dataDir, $altre] as $dir) {
     @rmdir($dir);
 }
 
+echo "\n== Qui atén cada adreça ==\n";
+
+require_once __DIR__ . '/../app/core/Tenancy.php';
+
+use Cros\Core\Tenancy;
+
+// Sense el fitxer de la plataforma, tot funciona com una instal·lació de sempre.
+$plain = sys_get_temp_dir() . '/cros-sense-plataforma-' . bin2hex(random_bytes(3));
+@mkdir($plain, 0775, true);
+check('Sense plataforma, una sola instal·lació',
+    Tenancy::boot($plain, 'elmeucros.cat')['mode'] === 'single',
+    Tenancy::boot($plain, 'elmeucros.cat')['mode']);
+
+// Un servidor amb la plataforma engegada.
+$server = sys_get_temp_dir() . '/cros-plataforma-' . bin2hex(random_bytes(3));
+@mkdir($server . '/tenants', 0775, true);
+file_put_contents($server . '/tenants/platform.php', "<?php return ['base_domain' => 'crosescolar.com', 'console' => ['admin'], 'reserved' => ['premsa']];\n");
+
+$mode = static fn (string $host): string => Tenancy::boot($server, $host)['mode'];
+
+check('El domini sol és la pàgina pública', $mode('crosescolar.com') === 'platform');
+check('Amb «www», també', $mode('www.crosescolar.com') === 'platform');
+check('«admin» és el panell de superadministració', $mode('admin.crosescolar.com') === 'console');
+check('Un subdomini sense instal·lar no existeix', $mode('ningu.crosescolar.com') === 'unknown');
+check('Un domini de fora no és de ningú', $mode('unaltreweb.cat') === 'unknown',
+    $mode('unaltreweb.cat'));
+check('Ni tan sols si s\'hi assembla', $mode('altrecrosescolar.com') === 'unknown',
+    $mode('altrecrosescolar.com'));
+
+// Ara sí, una instància instal·lada.
+foreach (['granada', 'vilafranca'] as $slug) {
+    @mkdir($server . '/tenants/' . $slug . '/uploads', 0775, true);
+    @mkdir($server . '/tenants/' . $slug . '/storage', 0775, true);
+    file_put_contents($server . '/tenants/' . $slug . '/config.php', "<?php return ['db' => ['name' => 'cros_$slug']];\n");
+}
+
+$granada = Tenancy::boot($server, 'granada.crosescolar.com');
+check('Un subdomini instal·lat és el web d\'un client', $granada['mode'] === 'tenant');
+check('Se sap de quin client és', $granada['slug'] === 'granada');
+check('I on té les seves dades', $granada['dir'] === $server . '/tenants/granada');
+check('La configuració queda apuntada', getenv('CROS_CONFIG') === $server . '/tenants/granada/config.php');
+check('Els fitxers pujats també', getenv('CROS_UPLOADS') === $server . '/tenants/granada/uploads');
+check('I la carpeta de treball', getenv('CROS_STORAGE') === $server . '/tenants/granada/storage');
+
+$vilafranca = Tenancy::boot($server, 'VILAFRANCA.CrosEscolar.com:8080');
+check('L\'adreça pot venir en majúscules i amb port', $vilafranca['slug'] === 'vilafranca');
+check('I apunta a les seves dades', getenv('CROS_CONFIG') === $server . '/tenants/vilafranca/config.php');
+
+// Una instància aturada.
+file_put_contents($server . '/tenants/granada/' . Tenancy::SUSPENDED, '');
+check('Una instància aturada no serveix el web', $mode('granada.crosescolar.com') === 'suspended');
+@unlink($server . '/tenants/granada/' . Tenancy::SUSPENDED);
+check('En reactivar-la, torna', $mode('granada.crosescolar.com') === 'tenant');
+
+check('Les instàncies instal·lades es poden llistar',
+    Tenancy::all($server) === ['granada', 'vilafranca'],
+    implode(', ', Tenancy::all($server)));
+
+echo "\n== Subdominis que no valen ==\n";
+
+check('Un nom amb punts no és un subdomini', $mode('una.altra.crosescolar.com') === 'unknown');
+check('Ni un que vulgui sortir de la carpeta', Tenancy::dir($server, '../../etc') === '');
+check('Tampoc amb barres', Tenancy::dir($server, 'granada/../vilafranca') === '');
+check('«admin» no es pot donar a ningú', Tenancy::reserved('admin'));
+check('«correu» tampoc', Tenancy::reserved('correu'));
+check('Ni els que afegeixi la plataforma', Tenancy::reserved('premsa', ['premsa']));
+check('Un nom normal sí que val', Tenancy::valid('santjordi'));
+check('Amb guió al mig, també', Tenancy::valid('sant-jordi'));
+check('Però no amb guió al final', !Tenancy::valid('santjordi-'));
+check('Ni amb dos guions seguits', !Tenancy::valid('sant--jordi'));
+check('Ni amb accents o majúscules', !Tenancy::valid('Sant Jordi') && !Tenancy::valid('olèrdola'));
+check('Ni massa curt', !Tenancy::valid('a'));
+check('Ni massa llarg', !Tenancy::valid(str_repeat('a', 31)));
+
+check('El subdomini se separa bé del domini',
+    Tenancy::slug('granada.crosescolar.com', 'crosescolar.com') === 'granada'
+    && Tenancy::slug('crosescolar.com', 'crosescolar.com') === ''
+    && Tenancy::slug('altrecrosescolar.com', 'crosescolar.com') === '');
+
+// Neteja
+foreach (['granada', 'vilafranca'] as $slug) {
+    @unlink($server . '/tenants/' . $slug . '/config.php');
+    @rmdir($server . '/tenants/' . $slug . '/uploads');
+    @rmdir($server . '/tenants/' . $slug . '/storage');
+    @rmdir($server . '/tenants/' . $slug);
+}
+@unlink($server . '/tenants/platform.php');
+@rmdir($server . '/tenants');
+@rmdir($server);
+@rmdir($plain);
+putenv('CROS_CONFIG');
+putenv('CROS_UPLOADS');
+putenv('CROS_STORAGE');
+
 echo "\n== Resultat ==\n  $passed proves correctes, $failed errors\n\n";
 exit($failed === 0 ? 0 : 1);
