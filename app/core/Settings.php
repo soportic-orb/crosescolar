@@ -31,6 +31,19 @@ class Settings
     }
 
     /**
+     * Posa uns valors a memòria sense tocar cap base de dades.
+     *
+     * Ho fa servir la plataforma, que no té taula de configuració però sí que
+     * necessita que funcionin coses com l'enviament de correu.
+     *
+     * @param array<string,string> $values
+     */
+    public static function prime(array $values): void
+    {
+        self::$cache = array_merge(self::$cache ?? [], $values);
+    }
+
+    /**
      * Oblida el que hi ha a memòria sense llegir res.
      * Es fa servir quan s'ha treballat amb una altra base de dades i els valors
      * que hi ha carregats ja no són els d'aquesta instal·lació.

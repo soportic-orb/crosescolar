@@ -243,6 +243,165 @@ if ($db['tenant'] !== '') {
     @rmdir($dir);
 }
 
+/* La pàgina pública, servida de debò ---------------------------------------- */
+echo "\n== La pàgina pública de la plataforma ==\n";
+
+// Una còpia del codi en una carpeta a part, amb la plataforma engegada: així
+// les proves no toquen el projecte ni les altres bateries.
+// Les proves d'abans han deixat apuntades unes carpetes d'instància a
+// l'entorn, i el servidor que arrencarem l'heretaria: es netegen primer.
+putenv('CROS_CONFIG');
+putenv('CROS_UPLOADS');
+putenv('CROS_STORAGE');
+
+$site = sys_get_temp_dir() . '/cros-web-plataforma-' . bin2hex(random_bytes(3));
+@mkdir($site . '/tenants', 0775, true);
+@mkdir($site . '/storage/logs', 0775, true);
+foreach (['app', 'assets'] as $folder) {
+    exec('cp -r ' . escapeshellarg($root . '/' . $folder) . ' ' . escapeshellarg($site . '/' . $folder));
+}
+copy($root . '/index.php', $site . '/index.php');
+@unlink($site . '/app/config.php');
+file_put_contents($site . '/tenants/platform.php', "<?php return " . var_export([
+    'base_domain' => 'crosescolar.test',
+    'name' => 'Cros Escolar',
+    'console' => ['admin'],
+    'mail' => ['from_email' => 'hola@crosescolar.test', 'notify' => 'hola@crosescolar.test', 'transport' => 'log'],
+    'db' => [
+        'host' => $db['host'], 'port' => $db['port'], 'name' => $db['platform'],
+        'user' => $db['user'], 'pass' => $db['pass'], 'charset' => 'utf8mb4', 'socket' => '',
+    ],
+], true) . ";\n");
+
+$port = (int) (getenv('CROS_TEST_PORT_PLATFORM') ?: 8129);
+// Si el port ja està ocupat, les peticions anirien a parar a un altre servidor
+// i les proves dirien coses que no són: val més aturar-se aquí.
+$busy = @fsockopen('127.0.0.1', $port, $errno, $error, 1);
+if ($busy !== false) {
+    fclose($busy);
+    echo "  El port $port ja està ocupat: atureu el que hi hagi o definiu CROS_TEST_PORT_PLATFORM.\n";
+    exit(1);
+}
+$webServer = proc_open(
+    sprintf('exec php -S 127.0.0.1:%d -t %s', $port, escapeshellarg($site)),
+    [1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']],
+    $pipes
+);
+$base = 'http://127.0.0.1:' . $port;
+$jar = sys_get_temp_dir() . '/cros-platform-cookies-' . bin2hex(random_bytes(3)) . '.txt';
+
+/** Petició al web de la plataforma, dient per quin amfitrió hi entrem. */
+$web = static function (string $method, string $path, array $fields = [], string $host = 'crosescolar.test') use ($base, $jar): array {
+    $ch = curl_init($base . $path);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HEADER => true,
+        CURLOPT_CUSTOMREQUEST => $method,
+        CURLOPT_HTTPHEADER => ['Host: ' . $host],
+        CURLOPT_COOKIEJAR => $jar,
+        CURLOPT_COOKIEFILE => $jar,
+        CURLOPT_TIMEOUT => 30,
+    ]);
+    if ($method === 'POST') {
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($fields));
+    }
+    $response = (string) curl_exec($ch);
+    $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $size = (int) curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+    curl_close($ch);
+
+    return ['status' => $status, 'headers' => substr($response, 0, $size), 'body' => substr($response, $size)];
+};
+$token = static fn (string $html): string => preg_match('/name="_token" value="([^"]+)"/', $html, $m) ? $m[1] : '';
+
+for ($i = 0; $i < 40 && ($web('GET', '/')['status'] ?? 0) === 0; $i++) {
+    usleep(200000);
+}
+
+try {
+    // Un parell d'instàncies publicades per al llistat.
+    $pdo->exec("UPDATE instances SET status = 'active', published = 1 WHERE slug <> 'novolsortir'");
+
+    $home = $web('GET', '/');
+    check('La portada de la plataforma respon', $home['status'] === 200, 'estat ' . $home['status']);
+    check('Hi surt el llistat de cros', str_contains($home['body'], 'cros-card'));
+    check('Amb el nom d\'un cros publicat', str_contains($home['body'], 'Cros Escolar Sant Jordi'));
+    check('I l\'enllaç al seu subdomini',
+        str_contains($home['body'], 'https://santjordi.crosescolar.test'));
+    check('No hi surt el que no vol sortir-hi', !str_contains($home['body'], 'Cros discret'));
+    check('Hi ha el botó de crear-ne un', str_contains(html_entity_decode($home['body']), 'Crea la web per al teu cros'));
+    check('I el formulari', str_contains($home['body'], 'name="entity"') && str_contains($home['body'], 'name="contact_email"'));
+
+    // El panell encara no hi és, però l'adreça ja la reconeix.
+    check('El subdomini del panell no és cap client',
+        $web('GET', '/', [], 'admin.crosescolar.test')['status'] === 503);
+    check('Un subdomini que no existeix contesta 404',
+        $web('GET', '/', [], 'ningu.crosescolar.test')['status'] === 404);
+
+    // Una sol·licitud incompleta no es desa.
+    $before = (int) $pdo->query('SELECT COUNT(*) FROM instance_requests')->fetchColumn();
+    $bad = $web('POST', '/sollicitud', ['_token' => $token($home['body']), 'entity' => '', 'contact_email' => 'aixo-no-es-un-correu']);
+    check('Una sol·licitud incompleta es rebutja', $bad['status'] === 200 && str_contains($bad['body'], 'field--error'));
+    check('I no es desa res',
+        (int) $pdo->query('SELECT COUNT(*) FROM instance_requests')->fetchColumn() === $before);
+
+    // Un subdomini reservat, tampoc.
+    $reserved = $web('POST', '/sollicitud', [
+        '_token' => $token($web('GET', '/')['body']),
+        'entity' => 'Prova', 'town' => 'Prova', 'contact_name' => 'Prova',
+        'contact_email' => 'prova@example.cat', 'contact_phone' => '600111222',
+        'slug' => 'admin', 'consent' => '1',
+    ]);
+    check('Un subdomini reservat no s\'accepta',
+        $reserved['status'] === 200 && str_contains(html_entity_decode($reserved['body']), 'reservat'));
+
+    // I ara, una de bona.
+    $good = $web('POST', '/sollicitud', [
+        '_token' => $token($web('GET', '/')['body']),
+        'entity' => 'AMPA Les Vinyes', 'nif' => 'G99887766', 'town' => 'Sant Sadurní d\'Anoia',
+        'contact_name' => 'Roser Guasch', 'contact_role' => 'Secretaria',
+        'contact_email' => 'roser@example.cat', 'contact_phone' => '677889900',
+        'slug' => 'lesvinyes2', 'language' => 'es', 'event_date' => '2027-04-11',
+        'participants' => '220', 'message' => 'Volem treure les inscripcions de paper.',
+        'consent' => '1',
+    ]);
+    check('Una sol·licitud completa es desa', $good['status'] === 302, 'estat ' . $good['status']);
+    check('I porta a la pantalla de confirmació', str_contains($good['headers'], '/sollicitud/'));
+
+    $saved = Db::one("SELECT * FROM instance_requests WHERE contact_email = 'roser@example.cat'");
+    check('Amb totes les dades', ($saved['entity'] ?? '') === 'AMPA Les Vinyes' && ($saved['slug'] ?? '') === 'lesvinyes2');
+    check('I l\'idioma que ha triat', ($saved['language'] ?? '') === 'es');
+    check('Queda pendent de revisar', ($saved['status'] ?? '') === 'pending');
+
+    preg_match('#/sollicitud/([0-9-]+)#', $good['headers'], $m);
+    $sent = $web('GET', '/sollicitud/' . ($m[1] ?? ''));
+    check('La confirmació mostra el número', $sent['status'] === 200 && str_contains($sent['body'], (string) $saved['code']));
+    check('I l\'adreça demanada', str_contains($sent['body'], 'lesvinyes2.crosescolar.test'));
+    check('Una confirmació inventada no existeix', $web('GET', '/sollicitud/2026-999')['status'] === 404);
+
+    // Els dos correus.
+    $log = (string) @file_get_contents($site . '/storage/logs/app-' . date('Y-m') . '.log');
+    check('S\'avisa qui l\'ha demanada', str_contains($log, 'roser@example.cat'));
+    check('I la superadministració', str_contains($log, 'hola@crosescolar.test'));
+
+    // El parany per a robots.
+    $bot = $web('POST', '/sollicitud', [
+        '_token' => $token($web('GET', '/')['body']),
+        'entity' => 'Robot', 'town' => 'Enlloc', 'contact_name' => 'Robot',
+        'contact_email' => 'robot@example.cat', 'contact_phone' => '600000000',
+        'website_url' => 'https://spam.example', 'consent' => '1',
+    ]);
+    check('Un robot que omple el camp amagat no desa res',
+        $bot['status'] === 302 && Db::one("SELECT id FROM instance_requests WHERE contact_email = 'robot@example.cat'") === null);
+} finally {
+    if (is_resource($webServer)) {
+        proc_terminate($webServer);
+        proc_close($webServer);
+    }
+    @unlink($jar);
+    exec('rm -rf ' . escapeshellarg($site));
+}
+
 echo "\n== Registre d'activitat ==\n";
 Platform::log('instance_create', 'instance', $instanceId, ['slug' => 'santjordi']);
 $activity = Db::one('SELECT * FROM platform_activity ORDER BY id DESC');

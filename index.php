@@ -45,13 +45,24 @@ switch ($instance['mode']) {
 
     case 'platform':
     case 'console':
-        // La plataforma encara no hi és: s'hi treballa al pas següent.
-        http_response_code(503);
-        View::render('errors/platform-soon', [
-            'title' => 'Cros Escolar · Plataforma',
-            'console' => $instance['mode'] === 'console',
-            'noindex' => true,
-        ], 'layouts/minimal');
+        // La pàgina pública de la plataforma i el panell de superadministració.
+        try {
+            \Cros\Platform\Platform::boot(__DIR__);
+        } catch (\Throwable $e) {
+            http_response_code(503);
+            log_line('platform', 'No s\'ha pogut obrir la plataforma', ['error' => $e->getMessage()]);
+            View::render('errors/platform-soon', [
+                'title' => 'Cros Escolar · Plataforma',
+                'console' => $instance['mode'] === 'console',
+                'noindex' => true,
+            ], 'layouts/minimal');
+            exit;
+        }
+        View::share('currentPath', Router::currentPath());
+        $mode = $instance['mode'];
+        /** @var Router $platformRouter */
+        $platformRouter = require CROS_APP . '/platform/routes.php';
+        $platformRouter->dispatch($_SERVER['REQUEST_METHOD'] ?? 'GET', Router::currentPath());
         exit;
 }
 

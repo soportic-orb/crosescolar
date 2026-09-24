@@ -77,7 +77,7 @@ $pdo->exec('SET FOREIGN_KEY_CHECKS = 1');
 
 /* Servidor local ----------------------------------------------------------- */
 $server = proc_open(
-    sprintf('php -S 127.0.0.1:%d -t %s', $port, escapeshellarg($root)),
+    sprintf('exec php -S 127.0.0.1:%d -t %s', $port, escapeshellarg($root)),
     [1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']],
     $pipes
 );

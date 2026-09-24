@@ -1,0 +1,72 @@
+/* Cros Escolar — pàgina pública de la plataforma.
+   Hereta l'estil del web dels cros (site.css) i hi afegeix el que és seu. */
+
+.platform-hero {
+  position: relative;
+  padding: clamp(3.5rem, 8vw, 6rem) 0 clamp(3rem, 6vw, 4.5rem);
+  background: linear-gradient(160deg, var(--green-900, #10261a) 0%, var(--green-700, #2f6b3c) 100%);
+  color: #fff;
+}
+.platform-hero h1 { color: #fff; font-size: clamp(2.1rem, 5vw, 3.2rem); margin: 0 0 1rem; max-width: 20ch; }
+.platform-hero .lead { color: rgba(255, 255, 255, .85); max-width: 56ch; }
+.platform-hero .eyebrow { color: var(--green-300, #9dc0a2); }
+.platform-hero__address {
+  display: inline-flex; align-items: center; gap: .6rem; margin: 1.8rem 0 0;
+  padding: .75rem 1.1rem; border-radius: 12px; font-size: .95rem;
+  background: rgba(255, 255, 255, .1); border: 1px solid rgba(255, 255, 255, .22);
+}
+.platform-hero__address span { color: var(--green-300, #9dc0a2); }
+
+/* El llistat de cros ------------------------------------------------------ */
+.cros-grid {
+  display: grid; gap: 1.2rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+}
+.cros-card {
+  display: flex; flex-direction: column; overflow: hidden; text-decoration: none; color: inherit;
+  background: var(--white, #fff); border: 1px solid var(--line, #e3eade); border-radius: var(--radius, 16px);
+  transition: transform var(--transition, .2s), box-shadow var(--transition, .2s);
+}
+.cros-card:hover { transform: translateY(-3px); box-shadow: var(--shadow, 0 12px 30px rgba(20, 35, 26, .12)); color: inherit; }
+.cros-card__top {
+  display: flex; align-items: flex-end; height: 92px; padding: .8rem .9rem;
+  background: linear-gradient(140deg, var(--green-700, #2f6b3c), var(--green-900, #10261a));
+}
+.cros-card__state {
+  background: rgba(255, 255, 255, .92); color: var(--green-900, #10261a);
+  font-size: .74rem; font-weight: 800; letter-spacing: .02em; padding: .2rem .6rem; border-radius: 999px;
+}
+.cros-card__body { display: flex; flex-direction: column; gap: .2rem; padding: 1rem 1.1rem 1.2rem; }
+.cros-card__name { font-weight: 700; font-size: 1.05rem; }
+.cros-card__town { color: var(--ink-soft, #5a6b60); font-size: .9rem; }
+.cros-card__date {
+  display: inline-flex; align-items: center; gap: .45rem; margin-top: .5rem;
+  color: var(--green-700, #2f6b3c); font-weight: 600; font-size: .9rem;
+}
+.cros-card__url { margin-top: .5rem; color: #8b998f; font-size: .82rem; }
+.cros-card--new {
+  align-items: center; justify-content: center; text-align: center; gap: .5rem; padding: 1.6rem;
+  background: var(--green-100, #eef4ec); border-style: dashed; color: var(--green-900, #10261a);
+}
+.cros-card__plus {
+  width: 42px; height: 42px; border-radius: 999px; display: grid; place-items: center;
+  background: #fff; border: 1px solid var(--green-300, #cddcc9); color: var(--green-700, #2f6b3c);
+}
+.cros-card--new span:last-child { color: var(--ink-soft, #5a6b60); font-size: .9rem; line-height: 1.45; }
+
+/* Els passos de «com funciona» -------------------------------------------- */
+.card__step {
+  width: 34px; height: 34px; border-radius: 999px; display: grid; place-items: center;
+  background: var(--green-100, #eef4ec); color: var(--green-800, #1b452a);
+  font-weight: 800; margin-bottom: .8rem;
+}
+
+/* El subdomini que es demana ---------------------------------------------- */
+.slug-field { display: flex; align-items: stretch; }
+.slug-field input { border-top-right-radius: 0; border-bottom-right-radius: 0; border-right: 0; }
+.slug-field span {
+  display: flex; align-items: center; padding: 0 .8rem; white-space: nowrap;
+  background: #f2f4f1; border: 1px solid var(--line, #d4ded2);
+  border-left: 0; border-top-right-radius: 10px; border-bottom-right-radius: 10px;
+  color: var(--ink-soft, #5a6b60); font-size: .95rem;
+}

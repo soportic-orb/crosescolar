@@ -5,6 +5,7 @@ namespace Cros\Platform;
 
 use Cros\Core\Db;
 use Cros\Core\Migrator;
+use Cros\Core\Settings;
 use Cros\Core\Tenancy;
 use PDO;
 use RuntimeException;
@@ -31,8 +32,44 @@ class Platform
         }
         $pdo = Db::connect($db + ['charset' => 'utf8mb4', 'timeout' => 10]);
         Db::setConnection($pdo);
+        self::primeSettings($settings);
 
         return $pdo;
+    }
+
+    /**
+     * La plataforma no té taula de configuració, però el correu i les vistes
+     * demanen valors com el nom de qui envia: es posen a memòria des del
+     * fitxer de la plataforma.
+     *
+     * @param array<string,mixed> $settings
+     */
+    private static function primeSettings(array $settings): void
+    {
+        $mail = (array) ($settings['mail'] ?? []);
+        $domain = (string) ($settings['base_domain'] ?? 'crosescolar.com');
+        $values = [
+            'site_name' => (string) ($settings['name'] ?? 'Cros Escolar'),
+            'mail_from_name' => (string) ($mail['from_name'] ?? ($settings['name'] ?? 'Cros Escolar')),
+            'mail_from_email' => (string) ($mail['from_email'] ?? ('no-reply@' . $domain)),
+            'mail_admin_notify' => (string) ($mail['notify'] ?? ('hola@' . $domain)),
+            'mail_transport' => (string) ($mail['transport'] ?? 'mail'),
+        ];
+        foreach (['reply_to' => 'mail_reply_to', 'smtp_host' => 'smtp_host', 'smtp_port' => 'smtp_port',
+                  'smtp_user' => 'smtp_user', 'smtp_pass' => 'smtp_pass', 'smtp_secure' => 'smtp_secure'] as $key => $setting) {
+            if (isset($mail[$key]) && (string) $mail[$key] !== '') {
+                $values[$setting] = (string) $mail[$key];
+            }
+        }
+        Settings::prime($values);
+    }
+
+    /** On arriben els avisos de la plataforma. */
+    public static function notifyEmail(?string $root = null): string
+    {
+        $mail = (array) (Tenancy::settings($root ?? CROS_ROOT)['mail'] ?? []);
+
+        return (string) ($mail['notify'] ?? ('hola@' . self::domain($root)));
     }
 
     /** Hi ha plataforma configurada en aquest servidor? */

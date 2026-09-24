@@ -32,6 +32,13 @@ i el versionatge semàntic.
   no perd la seva pròpia connexió.
 - **El llistat públic de cros** surt d'aquí: només els que ja han publicat el web i
   volen sortir-hi, amb les curses que vénen primer i les passades al final.
+- **La pàgina pública de la plataforma** (`crosescolar.com`): el llistat dels cros que
+  ja hi corren —cada targeta porta al seu subdomini—, com funciona i el formulari per
+  demanar-ne un de nou, amb el botó **«Crea la web per al teu cros»** al menú.
+- En enviar el formulari, la sol·licitud queda desada amb un número i surten **dos
+  correus**: la confirmació a qui l'ha demanada i l'avís a la superadministració.
+- El formulari comprova el subdomini abans d'acceptar-lo, no deixa que una adreça
+  n'enviï més de tres al dia i té un parany per a robots.
 - **L'instal·lador es pot cridar des del codi**: tota la feina de posar en marxa un
   web (escriure la configuració, crear les taules, el compte d'administració, la
   configuració inicial i els continguts d'exemple) passa a la classe
