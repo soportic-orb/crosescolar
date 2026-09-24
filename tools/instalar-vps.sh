@@ -45,7 +45,13 @@ groc()  { printf '\033[33m%s\033[0m\n' "$*"; }
 roig()  { printf '\033[31m%s\033[0m\n' "$*"; }
 titol() { printf '\n\033[1m── %s ─────────────────────────────\033[0m\n' "$*"; }
 fes()   { if [ "$ASSAIG" = "1" ]; then echo "   (assaig) $*"; else eval "$@"; fi; }
-clau()  { tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 28; }
+# Una clau llarga i a l'atzar.
+# No es fa amb «tr … | head», que sembla el natural: head tanca el tub quan ja
+# en té prou, tr rep un SIGPIPE i, amb «pipefail», l'script es moriria aquí
+# sense dir ni piu. od llegeix els bytes que li demanem i plega sol.
+clau() {
+    od -An -tx1 -N "${1:-21}" /dev/urandom | tr -d ' \n'
+}
 
 # Un assaig no toca res, de manera que es pot mirar sense ser root: així es pot
 # llegir el pla abans de deixar-lo actuar.
@@ -126,7 +132,11 @@ fi
 
 PHP_VERSIO="$(php -r 'echo PHP_MAJOR_VERSION . "." . PHP_MINOR_VERSION;' 2>/dev/null || echo '')"
 [ -n "$PHP_VERSIO" ] || { roig "No hi ha PHP al servidor."; exit 1; }
-SOCOL="$(ls /run/php/php*-fpm.sock 2>/dev/null | head -1 || echo "/run/php/php${PHP_VERSIO}-fpm.sock")"
+# El primer sòcol que hi hagi, sense tubs que es puguin tancar a mitges.
+SOCOL="/run/php/php${PHP_VERSIO}-fpm.sock"
+for s in /run/php/php*-fpm.sock; do
+    if [ -S "$s" ]; then SOCOL="$s"; break; fi
+done
 echo "   PHP $PHP_VERSIO · sòcol $SOCOL"
 fes "systemctl enable --now nginx mariadb cron >/dev/null 2>&1 || true"
 fes "systemctl enable --now php${PHP_VERSIO}-fpm >/dev/null 2>&1 || true"
@@ -306,7 +316,7 @@ EOF
     rm -f "$CRON"
     verd "   Vigilància cada quart, còpies a les 3, repàs a les 4:30 i purga els dilluns."
 
-    TESTIMONI="$(tr -dc 'a-f0-9' < /dev/urandom | head -c 48)"
+    TESTIMONI="$(clau 24)"
     cat > "$ARREL/tenants/instalacio.json" <<EOF
 {
     "arrel": "$ARREL",

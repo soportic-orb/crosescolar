@@ -3,6 +3,21 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.26.1] — 2026-09-24
+
+### Corregit
+- **L'script d'instal·lació es moria en silenci en arribar a les bases de dades.**
+  Les contrasenyes es generaven amb `tr … | head`, i `head` tanca el tub tan bon
+  punt en té prou: `tr` rep un SIGPIPE i, amb les opcions estrictes que fa servir
+  l'script, allò n'hi havia prou per aturar-ho tot sense dir ni piu, just després
+  d'haver instal·lat el programari i copiat el codi. Ara es generen d'una manera
+  que no pot fallar així.
+- El sòcol del PHP es buscava amb el mateix parany; ara es mira la carpeta
+  directament.
+- Bateria de proves nova (`tests/instalador.sh`) que executa les funcions de
+  l'script amb les mateixes opcions estrictes i comprova que l'assaig arriba al
+  final: és la que hauria destapat tot això.
+
 ## [1.26.0] — 2026-09-24
 
 ### Afegit

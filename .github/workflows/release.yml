@@ -130,11 +130,8 @@ jobs:
           mysql -h127.0.0.1 -uroot -proot -e "CREATE DATABASE IF NOT EXISTS cros_assistent CHARACTER SET utf8mb4; GRANT ALL ON cros_assistent.* TO 'cros'@'%';"
           php tests/setup.php
 
-      - name: Comprovar els scripts del servidor
-        run: |
-          bash -n tools/instalar-vps.sh
-          bash tools/instalar-vps.sh --assaig --sense-paquets --sense-certificat \
-            --dominis crosescolar.test,crosescolar.example --arrel /tmp/cros-assaig
+      - name: Proves de l'script d'instal·lació del servidor
+        run: bash tests/instalador.sh
 
       - name: Proves del panell de superadministració (MySQL real)
         env:
