@@ -19,6 +19,13 @@ $size = static function (int $bytes): string {
       Aquest web és vostre i les dades també. Amb un clic us les descarregueu totes
       en un sol fitxer ZIP, sense haver de demanar res a ningú.
     </p>
+    <p>
+      Aquest mateix fitxer és el que serveix per <strong>traslladar el cros a un altre
+      servidor</strong>: qui el rebi només l'ha de pujar en crear la instància nova i
+      hi arriba tot —inscripcions, resultats, textos, configuració i fitxers—, i qui
+      entrava al panell hi continua entrant amb la mateixa contrasenya. Aquest web no
+      es toca: continua funcionant mentre no el tanqueu.
+    </p>
 
     <div class="grid-cards mt-2">
       <?php foreach ($counts as $label => $total): ?>
@@ -50,6 +57,11 @@ $size = static function (int $bytes): string {
         <tr>
           <th><code>fitxers/</code></th>
           <td>Les imatges i els documents que heu pujat.</td>
+        </tr>
+        <tr>
+          <th><code>migracio.json</code></th>
+          <td>La fitxa del paquet: què hi ha a dins, de quina versió i de quin web.
+            És el que mira el sistema nou per assegurar-se que el fitxer arriba sencer.</td>
         </tr>
       </tbody>
     </table>

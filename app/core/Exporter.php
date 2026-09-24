@@ -15,8 +15,17 @@ use ZipArchive;
  */
 class Exporter
 {
-    /** Taules que no tenen sentit fora d'aquí. */
-    private const SKIP = ['migrations', 'login_attempts', 'sessions'];
+    /** Com es reconeix un paquet d'aquests. */
+    public const FORMAT = 'cros-escolar-export';
+
+    /** Versió del format del paquet, per si algun dia canvia. */
+    public const FORMAT_VERSION = 1;
+
+    /** Taules que no surten als fulls de càlcul: no diuen res a ningú. */
+    private const SKIP = ['migrations', 'login_attempts', 'sessions', 'login_links'];
+
+    /** Taules de les quals es desa l'estructura però no el contingut. */
+    private const SKIP_DATA = ['login_attempts', 'sessions', 'login_links'];
 
     /** Noms bonics per als fulls de càlcul de les taules que es miren més. */
     private const NAMES = [
@@ -67,12 +76,18 @@ class Exporter
 
         $tables = self::tables();
         $zip->addFromString('llegeix-me.txt', self::readme($tables, $title));
+        $counts = [];
         foreach ($tables as $table) {
             $rows = Db::all('SELECT * FROM `' . $table . '`');
+            $counts[$table] = count($rows);
             $zip->addFromString('fulls/' . (self::NAMES[$table] ?? $table) . '.csv', self::csv($rows));
         }
-        $zip->addFromString('base-de-dades.sql', self::dump($tables));
-        self::addUploads($zip, (string) ($options['uploads'] ?? rtrim(upload_path(''), '/')));
+        $sql = self::dump(self::allTables());
+        $zip->addFromString('base-de-dades.sql', $sql);
+        $uploads = self::addUploads($zip, (string) ($options['uploads'] ?? rtrim(upload_path(''), '/')));
+        // La fitxa del paquet: és el que mira la plataforma per saber que això
+        // és un cros de debò i que no s'ha fet malbé pel camí.
+        $zip->addFromString('migracio.json', self::manifest($title, $tables, $counts, $sql, $uploads, $options));
         $zip->close();
 
         return $file;
@@ -81,12 +96,25 @@ class Exporter
     /** Les taules del cros, sense les que només serveixen per funcionar. */
     public static function tables(): array
     {
+        return array_values(array_filter(
+            self::allTables(),
+            static fn (string $table): bool => !in_array($table, self::SKIP, true)
+        ));
+    }
+
+    /**
+     * Totes les taules, sense excepció.
+     * La còpia de la base de dades les ha de portar totes —també la de control
+     * de versions—: sense això, qui la restauri no sabria per quina versió va i
+     * tornaria a aplicar canvis que ja hi són.
+     *
+     * @return array<int,string>
+     */
+    public static function allTables(): array
+    {
         $tables = [];
         foreach (Db::conn()->query('SHOW TABLES')->fetchAll(\PDO::FETCH_NUM) as $row) {
-            $name = (string) $row[0];
-            if (!in_array($name, self::SKIP, true)) {
-                $tables[] = $name;
-            }
+            $tables[] = (string) $row[0];
         }
         sort($tables);
 
@@ -123,6 +151,11 @@ class Exporter
             $create = $pdo->query('SHOW CREATE TABLE `' . $table . '`')->fetch(\PDO::FETCH_NUM);
             $sql .= 'DROP TABLE IF EXISTS `' . $table . "`;\n" . ($create[1] ?? '') . ";\n\n";
 
+            if (in_array($table, self::SKIP_DATA, true)) {
+                // L'estructura sí; el contingut no diu res i pot portar adreces IP.
+                $sql .= "\n";
+                continue;
+            }
             $statement = $pdo->query('SELECT * FROM `' . $table . '`');
             $lines = [];
             $columns = [];
@@ -160,11 +193,13 @@ class Exporter
     }
 
     /** Els fitxers pujats, tal com estan. */
-    private static function addUploads(ZipArchive $zip, string $root): void
+    /** @return array{files:int,bytes:int} */
+    private static function addUploads(ZipArchive $zip, string $root): array
     {
         $root = rtrim($root, '/');
+        $total = ['files' => 0, 'bytes' => 0];
         if (!is_dir($root)) {
-            return;
+            return $total;
         }
         $files = new \RecursiveIteratorIterator(
             new \RecursiveDirectoryIterator($root, \FilesystemIterator::SKIP_DOTS)
@@ -176,7 +211,47 @@ class Exporter
             }
             $relative = ltrim(str_replace($root, '', $file->getPathname()), '/');
             $zip->addFile($file->getPathname(), 'fitxers/' . $relative);
+            $total['files']++;
+            $total['bytes'] += (int) $file->getSize();
         }
+
+        return $total;
+    }
+
+    /**
+     * La fitxa del paquet, en JSON.
+     * @param array<int,string> $tables
+     * @param array<string,int> $counts
+     * @param array{files:int,bytes:int} $uploads
+     */
+    private static function manifest(
+        string $title,
+        array $tables,
+        array $counts,
+        string $sql,
+        array $uploads,
+        array $options
+    ): string {
+        return (string) json_encode([
+            'format' => self::FORMAT,
+            'format_version' => self::FORMAT_VERSION,
+            'app_version' => app_version(),
+            'exported_at' => date('c'),
+            'site_name' => $title,
+            'base_url' => (string) ($options['base_url'] ?? base_url()),
+            // Es llegeix de la base de dades i no de la configuració a memòria:
+            // qui fa el paquet pot ser la plataforma, que té la seva.
+            'event_date' => (string) Db::val("SELECT v FROM settings WHERE k = 'event_date'", [], ''),
+            'tables' => self::allTables(),
+            'sheets' => $tables,
+            'rows' => $counts,
+            'uploads' => $uploads,
+            'database' => [
+                'file' => 'base-de-dades.sql',
+                'bytes' => strlen($sql),
+                'sha256' => hash('sha256', $sql),
+            ],
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 
     /** Què hi ha dins del ZIP, explicat. */
@@ -192,7 +267,10 @@ class Exporter
             . "                   S'obren amb l'Excel, el Numbers o el LibreOffice.\n"
             . "  base-de-dades.sql  Còpia completa de la base de dades, per si algun dia\n"
             . "                   voleu tornar a muntar el web en un altre servidor.\n"
-            . "  fitxers/         Les imatges i els documents que heu pujat.\n\n"
+            . "  fitxers/         Les imatges i els documents que heu pujat.\n"
+            . "  migracio.json    La fitxa del paquet. Serveix per traslladar aquest cros\n"
+            . "                   a un altre servidor sense perdre res: qui el rebi només\n"
+            . "                   ha de pujar aquest mateix fitxer ZIP.\n\n"
             . "Taules incloses: " . implode(', ', $tables) . "\n\n"
             . "Aquestes dades són vostres. Si les compartiu, tingueu present que hi ha\n"
             . "dades personals de les famílies inscrites i, a la llista d'usuaris, les\n"

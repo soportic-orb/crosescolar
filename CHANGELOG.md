@@ -83,6 +83,19 @@ i el versionatge semàntic.
   d'hora al cron): mira que la base de dades de cada cros respongui i que la pàgina
   s'obri. Quan un cau —o quan torna— surt un correu, una sola vegada, i el panell ho
   ensenya a dalt de tot amb el motiu i des de quina hora.
+- **Un cros que ja existia es pot portar a la plataforma sencer**: el ZIP de «Les
+  meves dades» és alhora el paquet de migració —porta una fitxa (`migracio.json`)
+  que diu què és, de quina versió i de quin web, amb l'empremta de la còpia de la
+  base de dades— i, en crear una instància, es puja al panell i la instància neix
+  amb tot a dins: inscripcions, resultats, textos, configuració, fitxers i comptes
+  del panell amb les seves contrasenyes. Els enllaços que apuntaven a l'adreça
+  antiga es canvien per la nova i el web d'origen no es toca.
+- Un paquet d'una versió antiga es posa al dia sol en importar-lo, perquè la còpia
+  porta també per quina versió anava el cros.
+- Els paquets grossos, que no passen pel navegador, es poden deixar a
+  `storage/imports/` del servidor i importar-los pel nom. Amb
+  `php tools/platform.php paquet <fitxer.zip>` es pot mirar què porta abans de
+  tocar res.
 - **Còpies de seguretat de cada client** (`php tools/platform.php copies`, de
   matinada al cron): el mateix ZIP que el client es pot descarregar, desat al servidor
   a la carpeta del seu subdomini i guardant-ne les set últimes. A la fitxa surten amb
@@ -115,6 +128,9 @@ i el versionatge semàntic.
   del codi, cadascuna amb les seves dades i el seu subdomini.
 - Bateria de proves nova (`tests/tenants.php`) que comprova que dues instal·lacions
   amb el mateix codi no es trepitgen els fitxers ni els registres.
+- La còpia de la base de dades es parteix caràcter a caràcter en comptes de per
+  punt i coma: un text amb un punt i coma a final de línia, amb una ratlla que
+  comenci per dos guions o amb línies en blanc arriba exactament igual.
 - Bateria de proves nova (`tests/readiness.php`) per al repàs previ a la cursa.
 - Bateria de proves nova (`tests/console.php`) que dona d'alta instàncies de debò
   contra un MySQL real i les serveix: accés al panell, alta, enllaços d'un sol ús,

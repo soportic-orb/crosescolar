@@ -9,6 +9,7 @@
  *   php tools/platform.php actualitzar                aplica els canvis pendents a totes
  *   php tools/platform.php vigilar [--sense-web]      mira que totes responguin i avisa dels canvis
  *   php tools/platform.php copies                     fa la còpia de seguretat de totes
+ *   php tools/platform.php paquet <fitxer.zip>        diu què porta un paquet de migració
  *   php tools/platform.php purgar [--de-veritat]      esborra les baixes que ja han passat els 90 dies
  */
 declare(strict_types=1);
@@ -24,6 +25,7 @@ require $root . '/app/bootstrap.php';
 use Cros\Core\Db;
 use Cros\Platform\Backup;
 use Cros\Platform\Console;
+use Cros\Platform\Importer;
 use Cros\Platform\Health;
 use Cros\Platform\Instance;
 use Cros\Platform\Platform;
@@ -146,6 +148,27 @@ switch ($command) {
         echo 'Es guarden les ' . Backup::keep($root) . " últimes de cada instància.\n";
         break;
 
+    case 'paquet':
+        $file = $argv[2] ?? '';
+        if ($file === '') {
+            exit("Ús: php tools/platform.php paquet <fitxer.zip>\n");
+        }
+        try {
+            $manifest = Importer::inspect($file);
+        } catch (Throwable $e) {
+            exit('El paquet no serveix: ' . $e->getMessage() . "\n");
+        }
+        echo "Paquet correcte.\n";
+        echo '  Cros:      ' . ($manifest['site_name'] ?? '?') . "\n";
+        echo '  Adreça:    ' . ($manifest['base_url'] ?? '?') . "\n";
+        echo '  Versió:    ' . ($manifest['app_version'] ?? '?') . "\n";
+        echo '  Exportat:  ' . ($manifest['exported_at'] ?? '?') . "\n";
+        echo '  Taules:    ' . count((array) ($manifest['tables'] ?? [])) . "\n";
+        echo '  Registres: ' . number_format(array_sum((array) ($manifest['rows'] ?? [])), 0, ',', '.') . "\n";
+        echo '  Fitxers:   ' . (int) ($manifest['uploads']['files'] ?? 0)
+            . ' (' . round(((int) ($manifest['uploads']['bytes'] ?? 0)) / 1048576, 1) . " MB)\n";
+        break;
+
     case 'purgar':
         $real = in_array('--de-veritat', $argv, true);
         $rows = Db::all(
@@ -168,5 +191,5 @@ switch ($command) {
         break;
 
     default:
-        echo "Ordres: migrar · usuari · instancies · repassar · actualitzar · vigilar · copies · purgar\n";
+        echo "Ordres: migrar · usuari · instancies · repassar · actualitzar · vigilar · copies · paquet · purgar\n";
 }

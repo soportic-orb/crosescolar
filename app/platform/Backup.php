@@ -68,6 +68,7 @@ class Backup
                 'dir' => self::dir($root, (string) $instance['slug']),
                 'uploads' => $dir . '/uploads',
                 'site_name' => (string) $instance['site_name'],
+                'base_url' => (string) ($config['base_url'] ?? Instance::url($instance, $root)),
             ]);
         } catch (\Throwable $e) {
             $error = $e->getMessage();
@@ -83,7 +84,7 @@ class Backup
 
         $size = (int) @filesize($file);
         Instance::update($id, ['backup_at' => date('Y-m-d H:i:s'), 'backup_size' => $size]);
-        self::rotate((string) $instance['slug'], self::keep($root), $root);
+        self::rotate((string) $instance['slug'], self::keep($root), $root, $file);
 
         return ['ok' => true, 'file' => $file, 'size' => $size, 'error' => ''];
     }
@@ -123,7 +124,10 @@ class Backup
     public static function all(string $slug, ?string $root = null): array
     {
         $files = glob(self::dir($root, $slug) . '/*.zip') ?: [];
-        usort($files, static fn (string $a, string $b): int => filemtime($b) <=> filemtime($a));
+        // Si dues còpies són del mateix segon, mana el nom: així la més nova
+        // queda sempre la primera i mai no s'esborra per error.
+        usort($files, static fn (string $a, string $b): int
+            => [filemtime($b), basename($b)] <=> [filemtime($a), basename($a)]);
 
         return array_map(static fn (string $file): array => [
             'name' => basename($file),
@@ -132,12 +136,30 @@ class Backup
         ], $files);
     }
 
-    /** Esborra les que sobren i deixa les $keep més noves. */
-    public static function rotate(string $slug, int $keep, ?string $root = null): int
+    /**
+     * Esborra les que sobren i deixa les $keep més noves.
+     *
+     * La que s'acaba de fer no s'esborra mai, encara que el rellotge del disc
+     * digui que és del mateix segon que les altres: és l'única de la qual
+     * sabem del cert quan s'ha fet.
+     */
+    public static function rotate(string $slug, int $keep, ?string $root = null, string $fresh = ''): int
     {
+        $keep = max(1, $keep);
+        $dir = self::dir($root, $slug);
+        $fresh = $fresh !== '' ? basename($fresh) : '';
+        $files = self::all($slug, $root);
+        if ($fresh !== '') {
+            $files = array_values(array_filter(
+                $files,
+                static fn (array $file): bool => $file['name'] !== $fresh
+            ));
+            $keep--;
+        }
+
         $removed = 0;
-        foreach (array_slice(self::all($slug, $root), max(1, $keep)) as $old) {
-            if (@unlink(self::dir($root, $slug) . '/' . $old['name'])) {
+        foreach (array_slice($files, max(0, $keep)) as $old) {
+            if (@unlink($dir . '/' . $old['name'])) {
                 $removed++;
             }
         }

@@ -43,6 +43,7 @@ use Cros\Core\Db;
 use Cros\Platform\Backup;
 use Cros\Platform\Console;
 use Cros\Platform\Health;
+use Cros\Platform\Importer;
 use Cros\Platform\Instance;
 use Cros\Platform\Platform;
 use Cros\Platform\Provisioner;
@@ -134,7 +135,11 @@ $web = static function (string $method, string $path, array $fields = [], string
         CURLOPT_TIMEOUT => 60,
     ]);
     if ($method === 'POST') {
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($fields));
+        $hasFile = false;
+        foreach ($fields as $value) {
+            $hasFile = $hasFile || $value instanceof CURLFile;
+        }
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $hasFile ? $fields : http_build_query($fields));
     }
     $response = (string) curl_exec($ch);
     $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -454,6 +459,111 @@ try {
     check('Un nom inventat no dona res',
         $web('GET', '/instancies/' . $instanceId . '/copia?fitxer=' . rawurlencode('../../platform.php'))['status'] === 404);
 
+    echo "\n== Portar un cros que ja existia ==\n";
+    // El cros «antic» és el que ja tenim: se li posen textos amb l'adreça de
+    // sempre i un fitxer pujat, i se'n fa el paquet com ho faria el seu panell.
+    $tenant = require $configFile;
+    $tenantPdo = Db::connect((array) $tenant['db'] + ['charset' => 'utf8mb4']);
+    $tricky = "Primera línia;\nsegona línia\n\n-- això no és un comentari\nI unes 'cometes'.";
+    $tenantPdo->prepare("INSERT INTO settings (k, v) VALUES ('home_intro', ?)
+        ON DUPLICATE KEY UPDATE v = VALUES(v)")->execute([
+        '<p>Mireu la <a href="http://santjordi.crosescolar.test/categories-i-premis">llista</a> '
+        . 'i la <img src="http://santjordi.crosescolar.test/uploads/fotos/cartell.jpg"></p>',
+    ]);
+    $tenantPdo->prepare("INSERT INTO settings (k, v) VALUES ('rules_text', ?)
+        ON DUPLICATE KEY UPDATE v = VALUES(v)")->execute([$tricky]);
+    $tenantPdo = null;
+    @mkdir($site . '/tenants/santjordi/uploads/fotos', 0775, true);
+    file_put_contents($site . '/tenants/santjordi/uploads/fotos/cartell.jpg', 'una foto de mentida');
+
+    $package = Backup::create($instanceId, $site);
+    check('El cros antic en fa el paquet', $package['ok'], $package['error']);
+    $manifest = Importer::inspect($package['file']);
+    check('Que es reconeix com un cros escolar', ($manifest['format'] ?? '') === 'cros-escolar-export');
+    check('Amb l\'adreça d\'on ve', ($manifest['base_url'] ?? '') === 'http://santjordi.crosescolar.test');
+    check('I amb el fitxer pujat a dins', (int) ($manifest['uploads']['files'] ?? 0) >= 1);
+
+    // Un paquet que no ho és no s'accepta.
+    $fake = sys_get_temp_dir() . '/cros-fals-' . bin2hex(random_bytes(3)) . '.zip';
+    $fakeZip = new ZipArchive();
+    $fakeZip->open($fake, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+    $fakeZip->addFromString('qualsevol.txt', 'res de res');
+    $fakeZip->close();
+    $rejected = '';
+    try {
+        Importer::inspect($fake);
+    } catch (Throwable $e) {
+        $rejected = $e->getMessage();
+    }
+    check('Un ZIP qualsevol es rebutja', str_contains($rejected, 'migracio.json'));
+
+    // I ara el porten al sistema nou, pujant-lo des del panell.
+    $form = $web('GET', '/instancies/nova');
+    check('El formulari deixa pujar el paquet', str_contains($form['body'], 'name="migration"'));
+    $imported = $web('POST', '/instancies/nova', [
+        '_token' => $token($form['body']),
+        'slug' => 'lagranada', 'site_name' => 'Nom que no es farà servir', 'town' => 'La Granada',
+        'admin_name' => 'Marta Puig', 'admin_email' => 'marta@example.cat', 'listed' => '1',
+        'migration' => new CURLFile($package['file'], 'application/zip', basename($package['file'])),
+    ]);
+    $granada = Db::one("SELECT * FROM instances WHERE slug = 'lagranada'");
+    $why = '';
+    if ($granada === null) {
+        // Si no ha anat bé, val més ensenyar què deia el panell que no pas «no».
+        preg_match('/alert--error">([^<]*)/', $web('GET', '/instancies/nova')['body'], $m);
+        $why = html_entity_decode(trim((string) ($m[1] ?? '')), ENT_QUOTES);
+    }
+    check('La instància es crea amb el cros importat',
+        $imported['status'] === 302 && $granada !== null, $why !== '' ? $why : 'estat ' . $imported['status']);
+    if ($granada === null) {
+        throw new RuntimeException('Sense instància importada no es pot continuar: ' . $why);
+    }
+
+    $new = require $site . '/tenants/lagranada/config.php';
+    $newPdo = Db::connect((array) $new['db'] + ['charset' => 'utf8mb4']);
+    $value = static fn (string $key): string => (string) $newPdo->query(
+        "SELECT v FROM settings WHERE k = " . $newPdo->quote($key)
+    )->fetchColumn();
+
+    check('Hi arriba la configuració del cros antic', $value('site_name') === 'Cros Escola Sant Jordi');
+    check('I les seves inscripcions',
+        (int) $newPdo->query('SELECT COUNT(*) FROM registrations')->fetchColumn()
+        === (int) ($manifest['rows']['registrations'] ?? -1));
+    check('Els textos amb punt i coma i guions arriben igual', $value('rules_text') === $tricky);
+    check('Els enllaços apunten a la casa nova',
+        str_contains($value('home_intro'), '://lagranada.crosescolar.test/categories-i-premis')
+        && str_contains($value('home_intro'), '://lagranada.crosescolar.test/uploads/fotos/cartell.jpg')
+        && !str_contains($value('home_intro'), 'santjordi.crosescolar.test'),
+        $value('home_intro'));
+    check('Els fitxers pujats també hi són',
+        is_file($site . '/tenants/lagranada/uploads/fotos/cartell.jpg'));
+    check('Amb el seu contingut',
+        (string) @file_get_contents($site . '/tenants/lagranada/uploads/fotos/cartell.jpg') === 'una foto de mentida');
+    check('La plataforma n\'agafa el nom de debò', (string) $granada['site_name'] === 'Cros Escola Sant Jordi');
+    $newPdo = null;
+
+    // El web nou funciona i qui hi entrava, hi continua entrant.
+    file_put_contents($site . '/tenants/lagranada/config.php', str_replace(
+        "'base_url' => 'https://lagranada.crosescolar.test'",
+        "'base_url' => 'http://lagranada.crosescolar.test'",
+        (string) file_get_contents($site . '/tenants/lagranada/config.php')
+    ));
+    $moved = $web('GET', '/', [], 'lagranada.crosescolar.test');
+    check('El web importat es serveix', $moved['status'] === 200, 'estat ' . $moved['status']);
+    $web('GET', '/admin/sortir', [], 'lagranada.crosescolar.test');
+    $login = $web('GET', '/admin/acces', [], 'lagranada.crosescolar.test');
+    $entered = $web('POST', '/admin/acces', [
+        '_token' => $token($login['body']), 'email' => 'laia@example.cat', 'password' => 'unaAltraClauLlarga1',
+    ], 'lagranada.crosescolar.test');
+    check('I qui gestionava el cros antic hi entra amb la mateixa contrasenya',
+        $entered['status'] === 302 && !str_contains($entered['headers'], '/admin/acces'));
+
+    check('El cros antic no s\'ha tocat',
+        is_file($site . '/tenants/santjordi/config.php')
+        && is_file($site . '/tenants/santjordi/uploads/fotos/cartell.jpg'));
+
+    @unlink($fake);
+
     echo "\n== D'una sol·licitud a una instància ==\n";
     $home = $web('GET', '/', [], 'crosescolar.test');
     $web('POST', '/sollicitud', [
@@ -587,7 +697,7 @@ try {
             $db['admin_pass'],
             [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
         );
-        foreach (['santjordi', 'elbosc'] as $slug) {
+        foreach (['santjordi', 'elbosc', 'lagranada'] as $slug) {
             $admin->exec('DROP DATABASE IF EXISTS `' . $prefix . $slug . '`');
             $drop = $admin->prepare('DROP USER IF EXISTS ?@?');
             $drop->execute([$prefix . $slug, $db['grant_host']]);

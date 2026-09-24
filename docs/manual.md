@@ -494,3 +494,6 @@ queden antics.
   voleu muntar el web en un altre servidor, i les imatges i documents que heu pujat.
   Ho podeu fer tantes vegades com vulgueu i no cal demanar-ho a ningú. Compte on el
   deseu: hi ha dades personals de les famílies inscrites.
+- Aquest mateix fitxer serveix per **traslladar el cros a un altre servidor**: qui
+  el rebi només l'ha de pujar en crear la instal·lació nova i hi arriba tot, també
+  els comptes del panell amb les seves contrasenyes. El web d'origen no es toca.

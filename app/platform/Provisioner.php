@@ -33,7 +33,8 @@ class Provisioner
      * Crea la instància sencera.
      *
      * @param array{slug:string,site_name:string,town?:string,language?:string,client_id?:int,
-     *              admin_name:string,admin_email:string,event_date?:string,demo?:bool,listed?:bool} $data
+     *              admin_name:string,admin_email:string,event_date?:string,demo?:bool,listed?:bool,
+     *              domain?:string,migration?:string} $data
      * @return array{instance_id:int,link:string,steps:array<string,string>}
      */
     public static function create(array $data, ?string $root = null): array
@@ -68,14 +69,23 @@ class Provisioner
             $created['folders'] = true;
             $steps['folders'] = 'Carpetes preparades a tenants/' . $slug . '/.';
 
+            $dbConfig = [
+                'host' => (string) ($provision['tenant_host'] ?? $provision['db_host'] ?? 'localhost'),
+                'port' => (int) ($provision['db_port'] ?? 3306),
+                'name' => $names['db'],
+                'user' => $names['user'],
+                'pass' => $dbPassword,
+                'socket' => (string) ($provision['db_socket'] ?? ''),
+            ];
+            $url = Platform::url($slug, $root, $domain);
             $installer = new Installer([
-                'db_host' => (string) ($provision['tenant_host'] ?? $provision['db_host'] ?? 'localhost'),
-                'db_port' => (int) ($provision['db_port'] ?? 3306),
+                'db_host' => $dbConfig['host'],
+                'db_port' => $dbConfig['port'],
                 'db_name' => $names['db'],
                 'db_user' => $names['user'],
                 'db_pass' => $dbPassword,
-                'db_socket' => (string) ($provision['db_socket'] ?? ''),
-                'base_url' => Platform::url($slug, $root, $domain),
+                'db_socket' => $dbConfig['socket'],
+                'base_url' => $url,
                 'site_name' => (string) $data['site_name'],
                 'event_date' => (string) ($data['event_date'] ?? ''),
                 'admin_name' => (string) $data['admin_name'],
@@ -86,11 +96,15 @@ class Provisioner
                 'config_file' => $dir . '/config.php',
                 'storage_dir' => $dir . '/storage',
             ]);
-            $installer->run();
-            $steps['install'] = 'Cros instal·lat i llest.';
-
-            // El web neix amagat: el publica el client quan ho tingui a punt.
-            self::hide($dir, (string) ($data['language'] ?? 'ca'));
+            $migration = trim((string) ($data['migration'] ?? ''));
+            if ($migration !== '') {
+                $steps['install'] = self::import($installer, $migration, $dbConfig, $dir, $url);
+            } else {
+                $installer->run();
+                $steps['install'] = 'Cros instal·lat i llest.';
+                // El web neix amagat: el publica el client quan ho tingui a punt.
+                self::hide($dir, (string) ($data['language'] ?? 'ca'));
+            }
             // Treballar amb la base de dades del client ha buidat la configuració
             // que hi havia a memòria: es torna a posar la de la plataforma.
             Platform::prime($root);
@@ -109,6 +123,12 @@ class Provisioner
                 'listed' => $data['listed'] ?? true,
             ]);
             $steps['record'] = 'Instància apuntada a la plataforma.';
+
+            // D'un cros importat, les dades bones són les seves: nom, data i
+            // inscrits surten de la seva base de dades, no del formulari.
+            if ($migration !== '') {
+                Instance::sync($created['instance'], $root);
+            }
 
             // Ningú no ha de saber la contrasenya que s'ha posat aquí: qui
             // gestionarà el cros entra amb un enllaç i se'n posa una de seva.
@@ -164,6 +184,50 @@ class Provisioner
         Platform::log('instance_purge', 'instance', $id, ['slug' => $instance['slug']]);
 
         return true;
+    }
+
+    /**
+     * Posa en marxa la instància a partir d'un cros que ja existia.
+     *
+     * No s'instal·la res de nou: s'escriu la configuració, es buida el paquet
+     * a la base de dades, s'hi apliquen els canvis de versió que li faltin i
+     * es canvia l'adreça antiga per la nova dins dels textos. Els usuaris i la
+     * configuració del cros vell arriben tal qual: qui hi entrava, hi continua
+     * entrant amb la mateixa contrasenya.
+     */
+    private static function import(
+        Installer $installer,
+        string $file,
+        array $dbConfig,
+        string $dir,
+        string $url
+    ): string {
+        $manifest = Importer::inspect($file);
+        $platform = Db::connection();
+        try {
+            $installer->phase('config');
+            $report = Importer::into($file, $dbConfig, $dir . '/uploads');
+
+            // L'adreça de sempre, canviada per la nova dins dels textos.
+            Db::setConnection(Db::connect($dbConfig + ['charset' => 'utf8mb4', 'timeout' => 30]));
+            $links = Importer::rewriteUrls((string) ($manifest['base_url'] ?? ''), $url);
+
+            // Que qui hagi de gestionar-lo hi pugui entrar, encara que al cros
+            // vell no hi constés amb aquesta adreça.
+            $installer->phase('admin');
+            $installer->phase('finish');
+        } finally {
+            Db::setConnection($platform);
+            Settings::forget();
+        }
+
+        return sprintf(
+            'Cros importat: %d taules, %s registres i %d fitxers%s.',
+            $report['tables'],
+            number_format($report['rows'], 0, ',', '.'),
+            $report['files'],
+            $links > 0 ? ', amb ' . $links . ' enllaços actualitzats' : ''
+        );
     }
 
     /** Noms de la base de dades i de l'usuari d'una instància. */

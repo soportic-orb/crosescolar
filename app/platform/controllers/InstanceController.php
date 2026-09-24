@@ -11,6 +11,7 @@ use Cros\Core\View;
 use Cros\Platform\Backup;
 use Cros\Platform\Client;
 use Cros\Platform\Console;
+use Cros\Platform\Importer;
 use Cros\Platform\Instance;
 use Cros\Platform\Platform;
 use Cros\Platform\Provisioner;
@@ -78,6 +79,7 @@ class InstanceController extends Controller
             'listed' => !empty($_POST['listed']),
         ];
         $requestId = (int) ($_POST['request_id'] ?? 0);
+        $migration = $this->migrationFile();
         $clientId = (int) ($_POST['client_id'] ?? 0);
 
         $errors = $this->validate([
@@ -91,10 +93,12 @@ class InstanceController extends Controller
             $errors['slug'] = $problem;
         }
         if ($errors) {
+            @unlink($migration);
             set_old($_POST);
             flash('error', reset($errors));
             redirect('/instancies/nova' . ($requestId > 0 ? '?peticio=' . $requestId : ''));
         }
+        $data['migration'] = $migration;
 
         // Si ve d'una sol·licitud i no s'ha triat client, se li crea la fitxa.
         $request = $requestId > 0 ? Request::find($requestId) : null;
@@ -103,10 +107,13 @@ class InstanceController extends Controller
         }
         $data['client_id'] = $clientId > 0 ? $clientId : null;
 
+        // Importar un cros sencer pot trigar més que instal·lar-ne un de nou.
+        @set_time_limit(600);
         try {
             $result = Provisioner::create($data);
         } catch (RuntimeException $e) {
             log_line('platform', 'Alta d\'instància fallida des del panell', ['slug' => $data['slug'], 'error' => $e->getMessage()]);
+            @unlink($migration);
             set_old($_POST);
             flash('error', $e->getMessage());
             redirect('/instancies/nova' . ($requestId > 0 ? '?peticio=' . $requestId : ''));
@@ -116,6 +123,13 @@ class InstanceController extends Controller
             Request::decide($requestId, 'approved', '', $result['instance_id'], Console::id());
         }
         Console::log('instance_create', 'instance', $result['instance_id'], ['slug' => $data['slug']]);
+
+        if ($migration !== '' && str_starts_with(basename($migration), 'migracio-')) {
+            @unlink($migration);
+        }
+        if ($migration !== '') {
+            flash('success', $result['steps']['install'] ?? 'Cros importat.');
+        }
 
         // L'enllaç d'estrena només es veu un cop, just després de crear-la.
         $_SESSION['console_new_instance'] = ['id' => $result['instance_id'], 'link' => $result['link']];
@@ -164,6 +178,76 @@ class InstanceController extends Controller
         }
 
         redirect('/instancies');
+    }
+
+    /**
+     * El paquet de migració que s'hagi pujat, desat en un lloc segur.
+     * Torna '' si no n'hi ha cap; si n'hi ha un de dolent, s'atura aquí.
+     */
+    private function migrationFile(): string
+    {
+        // Un paquet gros no passa pel navegador: es deixa a storage/imports/
+        // del servidor i aquí només se'n diu el nom.
+        $name = trim((string) ($_POST['migration_file'] ?? ''));
+        if ($name !== '') {
+            $path = storage_path('imports') . '/' . basename($name);
+            if (!is_file($path)) {
+                set_old($_POST);
+                flash('error', 'No hi ha cap fitxer «' . basename($name) . '» a storage/imports/ del servidor.');
+                redirect('/instancies/nova');
+            }
+
+            return $this->checked($path, false);
+        }
+
+        $file = $_FILES['migration'] ?? null;
+        if (!is_array($file) || (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+            return '';
+        }
+        $error = (int) $file['error'];
+        if ($error === UPLOAD_ERR_INI_SIZE || $error === UPLOAD_ERR_FORM_SIZE) {
+            set_old($_POST);
+            flash('error', 'El fitxer és massa gran per a aquest servidor. Pugeu «upload_max_filesize» '
+                . 'i «post_max_size» del PHP, o deixeu el paquet al servidor i importeu-lo per consola.');
+            redirect('/instancies/nova');
+        }
+        if ($error !== UPLOAD_ERR_OK || !is_uploaded_file((string) $file['tmp_name'])) {
+            set_old($_POST);
+            flash('error', 'La pujada del fitxer ha fallat. Torneu-ho a provar.');
+            redirect('/instancies/nova');
+        }
+        $target = storage_path('imports');
+        if (!is_dir($target) && !@mkdir($target, 0775, true) && !is_dir($target)) {
+            flash('error', 'No s\'ha pogut desar el fitxer al servidor.');
+            redirect('/instancies/nova');
+        }
+        $path = $target . '/migracio-' . bin2hex(random_bytes(6)) . '.zip';
+        if (!@move_uploaded_file((string) $file['tmp_name'], $path)) {
+            flash('error', 'No s\'ha pogut desar el fitxer al servidor.');
+            redirect('/instancies/nova');
+        }
+
+        return $this->checked($path, true);
+    }
+
+    /**
+     * Comprova que el paquet sigui bo abans de tocar res.
+     * @param bool $own si el fitxer l'hem desat nosaltres (i per tant el podem esborrar)
+     */
+    private function checked(string $path, bool $own): string
+    {
+        try {
+            Importer::inspect($path);
+        } catch (RuntimeException $e) {
+            if ($own) {
+                @unlink($path);
+            }
+            set_old($_POST);
+            flash('error', $e->getMessage());
+            redirect('/instancies/nova');
+        }
+
+        return $path;
     }
 
     /** Es descarrega una còpia de seguretat. */

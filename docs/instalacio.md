@@ -196,6 +196,7 @@ Altres ordres de la mateixa eina:
 | `php tools/platform.php actualitzar` | aplica els canvis pendents de la versió nova a totes |
 | `php tools/platform.php vigilar` | mira que totes responguin i avisa dels canvis |
 | `php tools/platform.php copies` | fa la còpia de seguretat de totes |
+| `php tools/platform.php paquet <fitxer>` | diu què porta un paquet de migració |
 | `php tools/platform.php purgar` | diu quines baixes ja han passat els 90 dies |
 | `php tools/platform.php purgar --de-veritat` | les esborra de debò (base de dades i carpeta) |
 
@@ -229,6 +230,37 @@ la contrasenya. Des de la fitxa de la instància es pot:
 
 Tots els enllaços serveixen una sola vegada i al seu web només se'n desa l'empremta:
 qui miri la base de dades no en treu cap enllaç que funcioni.
+
+### Portar un cros que ja existia
+
+Un cros que ja funciona pel seu compte —una instal·lació de tota la vida— es pot
+passar a la plataforma sense perdre res i sense aturar-lo:
+
+1. **Al web antic**, actualitzeu-lo a la versió 1.25 o posterior (Sistema →
+   Actualitzacions) i aneu a **Sistema → Les meves dades**. Descarregueu el ZIP:
+   aquest mateix fitxer és el paquet de migració.
+2. **Al panell de la plataforma**, obriu **Instàncies → Nova instància**, poseu-hi
+   el subdomini i el domini que tindrà, i pugeu el fitxer al camp **«Fitxer de
+   migració»**. Si el paquet és massa gros per al navegador, deixeu-lo a
+   `storage/imports/` del servidor i escriviu-ne només el nom al camp del costat.
+3. Ja està. La instància no es crea buida: hi arriben les inscripcions, els
+   resultats, els textos, la configuració i els fitxers pujats, i **qui entrava al
+   panell hi continua entrant amb la mateixa contrasenya**. Els enllaços i les
+   imatges que apuntaven a l'adreça antiga es canvien per la nova.
+
+El web antic **no es toca**: continua funcionant mentre no el tanqueu, de manera
+que es pot comprovar que tot ha arribat bé abans de moure el DNS. Si el paquet fa
+mala cara, `php tools/platform.php paquet <fitxer.zip>` diu què porta a dins
+(cros, adreça, versió, taules, registres i fitxers) sense tocar res.
+
+Dues coses a tenir en compte:
+
+- El paquet porta la taula de control de versions, de manera que el cros importat
+  conserva per quina versió anava i, en entrar, se li apliquen només els canvis que
+  li faltin. Un cros d'una versió antiga es posa al dia sol.
+- Si el paquet supera el que admet el PHP del servidor, o bé es puja
+  `upload_max_filesize` i `post_max_size` (i `client_max_body_size` a l'nginx), o
+  bé es fa servir la via de `storage/imports/`, que no té cap límit.
 
 ### Còpies de seguretat
 

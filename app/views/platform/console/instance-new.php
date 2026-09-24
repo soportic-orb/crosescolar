@@ -18,7 +18,7 @@ $slug = $prefill('slug', (string) ($request['slug'] ?? ''));
   </div>
 <?php endif; ?>
 
-<form method="post" action="<?= e(url('/instancies/nova')) ?>">
+<form method="post" action="<?= e(url('/instancies/nova')) ?>" enctype="multipart/form-data">
   <?= csrf_field() ?>
   <?php if ($request): ?><input type="hidden" name="request_id" value="<?= (int) $request['id'] ?>"><?php endif; ?>
 
@@ -63,7 +63,34 @@ $slug = $prefill('slug', (string) ($request['slug'] ?? ''));
           <span class="label">Opcions</span>
           <label class="switch"><input type="checkbox" name="listed" value="1" checked> Surt al llistat de crosescolar.com</label>
           <label class="switch"><input type="checkbox" name="demo" value="1"> Omplir-lo amb dades d'exemple</label>
+          <p class="hint">Les dades d'exemple no es posen si s'importa un cros.</p>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel mt-2">
+    <div class="panel__head"><h2>Ve d'un cros que ja existeix?</h2></div>
+    <div class="panel__body">
+      <div class="field">
+        <label for="migration">Fitxer de migració (opcional)</label>
+        <input type="file" id="migration" name="migration" accept=".zip">
+        <p class="hint">
+          El ZIP que dona «Les meves dades» del panell del cros antic. Si n'hi poseu un,
+          la instància no es crea buida: s'hi porten les inscripcions, els resultats, els
+          textos, la configuració i els fitxers pujats, i qui hi entrava hi continua
+          entrant amb la mateixa contrasenya. Els enllaços que apuntaven a l'adreça antiga
+          es canvien per la nova. El web vell no es toca.
+        </p>
+      </div>
+      <div class="field">
+        <label for="migration_file">…o el nom d'un fitxer que ja sigui al servidor</label>
+        <input type="text" id="migration_file" name="migration_file" value="<?= e(old('migration_file')) ?>"
+               placeholder="cros-escolar-la-granada-2026-09-24.zip" autocomplete="off">
+        <p class="hint">
+          Per als paquets grossos, que no passen pel navegador: deixeu el ZIP a
+          <code>storage/imports/</code> del servidor i escriviu-ne aquí el nom.
+        </p>
       </div>
     </div>
   </div>
