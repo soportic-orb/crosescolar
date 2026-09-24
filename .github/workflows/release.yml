@@ -100,9 +100,19 @@ jobs:
           CROS_DB_PASS: cros
           CROS_DB_TENANT: cros_instancia
         run: |
-          # Segona base de dades per provar l'alta d'una instància des del codi.
-          mysql -h127.0.0.1 -uroot -proot -e "CREATE DATABASE IF NOT EXISTS cros_instancia CHARACTER SET utf8mb4; GRANT ALL ON cros_instancia.* TO 'cros'@'%';"
+          # Bases de dades de les proves que necessiten MySQL de debò.
+          mysql -h127.0.0.1 -uroot -proot -e "CREATE DATABASE IF NOT EXISTS cros_instancia CHARACTER SET utf8mb4; CREATE DATABASE IF NOT EXISTS cros_plataforma CHARACTER SET utf8mb4; GRANT ALL ON cros_instancia.* TO 'cros'@'%'; GRANT ALL ON cros_plataforma.* TO 'cros'@'%';"
           php tests/installer.php
+
+      - name: Proves de la plataforma (MySQL real)
+        env:
+          CROS_DB_HOST: 127.0.0.1
+          CROS_DB_PORT: '3306'
+          CROS_DB_USER: cros
+          CROS_DB_PASS: cros
+          CROS_DB_PLATFORM: cros_plataforma
+          CROS_DB_TENANT: cros_instancia
+        run: php tests/platform.php
 
       - name: Generar el paquet
         env:

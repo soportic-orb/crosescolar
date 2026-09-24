@@ -21,6 +21,17 @@ i el versionatge semàntic.
   i els fitxers pujats de cada instància.
 - Sense el fitxer `tenants/platform.php`, res d'això s'engega: una instal·lació de
   sempre continua funcionant exactament igual.
+- **La plataforma té la seva pròpia base de dades**, a part de les dels clients, amb
+  els clients, les seves instàncies, les sol·licituds, els comptes de
+  superadministració i el registre d'activitat. Les dades de cada cros no hi són:
+  la plataforma només sap quins webs existeixen i de qui són.
+- Una instància es pot **aturar, tornar a engegar i donar de baixa** des del codi, i
+  quan es dona de baixa es guarda la data en què s'esborraran les dades (90 dies).
+- La plataforma es pot **posar al dia llegint cada instància**: com es diu el web,
+  quan és la cursa, quanta gent hi ha inscrita i si ja l'han publicat. Mentre ho fa
+  no perd la seva pròpia connexió.
+- **El llistat públic de cros** surt d'aquí: només els que ja han publicat el web i
+  volen sortir-hi, amb les curses que vénen primer i les passades al final.
 - **L'instal·lador es pot cridar des del codi**: tota la feina de posar en marxa un
   web (escriure la configuració, crear les taules, el compte d'administració, la
   configuració inicial i els continguts d'exemple) passa a la classe
