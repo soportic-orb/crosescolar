@@ -172,6 +172,7 @@ Altres ordres de la mateixa eina:
 | `php tools/platform.php instancies` | llista les instàncies i el seu estat |
 | `php tools/platform.php repassar` | actualitza inscrits, data i estat de publicació de totes |
 | `php tools/platform.php actualitzar` | aplica els canvis pendents de la versió nova a totes |
+| `php tools/platform.php vigilar` | mira que totes responguin i avisa dels canvis |
 | `php tools/platform.php purgar` | diu quines baixes ja han passat els 90 dies |
 | `php tools/platform.php purgar --de-veritat` | les esborra de debò (base de dades i carpeta) |
 
@@ -179,9 +180,31 @@ Va bé posar `repassar` al cron un cop al dia, i `purgar --de-veritat` un cop a 
 setmana:
 
 ```
-30 4 * * *  cd /var/www/crosescolar && php tools/platform.php repassar
-15 5 * * 1  cd /var/www/crosescolar && php tools/platform.php purgar --de-veritat
+*/15 * * * * cd /var/www/crosescolar && php tools/platform.php vigilar
+30 4 * * *   cd /var/www/crosescolar && php tools/platform.php repassar
+15 5 * * 1   cd /var/www/crosescolar && php tools/platform.php purgar --de-veritat
 ```
+
+La vigilància mira, de cada cros en marxa, que la seva base de dades respongui i
+que la pàgina s'obri. Quan un cau —o quan torna— surt un correu a l'adreça
+d'avisos, **una sola vegada**: ni silenci, ni el mateix correu cada quart. Al
+panell surt a dalt de tot amb el motiu i des de quina hora. Amb
+`--sense-web` només es mira la base de dades (útil si el servidor no es pot
+consultar a si mateix per fora).
+
+### Entrar al panell d'un client
+
+La plataforma no desa cap contrasenya de ningú. Quan s'estrena un cros, a qui el
+gestionarà li arriba un **enllaç d'un sol ús** (val set dies) per entrar i triar-se
+la contrasenya. Des de la fitxa de la instància es pot:
+
+- **Enviar-los un enllaç per entrar**, si l'han perdut (val dues hores).
+- **Entrar-hi per donar suport**, que obre el seu panell amb un enllaç que val vint
+  minuts. Queda apuntat al registre del seu web, de manera que el client sempre pot
+  veure que algú de la plataforma hi ha entrat i quan.
+
+Tots els enllaços serveixen una sola vegada i al seu web només se'n desa l'empremta:
+qui miri la base de dades no en treu cap enllaç que funcioni.
 
 ### Actualitzar totes les instàncies
 

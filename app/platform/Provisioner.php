@@ -34,7 +34,7 @@ class Provisioner
      *
      * @param array{slug:string,site_name:string,town?:string,language?:string,client_id?:int,
      *              admin_name:string,admin_email:string,event_date?:string,demo?:bool,listed?:bool} $data
-     * @return array{instance_id:int,password:string,steps:array<string,string>}
+     * @return array{instance_id:int,link:string,steps:array<string,string>}
      */
     public static function create(array $data, ?string $root = null): array
     {
@@ -49,9 +49,12 @@ class Provisioner
         $provision = (array) ($settings['provision'] ?? []);
         $names = self::names($slug, $provision);
         $dir = Tenancy::dir($root, $slug);
-        $password = self::password(14);
+        // Cal posar-li una contrasenya a l'administrador, però no la sabrà
+        // ningú: s'entra amb l'enllaç d'un sol ús i se'n tria una de pròpia.
+        $password = self::password(24);
         $dbPassword = self::password(24);
         $steps = [];
+        $link = '';
         $created = ['database' => false, 'folders' => false, 'instance' => 0];
 
         try {
@@ -105,8 +108,14 @@ class Provisioner
             ]);
             $steps['record'] = 'Instància apuntada a la plataforma.';
 
-            self::welcome($data, $slug, $password, $root);
-            $steps['welcome'] = 'Claus enviades a ' . $data['admin_email'] . '.';
+            // Ningú no ha de saber la contrasenya que s'ha posat aquí: qui
+            // gestionarà el cros entra amb un enllaç i se'n posa una de seva.
+            $access = Instance::accessLink($created['instance'], 'welcome', $root, 'Alta de la instància');
+            $link = $access['ok'] ? $access['url'] : '';
+            self::welcome($data, $slug, $link, $root);
+            $steps['welcome'] = $link !== ''
+                ? 'Enllaç d\'accés enviat a ' . $data['admin_email'] . '.'
+                : 'No s\'ha pogut crear l\'enllaç d\'accés: ' . $access['error'];
 
             Platform::log('instance_create', 'instance', $created['instance'], ['slug' => $slug]);
         } catch (\Throwable $e) {
@@ -116,7 +125,7 @@ class Provisioner
             throw new RuntimeException('No s\'ha pogut crear la instància: ' . $e->getMessage(), 0, $e);
         }
 
-        return ['instance_id' => $created['instance'], 'password' => $password, 'steps' => $steps];
+        return ['instance_id' => $created['instance'], 'link' => $link, 'steps' => $steps];
     }
 
     /**
@@ -232,8 +241,8 @@ class Provisioner
         }
     }
 
-    /** Avisa qui gestionarà el cros, amb l'adreça i les claus. */
-    private static function welcome(array $data, string $slug, string $password, string $root): void
+    /** Avisa qui gestionarà el cros, amb l'adreça i l'enllaç per entrar-hi. */
+    private static function welcome(array $data, string $slug, string $link, string $root): void
     {
         $email = (string) $data['admin_email'];
         if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -244,7 +253,7 @@ class Provisioner
             'site_name' => (string) $data['site_name'],
             'url' => Platform::url($slug, $root),
             'email' => $email,
-            'password' => $password,
+            'link' => $link,
         ]);
     }
 

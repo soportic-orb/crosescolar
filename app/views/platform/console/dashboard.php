@@ -26,6 +26,23 @@ use Cros\Platform\Instance;
   </div>
 </div>
 
+<?php if ($failing): ?>
+  <div class="alert alert--error mt-2">
+    <strong><?= count($failing) === 1 ? 'Un web no respon' : count($failing) . ' webs no responen' ?>:</strong>
+    <ul style="margin:.4rem 0 0;padding-left:1.2rem">
+      <?php foreach ($failing as $row): ?>
+        <li>
+          <a href="<?= e(url('/instancies/' . (int) $row['id'])) ?>"><?= e($row['slug']) ?></a>
+          — <?= e((string) ($row['health_error'] ?? 'sense detall')) ?>
+          <?php if (!empty($row['health_since'])): ?>
+            <small class="text-soft">(des de les <?= e(substr((string) $row['health_since'], 11, 5)) ?>)</small>
+          <?php endif; ?>
+        </li>
+      <?php endforeach; ?>
+    </ul>
+  </div>
+<?php endif; ?>
+
 <?php if ((int) $stats['outdated'] > 0): ?>
   <div class="alert alert--warning mt-2 flex-between">
     <span>

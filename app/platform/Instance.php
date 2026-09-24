@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Cros\Platform;
 
 use Cros\Core\Db;
+use Cros\Core\LoginLink;
 use Cros\Core\Migrator;
 use Cros\Core\Settings;
 use Cros\Core\Tenancy;
@@ -199,6 +200,58 @@ class Instance
         ]);
 
         return true;
+    }
+
+    /**
+     * Crea un enllaç d'accés d'un sol ús al panell d'una instància.
+     *
+     * El fa a la base de dades del client, per a qui hi consta com a
+     * administrador, i en torna l'adreça. La plataforma no sap ni desa cap
+     * contrasenya de ningú: quan cal entrar-hi, es fa així i queda apuntat al
+     * registre del seu web.
+     *
+     * @return array{ok:bool,url:string,email:string,error:string}
+     */
+    public static function accessLink(int $id, string $purpose = 'reset', ?string $root = null, string $note = ''): array
+    {
+        $root = $root ?? CROS_ROOT;
+        $instance = self::find($id);
+        if (!$instance || in_array((string) $instance['status'], ['cancelled', 'purged'], true)) {
+            return ['ok' => false, 'url' => '', 'email' => '', 'error' => 'La instància no està en marxa.'];
+        }
+        $dir = Tenancy::dir($root, (string) $instance['slug']);
+        if ($dir === '' || !is_file($dir . '/config.php')) {
+            return ['ok' => false, 'url' => '', 'email' => '', 'error' => 'No hi ha la carpeta de la instància.'];
+        }
+        $config = require $dir . '/config.php';
+        $platform = Db::connection();
+        $url = '';
+        $email = '';
+        $error = '';
+        try {
+            Db::setConnection(Db::connect((array) ($config['db'] ?? []) + ['charset' => 'utf8mb4', 'timeout' => 10]));
+            $user = null;
+            if (!empty($instance['admin_email'])) {
+                $user = Db::one("SELECT * FROM users WHERE email = :email AND active = 1 AND role = 'admin'",
+                    ['email' => $instance['admin_email']]);
+            }
+            $user = $user ?: Db::one("SELECT * FROM users WHERE active = 1 AND role = 'admin' ORDER BY id LIMIT 1");
+            if (!$user) {
+                throw new \RuntimeException('Aquest web no té cap administrador actiu.');
+            }
+            $token = LoginLink::issue((int) $user['id'], $purpose, $note);
+            $email = (string) $user['email'];
+            $url = LoginLink::urlFor((string) ($config['base_url'] ?? Platform::url((string) $instance['slug'], $root)), $token);
+        } catch (\Throwable $e) {
+            $error = $e->getMessage();
+            log_line('platform', 'No s\'ha pogut crear l\'enllaç d\'accés', ['slug' => $instance['slug'], 'error' => $error]);
+        } finally {
+            Db::setConnection($platform);
+            Settings::forget();
+            Platform::prime($root);
+        }
+
+        return ['ok' => $error === '', 'url' => $url, 'email' => $email, 'error' => $error];
     }
 
     /**

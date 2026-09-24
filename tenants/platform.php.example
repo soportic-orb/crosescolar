@@ -43,6 +43,14 @@ return [
         'tenant_host' => 'localhost',
     ],
 
+    // Vigilància de les instàncies (php tools/platform.php vigilar).
+    'monitor' => [
+        // Mirar també que la pàgina de cada cros s'obri, no només la base de dades.
+        'web' => true,
+        // Intermediari de sortida, si el servidor en té cap. Normalment, res.
+        'proxy' => '',
+    ],
+
     // Correu de la plataforma (avisos de sol·licituds i claus dels clients).
     'mail' => [
         'from_name' => 'Cros Escolar',

@@ -8,10 +8,13 @@ $status = (string) $instance['status'];
 
 <?php if ($fresh): ?>
   <div class="alert alert--success">
-    <strong>Instància creada.</strong> Aquestes són les claus que s'han enviat a <?= e((string) $instance['admin_email']) ?>;
-    només es veuen ara:
-    <br>Usuari <code><?= e((string) $instance['admin_email']) ?></code>
-    · Contrasenya <code style="font-size:1rem;letter-spacing:1px"><?= e((string) $fresh['password']) ?></code>
+    <strong>Instància creada.</strong>
+    S'ha enviat a <?= e((string) $instance['admin_email']) ?> un enllaç per entrar-hi i triar
+    la contrasenya. Val set dies i serveix un sol cop.
+    <?php if (!empty($fresh['link'])): ?>
+      <br><small>Si el correu no arriba, aquest és l'enllaç (només es veu ara):
+      <code style="word-break:break-all"><?= e((string) $fresh['link']) ?></code></small>
+    <?php endif; ?>
   </div>
 <?php endif; ?>
 
@@ -41,6 +44,20 @@ $status = (string) $instance['status'];
           <?php endif; ?>
         </td></tr>
         <tr><th>Creada</th><td><?= e(ca_date(substr((string) $instance['created_at'], 0, 10), true)) ?></td></tr>
+        <tr><th>Com va</th><td>
+          <?php $health = (string) ($instance['health'] ?? ''); ?>
+          <?php if ($health === 'ok'): ?>
+            <span class="badge badge--green">Respon</span>
+          <?php elseif ($health === 'error'): ?>
+            <span class="badge badge--red">No respon</span>
+            <?= e((string) ($instance['health_error'] ?? '')) ?>
+          <?php else: ?>
+            <span class="text-soft">encara no s'ha mirat</span>
+          <?php endif; ?>
+          <?php if (!empty($instance['health_checked_at'])): ?>
+            <small class="text-soft">· mirat el <?= e(substr((string) $instance['health_checked_at'], 0, 16)) ?></small>
+          <?php endif; ?>
+        </td></tr>
         <tr><th>Últim repàs</th><td><?= $instance['synced_at'] ? e(substr((string) $instance['synced_at'], 0, 16)) : '<span class="text-soft">mai</span>' ?></td></tr>
         <?php if ($instance['cancelled_at']): ?>
           <tr><th>Baixa</th><td>
@@ -98,6 +115,22 @@ $status = (string) $instance['status'];
             <?= ($instance['version'] ?? '') === app_version() ? 'Repassar la versió' : 'Posar-la a la versió ' . e(app_version()) ?>
           </button>
         </form>
+      <?php endif; ?>
+      <?php if (!in_array($status, ['cancelled', 'purged'], true)): ?>
+        <form method="post" action="<?= e(url('/instancies/' . (int) $instance['id'] . '/accio')) ?>">
+          <?= csrf_field() ?>
+          <input type="hidden" name="action" value="link">
+          <button class="btn btn--ghost" type="submit">Enviar-los un enllaç per entrar</button>
+        </form>
+        <form method="post" action="<?= e(url('/instancies/' . (int) $instance['id'] . '/accio')) ?>" target="_blank">
+          <?= csrf_field() ?>
+          <input type="hidden" name="action" value="support">
+          <button class="btn btn--ghost" type="submit">Entrar-hi per donar suport</button>
+        </form>
+        <span class="hint" style="flex-basis:100%">
+          Entrar-hi obre el seu panell com el seu administrador i queda apuntat al registre
+          del seu web. Sortiu-ne quan acabeu.
+        </span>
       <?php endif; ?>
       <?php if ($status === 'suspended'): ?>
         <form method="post" action="<?= e(url('/instancies/' . (int) $instance['id'] . '/accio')) ?>">

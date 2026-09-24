@@ -58,6 +58,16 @@ switch ($instance['mode']) {
             ], 'layouts/minimal');
             exit;
         }
+        // El panell posa al dia la seva pròpia base de dades tot sol: qui
+        // actualitza el codi no ha de recordar cap ordre de consola. La
+        // pàgina pública no ho fa, que és la que rep visites.
+        if ($instance['mode'] === 'console') {
+            try {
+                \Cros\Platform\Platform::migrate();
+            } catch (\Throwable $e) {
+                log_line('platform', 'No s\'han pogut aplicar les migracions de la plataforma', ['error' => $e->getMessage()]);
+            }
+        }
         View::share('currentPath', Router::currentPath());
         $mode = $instance['mode'];
         /** @var Router $platformRouter */

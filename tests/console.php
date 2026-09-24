@@ -41,6 +41,7 @@ require $root . '/app/bootstrap.php';
 
 use Cros\Core\Db;
 use Cros\Platform\Console;
+use Cros\Platform\Health;
 use Cros\Platform\Instance;
 use Cros\Platform\Platform;
 use Cros\Platform\Provisioner;
@@ -70,6 +71,8 @@ file_put_contents($site . '/tenants/platform.php', "<?php return " . var_export(
     'name' => 'Cros Escolar',
     'console' => ['admin'],
     'mail' => ['from_email' => 'hola@crosescolar.test', 'notify' => 'hola@crosescolar.test', 'transport' => 'log'],
+    // A les proves no hi ha cap servidor a crosescolar.test: només es mira la base de dades.
+    'monitor' => ['web' => false],
     'db' => [
         'host' => $db['host'], 'port' => $db['port'], 'name' => $db['platform'],
         'user' => $db['user'], 'pass' => $db['pass'], 'charset' => 'utf8mb4', 'socket' => '',
@@ -267,7 +270,7 @@ try {
     check('En tornar-la a engegar, el web torna',
         $web('GET', '/', [], 'santjordi.crosescolar.test')['status'] === 200);
 
-    echo "\n== El client s'emporta les seves dades ==\n";
+    echo "\n== Enllaços d'accés d'un sol ús ==\n";
     // El web d'una instància s'adreça per https; per poder-hi entrar amb curl
     // durant la prova, se li diu que de moment parla per http.
     $configFile = $site . '/tenants/santjordi/config.php';
@@ -276,17 +279,69 @@ try {
         "'base_url' => 'http://santjordi.crosescolar.test'",
         (string) file_get_contents($configFile)
     ));
+
     $tenant = require $configFile;
     $tenantPdo = Db::connect((array) $tenant['db'] + ['charset' => 'utf8mb4']);
-    $tenantPdo->prepare('UPDATE users SET password_hash = ? WHERE email = ?')
-        ->execute([password_hash('unaAltraClauLlarga1', PASSWORD_DEFAULT), 'laia@example.cat']);
+    check('En crear la instància s\'hi ha deixat un enllaç d\'estrena',
+        (string) $tenantPdo->query("SELECT COUNT(*) FROM login_links WHERE purpose = 'welcome'")->fetchColumn() === '1');
+    check('I no s\'hi desa l\'enllaç, només la seva empremta',
+        (int) $tenantPdo->query('SELECT LENGTH(token_hash) FROM login_links LIMIT 1')->fetchColumn() === 64);
     $tenantPdo = null;
 
+    $access = Instance::accessLink($instanceId, 'welcome', $site, 'prova');
+    check('La plataforma en pot crear un de nou', $access['ok'], $access['error']);
+    check('Va a parar a qui gestiona el cros', $access['email'] === 'laia@example.cat');
+    check('I apunta al seu web', str_starts_with($access['url'], 'http://santjordi.crosescolar.test/admin/clau/'));
+
+    $path = (string) parse_url($access['url'], PHP_URL_PATH);
+    $used = $web('GET', $path, [], 'santjordi.crosescolar.test');
+    check('En prémer-lo s\'entra al panell',
+        $used['status'] === 302 && str_contains($used['headers'], '/admin/clau'));
+    $choose = $web('GET', '/admin/clau', [], 'santjordi.crosescolar.test');
+    check('I demana triar una contrasenya',
+        $choose['status'] === 200 && str_contains($choose['body'], 'Poseu-vos una contrasenya'));
+
+    $saved = $web('POST', '/admin/clau', [
+        '_token' => $token($choose['body']),
+        'password' => 'unaAltraClauLlarga1', 'password_confirm' => 'unaAltraClauLlarga1',
+    ], 'santjordi.crosescolar.test');
+    check('La contrasenya es desa', $saved['status'] === 302);
+
+    $again = $web('GET', $path, [], 'santjordi.crosescolar.test');
+    check('El mateix enllaç ja no serveix una segona vegada',
+        $again['status'] === 302 && str_contains($again['headers'], '/admin/acces'));
+    check('Un enllaç inventat tampoc',
+        $web('GET', '/admin/clau/' . str_repeat('a', 48), [], 'santjordi.crosescolar.test')['status'] === 302);
+
+    // Entrar a donar suport des del panell de la plataforma.
+    $detail = $web('GET', '/instancies/' . $instanceId);
+    $support = $web('POST', '/instancies/' . $instanceId . '/accio', [
+        '_token' => $token($detail['body']), 'action' => 'support',
+    ]);
+    preg_match('#Location: (\S+)#', $support['headers'], $m);
+    check('El panell dona un enllaç de suport',
+        $support['status'] === 302 && str_contains((string) ($m[1] ?? ''), '/admin/clau/'));
+    $supportPath = (string) parse_url(trim((string) ($m[1] ?? '')), PHP_URL_PATH);
+    $entered = $web('GET', $supportPath, [], 'santjordi.crosescolar.test');
+    check('Que deixa entrar al panell del client',
+        $entered['status'] === 302 && str_contains($entered['headers'], '/admin'));
+
+    $tenant = require $configFile;
+    $tenantPdo = Db::connect((array) $tenant['db'] + ['charset' => 'utf8mb4']);
+    $entry = $tenantPdo->query("SELECT * FROM activity_log WHERE action = 'login_link' ORDER BY id DESC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+    check('I queda apuntat al registre del seu web', $entry !== false);
+    check('Dient que ve de la plataforma',
+        str_contains((string) ($entry['details'] ?? ''), 'Suport'));
+    $tenantPdo = null;
+
+    echo "\n== El client s'emporta les seves dades ==\n";
+    // Es tanca la sessió de suport: qui entra ara és qui gestiona el cros.
+    $web('GET', '/admin/sortir', [], 'santjordi.crosescolar.test');
     $login = $web('GET', '/admin/acces', [], 'santjordi.crosescolar.test');
     $entered = $web('POST', '/admin/acces', [
         '_token' => $token($login['body']), 'email' => 'laia@example.cat', 'password' => 'unaAltraClauLlarga1',
     ], 'santjordi.crosescolar.test');
-    check('Qui gestiona el cros entra al seu panell', $entered['status'] === 302);
+    check('Qui gestiona el cros entra amb la contrasenya que s\'ha triat', $entered['status'] === 302);
 
     $page = $web('GET', '/admin/dades', [], 'santjordi.crosescolar.test');
     check('Hi té la pàgina de les seves dades',
@@ -325,6 +380,44 @@ try {
     @unlink($zipFile);
     check('El servidor no es queda el fitxer',
         (glob($site . '/tenants/santjordi/storage/exports/*.zip') ?: []) === []);
+
+    echo "\n== Vigilància ==\n";
+    $report = Health::run($site);
+    check('Es miren les instàncies en marxa', $report['checked'] >= 1);
+    check('I aquesta respon', !in_array('santjordi', $report['failing'], true));
+    $instance = Instance::find($instanceId);
+    check('Queda apuntat que va bé', (string) $instance['health'] === 'ok');
+    check('Amb l\'hora del repàs', !empty($instance['health_checked_at']));
+
+    // Es trenca la connexió de la instància a posta.
+    $configFile = $site . '/tenants/santjordi/config.php';
+    $good = (string) file_get_contents($configFile);
+    file_put_contents($configFile, str_replace("'name' => '" . $prefix . "santjordi'", "'name' => 'no_existeix_aquesta'", $good));
+
+    $report = Health::run($site);
+    $instance = Instance::find($instanceId);
+    check('Si la base de dades no hi és, es nota', (string) $instance['health'] === 'error');
+    check('I es diu què passa', str_contains((string) $instance['health_error'], 'Base de dades'));
+    check('Consta com a caiguda de nou', in_array('santjordi', $report['broke'], true));
+    $alerts = static fn (string $action): int => (int) Db::val(
+        'SELECT COUNT(*) FROM platform_activity WHERE action = :a AND subject_id = :id',
+        ['a' => $action, 'id' => $instanceId],
+        0
+    );
+    check('S\'avisa la superadministració', $alerts('health_error') === 1);
+
+    Health::run($site);
+    check('Però no s\'avisa dues vegades del mateix', $alerts('health_error') === 1);
+
+    file_put_contents($configFile, $good);
+    $report = Health::run($site);
+    $instance = Instance::find($instanceId);
+    check('Quan torna, també es nota', (string) $instance['health'] === 'ok');
+    check('I s\'avisa que ha tornat', in_array('santjordi', $report['recovered'], true));
+    check('Amb un avís, un de sol', $alerts('health_ok') === 1);
+
+    $dashboard = $web('GET', '/');
+    check('El tauler no dona l\'alarma si tot va bé', !str_contains($dashboard['body'], 'no responen'));
 
     echo "\n== D'una sol·licitud a una instància ==\n";
     $home = $web('GET', '/', [], 'crosescolar.test');

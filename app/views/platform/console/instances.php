@@ -50,7 +50,10 @@ $tabs = ['' => 'Totes'] + Instance::STATUSES;
             </td>
             <td><?= $row['event_date'] ? e(ca_date((string) $row['event_date'])) : '<span class="text-soft">—</span>' ?></td>
             <td><?= (int) $row['registrations'] ?></td>
-            <td><span class="badge badge--<?= e(Instance::tone((string) $row['status'])) ?>"><?= e(Instance::label((string) $row['status'])) ?></span></td>
+            <td>
+              <span class="badge badge--<?= e(Instance::tone((string) $row['status'])) ?>"><?= e(Instance::label((string) $row['status'])) ?></span>
+              <?php if (($row['health'] ?? '') === 'error'): ?><span class="badge badge--red">No respon</span><?php endif; ?>
+            </td>
             <td><small class="text-soft"><?= e($row['version'] ?? '—') ?></small></td>
             <td class="text-right"><a class="btn btn--ghost btn--sm" href="<?= e(url('/instancies/' . (int) $row['id'])) ?>">Fitxa</a></td>
           </tr>

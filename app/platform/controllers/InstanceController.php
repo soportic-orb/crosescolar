@@ -6,6 +6,7 @@ namespace Cros\Platform\Controllers;
 use Cros\Core\Controller;
 use Cros\Core\Db;
 use Cros\Core\HttpException;
+use Cros\Core\Mailer;
 use Cros\Core\View;
 use Cros\Platform\Client;
 use Cros\Platform\Console;
@@ -114,8 +115,8 @@ class InstanceController extends Controller
         }
         Console::log('instance_create', 'instance', $result['instance_id'], ['slug' => $data['slug']]);
 
-        // La contrasenya només es veu un cop, just després de crear-la.
-        $_SESSION['console_new_instance'] = ['id' => $result['instance_id'], 'password' => $result['password']];
+        // L'enllaç d'estrena només es veu un cop, just després de crear-la.
+        $_SESSION['console_new_instance'] = ['id' => $result['instance_id'], 'link' => $result['link']];
         flash('success', 'La instància ' . $data['slug'] . '.' . Platform::domain() . ' ja està en marxa.');
         redirect('/instancies/' . $result['instance_id']);
     }
@@ -224,6 +225,29 @@ class InstanceController extends Controller
                 flash('success', 'Instància donada de baixa. Les dades es guarden '
                     . Instance::PURGE_DAYS . ' dies abans d\'esborrar-se.');
                 break;
+            case 'link':
+                $link = Instance::accessLink($id, 'reset', null, 'Demanat des del panell de la plataforma');
+                Console::log('instance_link', 'instance', $id, ['slug' => $instance['slug'], 'ok' => $link['ok']]);
+                if (!$link['ok']) {
+                    flash('error', 'No s\'ha pogut crear l\'enllaç: ' . $link['error']);
+                    break;
+                }
+                Mailer::sendTemplate($link['email'], 'Enllaç per entrar al panell', 'access-link', [
+                    'site_name' => (string) $instance['site_name'],
+                    'link' => $link['url'],
+                ]);
+                flash('success', 'Enllaç d\'accés enviat a ' . $link['email'] . '. Val dues hores i serveix un sol cop.');
+                break;
+            case 'support':
+                $link = Instance::accessLink($id, 'support', null, 'Suport des de la plataforma');
+                Console::log('instance_support', 'instance', $id, ['slug' => $instance['slug'], 'ok' => $link['ok']]);
+                if (!$link['ok']) {
+                    flash('error', 'No s\'ha pogut entrar: ' . $link['error']);
+                    break;
+                }
+                // Qui gestiona el cros ho veurà al registre del seu web.
+                redirect($link['url']);
+                // no s'hi arriba
             case 'upgrade':
                 $result = Instance::upgrade($id);
                 Console::log('instance_upgrade', 'instance', $id, ['slug' => $instance['slug'], 'ok' => $result['ok']]);

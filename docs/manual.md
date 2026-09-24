@@ -478,6 +478,10 @@ queden antics.
 - Totes les llistes es poden **reordenar arrossegant** les files.
 - **Sistema → Registre** mostra qui ha fet cada canvi.
 - **Sistema → Correus** mostra els correus enviats i permet fer una prova d'enviament.
+- Si perdeu la contrasenya, qui manté la plataforma us pot enviar un **enllaç per
+  entrar** al correu: serveix un sol cop, caduca en un parell d'hores i en prémer-lo
+  us podreu posar una contrasenya nova. Si algun dia hi entren des de la plataforma
+  per donar-vos suport, ho veureu a **Sistema → Registre**.
 - **Sistema → Les meves dades** us descarrega **tot el que hi ha al web** en un sol
   fitxer ZIP: un full de càlcul per cada llista (inscripcions, resultats, categories,
   comandes, configuració…), una còpia completa de la base de dades per si algun dia

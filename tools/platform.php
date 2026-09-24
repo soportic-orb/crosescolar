@@ -7,6 +7,7 @@
  *   php tools/platform.php instancies                 llista les instàncies
  *   php tools/platform.php repassar                   actualitza les dades de totes
  *   php tools/platform.php actualitzar                aplica els canvis pendents a totes
+ *   php tools/platform.php vigilar [--sense-web]      mira que totes responguin i avisa dels canvis
  *   php tools/platform.php purgar [--de-veritat]      esborra les baixes que ja han passat els 90 dies
  */
 declare(strict_types=1);
@@ -21,6 +22,7 @@ require $root . '/app/bootstrap.php';
 
 use Cros\Core\Db;
 use Cros\Platform\Console;
+use Cros\Platform\Health;
 use Cros\Platform\Instance;
 use Cros\Platform\Platform;
 use Cros\Platform\Provisioner;
@@ -116,6 +118,22 @@ switch ($command) {
         echo "Fet.\n";
         break;
 
+    case 'vigilar':
+        $report = Health::run($root, in_array('--sense-web', $argv, true) ? false : null);
+        echo $report['checked'] . " instàncies mirades.\n";
+        if ($report['broke']) {
+            echo "  Han caigut: " . implode(', ', $report['broke']) . "\n";
+        }
+        if ($report['recovered']) {
+            echo "  Han tornat: " . implode(', ', $report['recovered']) . "\n";
+        }
+        if ($report['failing']) {
+            echo "  No responen: " . implode(', ', $report['failing']) . "\n";
+        } else {
+            echo "  Totes responen.\n";
+        }
+        break;
+
     case 'purgar':
         $real = in_array('--de-veritat', $argv, true);
         $rows = Db::all(
@@ -138,5 +156,5 @@ switch ($command) {
         break;
 
     default:
-        echo "Ordres: migrar · usuari · instancies · repassar · actualitzar · purgar\n";
+        echo "Ordres: migrar · usuari · instancies · repassar · actualitzar · vigilar · purgar\n";
 }

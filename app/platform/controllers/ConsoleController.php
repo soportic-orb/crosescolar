@@ -55,6 +55,9 @@ class ConsoleController extends Controller
             'pending' => Request::pending(),
             'outdated' => count(Instance::outdated()),
         ];
+        $failing = Db::all(
+            "SELECT * FROM instances WHERE health = 'error' AND status IN ('new', 'active') ORDER BY health_since"
+        );
         $upcoming = Db::all(
             'SELECT * FROM instances WHERE status = :s AND event_date >= :today ORDER BY event_date LIMIT 6',
             ['s' => 'active', 'today' => date('Y-m-d')]
@@ -66,6 +69,7 @@ class ConsoleController extends Controller
             'requests' => array_slice(Request::all('pending'), 0, 5),
             'instances' => array_slice(Instance::all(), 0, 6),
             'upcoming' => $upcoming,
+            'failing' => $failing,
             'activity' => Db::all('SELECT * FROM platform_activity ORDER BY id DESC LIMIT 8'),
         ], 'layouts/console');
     }

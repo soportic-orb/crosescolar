@@ -64,9 +64,20 @@ i el versionatge semàntic.
   que hi ha en un ZIP —un full de càlcul per cada llista, una còpia completa de la
   base de dades i els fitxers pujats—, tantes vegades com vulgui i sense demanar-ho
   a ningú. El fitxer no es queda al servidor.
+- **Enllaços d'accés d'un sol ús**: la plataforma no desa cap contrasenya de ningú.
+  Qui estrena un cros rep un enllaç (val set dies) per entrar i triar-se la seva; des
+  de la fitxa se'n pot enviar un de nou si es perd (dues hores) i qui manté la
+  plataforma pot entrar a donar suport amb un que val vint minuts. Serveixen una sola
+  vegada, caduquen i al web del client només se'n desa l'empremta.
+- Entrar a donar suport **queda apuntat al registre del web del client**: sempre pot
+  veure que algú de la plataforma hi ha entrat, quan i per què.
+- **Vigilància de les instàncies** (`php tools/platform.php vigilar`, cada quart
+  d'hora al cron): mira que la base de dades de cada cros respongui i que la pàgina
+  s'obri. Quan un cau —o quan torna— surt un correu, una sola vegada, i el panell ho
+  ensenya a dalt de tot amb el motiu i des de quina hora.
 - **Eina de consola de la plataforma** (`php tools/platform.php`): posar al dia la
   base de dades, crear superadministradors, llistar i repassar instàncies i esborrar
-  les baixes que ja han passat els 90 dies, i actualitzar-les totes.
+  les baixes que ja han passat els 90 dies, actualitzar-les totes i vigilar-les.
 - **L'instal·lador es pot cridar des del codi**: tota la feina de posar en marxa un
   web (escriure la configuració, crear les taules, el compte d'administració, la
   configuració inicial i els continguts d'exemple) passa a la classe
@@ -86,8 +97,9 @@ i el versionatge semàntic.
 - Bateria de proves nova (`tests/tenants.php`) que comprova que dues instal·lacions
   amb el mateix codi no es trepitgen els fitxers ni els registres.
 - Bateria de proves nova (`tests/console.php`) que dona d'alta instàncies de debò
-  contra un MySQL real i les serveix: accés al panell, alta, publicació, aturada,
-  baixa i esborrat definitiu.
+  contra un MySQL real i les serveix: accés al panell, alta, enllaços d'un sol ús,
+  publicació, actualització, vigilància, descàrrega de dades, aturada, baixa i
+  esborrat definitiu.
 
 ## [1.24.0] — 2026-09-23
 
