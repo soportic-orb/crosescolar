@@ -6,6 +6,15 @@ i el versionatge semàntic.
 ## [1.25.0] — 2026-09-24
 
 ### Afegit
+- **L'instal·lador es pot cridar des del codi**: tota la feina de posar en marxa un
+  web (escriure la configuració, crear les taules, el compte d'administració, la
+  configuració inicial i els continguts d'exemple) passa a la classe
+  `Cros\Core\Installer`. El formulari d'`install.php` només és una manera de
+  cridar-la; el panell de la plataforma en podrà cridar una altra per donar d'alta
+  la instància d'un client sense cap formulari pel mig.
+- Cada instal·lació pot tenir el seu fitxer de configuració i la seva carpeta de
+  treball on convingui, i qui crea una instància no perd la connexió ni la
+  configuració amb què estava treballant.
 - **Les carpetes de dades es poden posar fora del codi**: amb les variables
   d'entorn `CROS_UPLOADS` i `CROS_STORAGE` s'indica on van els fitxers pujats i el
   que el sistema escriu mentre funciona (registres, còpies i temporals). Sense

@@ -30,6 +30,16 @@ class Settings
         return self::$cache;
     }
 
+    /**
+     * Oblida el que hi ha a memòria sense llegir res.
+     * Es fa servir quan s'ha treballat amb una altra base de dades i els valors
+     * que hi ha carregats ja no són els d'aquesta instal·lació.
+     */
+    public static function forget(): void
+    {
+        self::$cache = null;
+    }
+
     public static function get(string $key, $default = null)
     {
         $all = self::load();

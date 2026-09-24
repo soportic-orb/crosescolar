@@ -164,5 +164,92 @@ try {
     @unlink($root . '/storage/installed.lock');
 }
 
+/* Alta d'una instància sense formulari ------------------------------------- */
+echo "\n== Alta d'una instància des del codi ==\n";
+
+require $root . '/app/bootstrap.php';
+
+$tenantDb = getenv('CROS_DB_TENANT') ?: 'cros_tenant';
+$tenantDir = sys_get_temp_dir() . '/cros-instancia-' . bin2hex(random_bytes(3));
+@mkdir($tenantDir . '/storage', 0775, true);
+
+$dsn = sprintf('mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4', $db['host'], (int) $db['port'], $tenantDb);
+try {
+    $tenantPdo = new PDO($dsn, $db['user'], $db['pass'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+} catch (\Throwable $e) {
+    echo "  (omesa: no hi ha la base de dades «$tenantDb» per provar-ho)\n";
+    $tenantPdo = null;
+}
+
+if ($tenantPdo) {
+    $tenantPdo->exec('SET FOREIGN_KEY_CHECKS = 0');
+    foreach ($tenantPdo->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN) as $table) {
+        $tenantPdo->exec('DROP TABLE IF EXISTS `' . $table . '`');
+    }
+    $tenantPdo->exec('SET FOREIGN_KEY_CHECKS = 1');
+
+    // Qui crea la instància ja està treballant amb una altra base de dades:
+    // en acabar, s'ha de quedar exactament on era.
+    $platform = new PDO(
+        sprintf('mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4', $db['host'], (int) $db['port'], $db['name']),
+        $db['user'],
+        $db['pass'],
+        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+    );
+    \Cros\Core\Db::setConnection($platform);
+
+    $installer = new \Cros\Core\Installer([
+        'db_host' => $db['host'], 'db_port' => $db['port'], 'db_name' => $tenantDb,
+        'db_user' => $db['user'], 'db_pass' => $db['pass'], 'db_socket' => '',
+        'base_url' => 'https://santjordi.crosescolar.com',
+        'site_name' => 'Cros Escolar Sant Jordi',
+        'event_date' => '2027-03-14',
+        'admin_name' => 'Mireia Soler',
+        'admin_email' => 'mireia@example.cat',
+        'admin_pass' => 'provaprova',
+        'demo' => '1',
+    ], [
+        'config_file' => $tenantDir . '/config.php',
+        'storage_dir' => $tenantDir . '/storage',
+    ]);
+
+    $messages = $installer->run();
+    check('Es fan les sis fases', count($messages) === 6, implode(' · ', array_keys($messages)));
+
+    check('La configuració va on se li ha dit', is_file($tenantDir . '/config.php'));
+    $config = is_file($tenantDir . '/config.php') ? require $tenantDir . '/config.php' : [];
+    check('Amb la base de dades de la instància', ($config['db']['name'] ?? '') === $tenantDb);
+    check('I amb la seva adreça', ($config['base_url'] ?? '') === 'https://santjordi.crosescolar.com');
+    check('Amb una clau d\'aplicació pròpia', strlen((string) ($config['app_key'] ?? '')) > 20);
+    check('El bloqueig es desa a la seva carpeta', is_file($tenantDir . '/storage/installed.lock'));
+    check('I no a la carpeta del codi', !is_file($root . '/storage/installed.lock'));
+
+    $tables = $tenantPdo->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN);
+    check('La instància té totes les taules', count($tables) >= 20, count($tables) . ' taules');
+    check('Amb la seva administradora',
+        (int) $tenantPdo->query("SELECT COUNT(*) FROM users WHERE email = 'mireia@example.cat' AND role = 'admin'")->fetchColumn() === 1);
+    check('I amb el nom del seu web',
+        (string) $tenantPdo->query("SELECT v FROM settings WHERE k = 'site_name'")->fetchColumn() === 'Cros Escolar Sant Jordi');
+    check('Amb els continguts d\'exemple',
+        (int) $tenantPdo->query('SELECT COUNT(*) FROM courses')->fetchColumn() === 3);
+
+    check('Qui l\'ha cridat es queda amb la seva connexió', \Cros\Core\Db::connection() === $platform);
+    check('I sense la configuració de la instància a la memòria',
+        \Cros\Core\Settings::get('site_name') !== 'Cros Escolar Sant Jordi',
+        (string) \Cros\Core\Settings::get('site_name'));
+
+    // Tornar-la a crear no ha de duplicar res.
+    $installer->run();
+    check('Crear-la dues vegades no duplica l\'administradora',
+        (int) $tenantPdo->query("SELECT COUNT(*) FROM users WHERE email = 'mireia@example.cat'")->fetchColumn() === 1);
+    check('Ni els continguts d\'exemple',
+        (int) $tenantPdo->query('SELECT COUNT(*) FROM courses')->fetchColumn() === 3);
+
+    @unlink($tenantDir . '/config.php');
+    @unlink($tenantDir . '/storage/installed.lock');
+    @rmdir($tenantDir . '/storage');
+    @rmdir($tenantDir);
+}
+
 echo "\n== Resultat ==\n  $passed proves correctes, $failed errors\n\n";
 exit($failed === 0 ? 0 : 1);

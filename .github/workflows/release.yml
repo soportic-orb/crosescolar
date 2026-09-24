@@ -98,7 +98,11 @@ jobs:
           CROS_DB_NAME: cros
           CROS_DB_USER: cros
           CROS_DB_PASS: cros
-        run: php tests/installer.php
+          CROS_DB_TENANT: cros_instancia
+        run: |
+          # Segona base de dades per provar l'alta d'una instància des del codi.
+          mysql -h127.0.0.1 -uroot -proot -e "CREATE DATABASE IF NOT EXISTS cros_instancia CHARACTER SET utf8mb4; GRANT ALL ON cros_instancia.* TO 'cros'@'%';"
+          php tests/installer.php
 
       - name: Generar el paquet
         env:

@@ -10,11 +10,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/app/bootstrap.php';
 
-use Cros\Core\Crypto;
-use Cros\Core\Db;
-use Cros\Core\Migrator;
-use Cros\Core\Seeder;
-use Cros\Core\Settings;
+use Cros\Core\Installer;
 
 // L'instal·lador no ha de dependre del bloqueig de sessió ni dels límits de temps.
 if (session_status() === PHP_SESSION_ACTIVE) {
@@ -82,149 +78,35 @@ function requirements(): array
 /** Connexió a la base de dades amb temps d'espera curt. */
 function install_connect(array $data): PDO
 {
-    return Db::connect([
-        'host' => trim((string) $data['db_host']),
-        'port' => (int) $data['db_port'],
-        'name' => trim((string) $data['db_name']),
-        'user' => trim((string) $data['db_user']),
-        'pass' => (string) $data['db_pass'],
-        'charset' => 'utf8mb4',
-        'socket' => trim((string) ($data['db_socket'] ?? '')),
-        'timeout' => 10,
-    ]);
+    return (new Installer($data))->connect();
 }
 
 /** Camps que viatgen d'una fase a la següent. */
 const CARRY = ['db_host', 'db_port', 'db_name', 'db_user', 'db_pass', 'db_socket', 'base_url',
     'site_name', 'event_date', 'admin_name', 'admin_email', 'admin_pass', 'token', 'log'];
 
-$phases = [
-    'config'   => 'Escrivint la configuració',
-    'schema'   => 'Creant les taules de la base de dades',
-    'admin'    => 'Creant el compte d\'administració',
-    'settings' => 'Aplicant la configuració inicial',
-    'demo'     => 'Creant els continguts d\'exemple',
-    'finish'   => 'Finalitzant la instal·lació',
-];
+$phases = Installer::PHASES;
 
 /**
  * Executa una fase. Retorna [correcte, missatge].
  * Totes les fases es poden repetir sense efectes secundaris.
+ *
+ * La feina la fa Cros\Core\Installer: aquí només es va apuntant al registre
+ * i es guarda el testimoni que després demana el formulari.
  */
 function run_phase(string $phase, array &$data): array
 {
     $started = microtime(true);
     install_log('Inici de la fase «' . $phase . '»');
 
-    switch ($phase) {
-        case 'config':
-            $pdo = install_connect($data);
-            Db::setConnection($pdo);
-            $config = "<?php\n/**\n * Configuració generada per l'instal·lador el " . date('d/m/Y H:i') . ".\n */\nreturn " . var_export([
-                'db' => [
-                    'host' => trim((string) $data['db_host']),
-                    'port' => (int) $data['db_port'],
-                    'name' => trim((string) $data['db_name']),
-                    'user' => trim((string) $data['db_user']),
-                    'pass' => (string) $data['db_pass'],
-                    'charset' => 'utf8mb4',
-                    'socket' => trim((string) ($data['db_socket'] ?? '')),
-                ],
-                'app_key' => Crypto::generateKey(),
-                'base_url' => rtrim((string) $data['base_url'], '/'),
-                'debug' => false,
-                'timezone' => 'Europe/Madrid',
-            ], true) . ";\n";
-            if (@file_put_contents(CROS_APP . '/config.php', $config) === false) {
-                throw new RuntimeException('No s\'ha pogut escriure app/config.php. Doneu permisos d\'escriptura a la carpeta app/ (chmod 775 app).');
-            }
-            @chmod(CROS_APP . '/config.php', 0640);
-
-            $token = bin2hex(random_bytes(16));
-            if (!is_dir(storage_path())) {
-                @mkdir(storage_path(), 0775, true);
-            }
-            if (@file_put_contents(storage_path('install.token'), $token) === false) {
-                throw new RuntimeException('No s\'ha pogut escriure a la carpeta storage/. Doneu-hi permisos d\'escriptura (chmod 775 storage).');
-            }
-            $data['token'] = $token;
-            $message = 'Configuració desada i connexió amb «' . $data['db_name'] . '» comprovada.';
-            break;
-
-        case 'schema':
-            Db::setConnection(install_connect($data));
-            $applied = Migrator::run();
-            $tables = count(Db::all('SHOW TABLES'));
-            $message = ($applied ? count($applied) . ' migracions aplicades' : 'Les taules ja existien')
-                . ' · ' . $tables . ' taules a la base de dades.';
-            break;
-
-        case 'admin':
-            Db::setConnection(install_connect($data));
-            $email = mb_strtolower(trim((string) $data['admin_email']));
-            $existing = Db::one('SELECT id FROM users WHERE email = :email', ['email' => $email]);
-            $fields = [
-                'name' => trim((string) $data['admin_name']),
-                'email' => $email,
-                'password_hash' => password_hash((string) $data['admin_pass'], PASSWORD_DEFAULT),
-                'role' => 'admin',
-                'active' => 1,
-            ];
-            if ($existing) {
-                Db::update('users', $fields, 'id = :id', ['id' => $existing['id']]);
-                $message = 'Compte d\'administració actualitzat (' . $email . ').';
-            } else {
-                Db::insert('users', $fields + ['created_at' => date('Y-m-d H:i:s')]);
-                $message = 'Compte d\'administració creat (' . $email . ').';
-            }
-            break;
-
-        case 'settings':
-            Db::setConnection(install_connect($data));
-            Settings::seedDefaults();
-            Settings::set('site_name', (string) $data['site_name']);
-            Settings::set('hero_title', (string) $data['site_name']);
-            Settings::set('event_date', (string) $data['event_date']);
-            Settings::set('contact_email', mb_strtolower(trim((string) $data['admin_email'])));
-            $host = parse_url((string) $data['base_url'], PHP_URL_HOST) ?: 'localhost';
-            Settings::set('mail_from_email', 'no-reply@' . preg_replace('/^www\./', '', (string) $host));
-            Settings::set('mail_admin_notify', mb_strtolower(trim((string) $data['admin_email'])));
-            $message = count(Settings::defaults()) . ' opcions de configuració inicialitzades.';
-            break;
-
-        case 'demo':
-            if ((string) ($data['demo'] ?? '') !== '1') {
-                $message = 'Continguts d\'exemple omesos.';
-                break;
-            }
-            Db::setConnection(install_connect($data));
-            Seeder::run();
-            $message = sprintf(
-                '%d recorreguts, %d categories, %d actes del programa i %d tipus de tiquet creats.',
-                (int) Db::val('SELECT COUNT(*) FROM courses', [], 0),
-                (int) Db::val('SELECT COUNT(*) FROM categories', [], 0),
-                (int) Db::val('SELECT COUNT(*) FROM schedule_items', [], 0),
-                (int) Db::val('SELECT COUNT(*) FROM ticket_types', [], 0)
-            );
-            break;
-
-        case 'finish':
-            $lock = storage_path('installed.lock');
-            if (@file_put_contents($lock, json_encode([
-                'installed_at' => date('c'),
-                'version' => app_version(),
-            ], JSON_PRETTY_PRINT)) === false) {
-                throw new RuntimeException('No s\'ha pogut crear storage/installed.lock. Reviseu els permisos de storage/.');
-            }
-            @unlink(storage_path('install.token'));
-            $message = 'Instal·lació completada.';
-            break;
-
-        default:
-            throw new RuntimeException('Fase desconeguda: ' . $phase);
+    $installer = new Installer($data);
+    $message = $installer->phase($phase);
+    if ($phase === 'config') {
+        $data['token'] = $installer->token();
     }
 
     install_log('Fi de la fase «' . $phase . '»', ['ms' => (int) ((microtime(true) - $started) * 1000)]);
+
     return [true, $message];
 }
 

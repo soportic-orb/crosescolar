@@ -59,6 +59,16 @@ class Db
         self::$pdo = $pdo;
     }
 
+    /**
+     * La connexió que hi ha ara mateix, sense obrir-ne cap de nova.
+     * Serveix per desar-la i tornar-la a deixar on era (instal·lar una altra
+     * instància enmig d'una petició, per exemple).
+     */
+    public static function connection(): ?PDO
+    {
+        return self::$pdo;
+    }
+
     /** Executa una consulta preparada. */
     public static function q(string $sql, array $params = []): PDOStatement
     {
