@@ -19,7 +19,19 @@ $name = (string) setting('site_name', 'Cros Escolar');
 <link rel="stylesheet" href="<?= e(asset('css/fonts.css')) ?>">
 <link rel="stylesheet" href="<?= e(asset('css/site.css')) ?>">
 <link rel="stylesheet" href="<?= e(asset('css/platform.css')) ?>">
-<link rel="icon" href="data:image/svg+xml,<?= rawurlencode('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#2f6b3c"/><text x="16" y="22" font-size="16" font-family="sans-serif" fill="#fff" text-anchor="middle">C</text></svg>') ?>">
+<?php $favicon = (string) setting('platform_favicon', ''); ?>
+<?php if ($favicon !== ''): ?>
+  <link rel="icon" href="<?= e(upload_url($favicon)) ?>">
+<?php else: ?>
+  <link rel="icon" href="data:image/svg+xml,<?= rawurlencode('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#2f6b3c"/><text x="16" y="22" font-size="16" font-family="sans-serif" fill="#fff" text-anchor="middle">C</text></svg>') ?>">
+<?php endif; ?>
+<style>
+  :root{
+    --platform-dark: <?= e(setting('platform_color_dark', '#16303d')) ?>;
+    --platform-main: <?= e(setting('color_primary', '#1f4f5f')) ?>;
+    --platform-accent: <?= e(setting('platform_color_accent', '#2f7d84')) ?>;
+  }
+</style>
 </head>
 <body>
 <a class="visually-hidden" href="#contingut">Salta al contingut principal</a>
@@ -27,7 +39,14 @@ $name = (string) setting('site_name', 'Cros Escolar');
 <header class="site-header">
   <div class="container site-header__inner">
     <a class="brand" href="<?= e(url('/')) ?>">
-      <span class="brand__mark"><?= \Cros\Core\Icons::svg('run', 'icon', 24) ?></span>
+      <?php $logo = (string) setting('platform_logo', ''); ?>
+      <span class="brand__mark">
+        <?php if ($logo !== ''): ?>
+          <img src="<?= e(upload_url($logo)) ?>" alt="<?= e($name) ?>" style="max-width:28px;max-height:28px">
+        <?php else: ?>
+          <?= \Cros\Core\Icons::svg('run', 'icon', 24) ?>
+        <?php endif; ?>
+      </span>
       <span class="brand__text">
         <small>Plataforma</small>
         <span><?= e($name) ?></span>

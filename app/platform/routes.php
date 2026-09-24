@@ -11,10 +11,12 @@
 declare(strict_types=1);
 
 use Cros\Core\Router;
+use Cros\Platform\Controllers\ConfigController;
 use Cros\Platform\Controllers\ConsoleController;
 use Cros\Platform\Controllers\InstanceController;
 use Cros\Platform\Controllers\RequestController;
 use Cros\Platform\Controllers\SiteController;
+use Cros\Platform\Controllers\UpdatesController;
 
 $router = new Router();
 
@@ -25,6 +27,17 @@ if (($mode ?? 'platform') === 'console') {
     $router->get('/', [ConsoleController::class, 'home']);
     $router->get('/clients', [ConsoleController::class, 'clients']);
     $router->get('/registre', [ConsoleController::class, 'activity']);
+
+    $router->get('/configuracio', [ConfigController::class, 'index']);
+    $router->get('/configuracio/{group}', [ConfigController::class, 'edit']);
+    $router->post('/configuracio/{group}', [ConfigController::class, 'update']);
+
+    $router->get('/actualitzacions', [UpdatesController::class, 'index']);
+    $router->post('/actualitzacions/comprovar', [UpdatesController::class, 'check']);
+    $router->post('/actualitzacions/instalar', [UpdatesController::class, 'install']);
+    $router->post('/actualitzacions/pujar', [UpdatesController::class, 'upload']);
+    $router->post('/actualitzacions/copia', [UpdatesController::class, 'backup']);
+    $router->get('/actualitzacions/copia/{file}', [UpdatesController::class, 'download']);
 
     $router->get('/sollicituds', [RequestController::class, 'index']);
     $router->get('/sollicituds/{id:\d+}', [RequestController::class, 'show']);

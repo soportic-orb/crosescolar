@@ -164,6 +164,23 @@ comodí** (validació DNS-01, que és l'única que serveix per als comodins) i e
 d'nginx de [`docs/nginx-plataforma.conf`](nginx-plataforma.conf), que serveix els
 fitxers pujats de cada instància des de la seva carpeta.
 
+### Què es configura des del panell i què des del fitxer
+
+Un cop en marxa, el panell de superadministració té una secció de
+**Configuració** amb el nom del servei, el logotip i els colors, el correu (amb
+un botó per enviar-se una prova), si s'accepten sol·licituds noves, la
+vigilància, les còpies i l'origen de les actualitzacions. Tot això es desa a la
+base de dades de la plataforma i es pot canviar sense tocar cap fitxer.
+
+Al fitxer `tenants/platform.php` només hi queden les coses que han de funcionar
+abans que hi hagi cap base de dades a punt: els dominis, el subdomini del panell
+i les credencials de les bases de dades. La pantalla de configuració les ensenya,
+perquè se sàpiga on són, però no les deixa editar: canviar-les vol dir tocar
+també l'nginx i el certificat.
+
+Si mai s'ha tocat un valor des del panell, mana el que digui el fitxer: una
+instal·lació que ve de la versió anterior continua fent exactament el mateix.
+
 ### Posar en marxa el panell de superadministració
 
 El panell viu a `admin.crosescolar.com` i té els seus propis usuaris, que no

@@ -22,16 +22,22 @@ class Platform
     /** Taula de control de les migracions de la plataforma. */
     private const MIGRATIONS = 'platform_migrations';
 
+    /** La carpeta de la instal·lació que s'ha obert amb boot(). */
+    private static ?string $root = null;
+
     /** Obre la base de dades de la plataforma i la deixa llesta per treballar. */
     public static function boot(?string $root = null): PDO
     {
-        $settings = Tenancy::settings($root ?? CROS_ROOT);
+        self::$root = $root ?? CROS_ROOT;
+        $settings = Tenancy::settings(self::$root);
         $db = (array) ($settings['db'] ?? []);
         if (trim((string) ($db['name'] ?? '')) === '') {
             throw new RuntimeException('La plataforma no té base de dades configurada a tenants/platform.php.');
         }
         $pdo = Db::connect($db + ['charset' => 'utf8mb4', 'timeout' => 10]);
         Db::setConnection($pdo);
+        // La plataforma té els seus propis camps de configuració.
+        Settings::useSchema(require CROS_APP . '/platform/config_schema.php');
         self::primeSettings($settings);
 
         return $pdo;
@@ -45,21 +51,50 @@ class Platform
      */
     public static function prime(?string $root = null): void
     {
-        self::primeSettings(Tenancy::settings($root ?? CROS_ROOT));
+        // Es torna a posar també l'esquema: si s'ha treballat amb el web d'un
+        // client, el que hi havia actiu era el seu.
+        Settings::useSchema(require CROS_APP . '/platform/config_schema.php');
+        self::primeSettings(Tenancy::settings($root ?? self::$root ?? CROS_ROOT));
     }
 
     /**
-     * La plataforma no té taula de configuració, però el correu i les vistes
-     * demanen valors com el nom de qui envia: es posen a memòria des del
-     * fitxer de la plataforma.
+     * Deixa a punt la configuració de la plataforma.
+     *
+     * Mana el que hi hagi desat a la base de dades, que és el que s'edita des
+     * del panell. El que no s'hagi tocat mai surt del fitxer tenants/platform.php,
+     * que és el que va escriure qui va instal·lar-ho. Així es pot canviar el
+     * correu o els colors sense tocar cap fitxer, i abans de fer-ho tot va com
+     * anava.
      *
      * @param array<string,mixed> $settings
      */
     private static function primeSettings(array $settings): void
     {
+        // Només s'agafa del fitxer el que no s'hagi desat mai al panell.
+        $saved = Settings::load();
+        $missing = [];
+        foreach (self::fileValues($settings) as $key => $value) {
+            if (!isset($saved[$key]) || (string) $saved[$key] === '') {
+                $missing[$key] = $value;
+            }
+        }
+        Settings::prime($missing);
+    }
+
+    /**
+     * La configuració que va escriure qui va instal·lar la plataforma, dita
+     * amb els noms dels camps del panell.
+     *
+     * @param array<string,mixed> $settings
+     * @return array<string,string>
+     */
+    private static function fileValues(array $settings): array
+    {
         $mail = (array) ($settings['mail'] ?? []);
-        $domain = (string) ($settings['base_domain'] ?? 'crosescolar.com');
-        $values = [
+        $monitor = (array) ($settings['monitor'] ?? []);
+        $backups = (array) ($settings['backups'] ?? []);
+        $domain = (string) ($settings['base_domain'] ?? 'crosescolar.cat');
+        $file = [
             'site_name' => (string) ($settings['name'] ?? 'Cros Escolar'),
             'mail_from_name' => (string) ($mail['from_name'] ?? ($settings['name'] ?? 'Cros Escolar')),
             'mail_from_email' => (string) ($mail['from_email'] ?? ('no-reply@' . $domain)),
@@ -69,10 +104,39 @@ class Platform
         foreach (['reply_to' => 'mail_reply_to', 'smtp_host' => 'smtp_host', 'smtp_port' => 'smtp_port',
                   'smtp_user' => 'smtp_user', 'smtp_pass' => 'smtp_pass', 'smtp_secure' => 'smtp_secure'] as $key => $setting) {
             if (isset($mail[$key]) && (string) $mail[$key] !== '') {
-                $values[$setting] = (string) $mail[$key];
+                $file[$setting] = (string) $mail[$key];
             }
         }
-        Settings::prime($values);
+        if (isset($monitor['web'])) {
+            $file['platform_monitor_web'] = $monitor['web'] ? '1' : '0';
+        }
+        if (isset($backups['keep'])) {
+            $file['platform_backups_keep'] = (string) $backups['keep'];
+        }
+
+        return $file;
+    }
+
+    /**
+     * Escriu la configuració inicial de la plataforma.
+     *
+     * Primer el que digui el fitxer de la instal·lació, que és el que va posar
+     * qui la va muntar, i després els valors per defecte de la resta de camps.
+     * Si es fes al revés, actualitzar el sistema tornaria enrere coses com el
+     * servidor de correu.
+     */
+    private static function seedSettings(array $settings): void
+    {
+        $existing = [];
+        foreach (Db::all('SELECT k FROM settings') as $row) {
+            $existing[$row['k']] = true;
+        }
+        foreach (self::fileValues($settings) as $key => $value) {
+            if (!isset($existing[$key]) && (string) $value !== '') {
+                Settings::set($key, (string) $value);
+            }
+        }
+        Settings::seedDefaults();
     }
 
     /** On arriben els avisos de la plataforma. */
@@ -152,8 +216,33 @@ class Platform
             $done[] = $name;
             log_line('platform', 'Migració de la plataforma aplicada', ['file' => $name]);
         }
+        if ($done) {
+            try {
+                self::seedSettings(Tenancy::settings(self::$root ?? CROS_ROOT));
+            } catch (\Throwable $e) {
+                log_line('platform', 'No s\'han pogut escriure els valors per defecte', ['error' => $e->getMessage()]);
+            }
+        }
 
         return $done;
+    }
+
+    /**
+     * Migracions de la plataforma que encara no s'han aplicat.
+     * @return array<int,string>
+     */
+    public static function pending(): array
+    {
+        try {
+            $applied = array_column(Db::all('SELECT name FROM ' . self::MIGRATIONS), 'name');
+        } catch (\Throwable $e) {
+            $applied = [];
+        }
+
+        return array_values(array_filter(
+            self::files(),
+            static fn (string $file): bool => !in_array(basename($file), $applied, true)
+        ));
     }
 
     /** @return array<int,string> */

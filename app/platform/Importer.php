@@ -94,6 +94,8 @@ class Importer
         try {
             $pdo = Db::connect($db + ['charset' => 'utf8mb4', 'timeout' => 60]);
             Db::setConnection($pdo);
+            // El que s'hi escriu és la configuració d'un cros, no la de la plataforma.
+            Settings::useSchema(null);
             $report['tables'] = self::loadSql($pdo, (string) $zip->getFromName('base-de-dades.sql'));
             $report['rows'] = (int) array_sum((array) ($manifest['rows'] ?? []));
             $report['files'] = self::extractUploads($zip, $uploadsDir);

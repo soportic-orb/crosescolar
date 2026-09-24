@@ -66,6 +66,7 @@ class Installer
     public function run(): array
     {
         $previous = Db::connection();
+        $schema = Settings::currentSchema();
         try {
             $messages = [];
             foreach (array_keys(self::PHASES) as $phase) {
@@ -74,6 +75,7 @@ class Installer
             return $messages;
         } finally {
             Db::setConnection($previous);
+            Settings::useSchema($schema);
             Settings::forget();
         }
     }
@@ -199,6 +201,9 @@ class Installer
     private function applySettings(): string
     {
         Db::setConnection($this->connect());
+        // La configuració que s'hi escriu és la d'un cros, sempre: qui crida
+        // l'instal·lador pot ser la plataforma, que té la seva de ben diferent.
+        Settings::useSchema(require CROS_APP . '/settings_schema.php');
         Settings::seedDefaults();
         Settings::set('site_name', (string) $this->data['site_name']);
         Settings::set('hero_title', (string) $this->data['site_name']);

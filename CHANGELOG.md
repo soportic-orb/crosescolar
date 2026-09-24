@@ -3,6 +3,35 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.27.0] — 2026-09-24
+
+### Afegit
+- **El panell de la plataforma s'actualitza sol** (Sistema → Actualitzacions):
+  comprova si hi ha versió nova, la instal·la fent còpia abans, deixa pujar un
+  paquet a mà i guarda les còpies del sistema, que es poden descarregar. Mentre
+  dura l'actualització, tots els webs que serveix diuen que tornen de seguida, i
+  en acabar només es posa al dia la base de dades de la plataforma: les dels
+  clients es fan a part, amb el botó d'actualitzar-les totes.
+- **La plataforma té configuració pròpia**, editable des del seu panell i desada
+  a la seva base de dades: nom del servei, frase i presentació de la portada,
+  logotip, icona i colors, correu sencer (inclòs SMTP, amb un botó per enviar-se
+  una prova), si s'accepten sol·licituds noves i què es diu quan no, si es mostra
+  el llistat de cros, la vigilància i quantes còpies es guarden de cada client.
+- Els colors i el logotip es veuen tant al panell com a la pàgina pública, i les
+  sol·licituds tancades no s'accepten ni que algú enviï el formulari pel seu compte.
+- El que continua al fitxer `tenants/platform.php` —dominis i bases de dades— surt
+  a la pantalla de configuració perquè se sàpiga on és, però no s'hi edita.
+
+### Corregit
+- **Una vista podia quedar-se en blanc si rebia una variable que es deia `file`**:
+  el nom xocava amb el que fa servir el renderitzador per obrir la plantilla. Ara
+  no es poden trepitjar.
+- L'esquema de configuració de la plataforma podia quedar-se actiu en treballar
+  amb la base de dades d'un client i escriure-hi camps que no són seus. Cada base
+  de dades torna a tenir el seu.
+- En actualitzar, els valors per defecte de la plataforma ja no trepitgen el que
+  va escriure qui la va instal·lar (el correu, per exemple).
+
 ## [1.26.1] — 2026-09-24
 
 ### Corregit

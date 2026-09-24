@@ -5,6 +5,7 @@ namespace Cros\Platform;
 
 use Cros\Core\Db;
 use Cros\Core\Mailer;
+use Cros\Core\Settings;
 use Cros\Core\Tenancy;
 
 /**
@@ -102,8 +103,9 @@ class Health
     public static function run(?string $root = null, ?bool $web = null): array
     {
         $root = $root ?? CROS_ROOT;
+        // Ho mana el panell; si no s'hi ha tocat mai, el fitxer de la plataforma.
         $settings = (array) (Tenancy::settings($root)['monitor'] ?? []);
-        $web = $web ?? (bool) ($settings['web'] ?? true);
+        $web = $web ?? Settings::bool('platform_monitor_web', (bool) ($settings['web'] ?? true));
         $proxy = (string) ($settings['proxy'] ?? '');
 
         $report = ['checked' => 0, 'failing' => [], 'recovered' => [], 'broke' => []];

@@ -17,6 +17,24 @@ continua accessible.
 
 **Mai no se sobreescriuen**: `app/config.php`, `uploads/` i `storage/`.
 
+## En una plataforma amb diversos cros
+
+Quan el servidor serveix més d'un cros, el codi és un de sol i **qui l'actualitza
+és el panell de la plataforma**, a `admin.crosescolar.cat` → **Sistema →
+Actualitzacions**. Als panells dels clients aquell apartat no hi surt: si hi
+poguessin, actualitzarien el sistema de tothom.
+
+El camí és el mateix que el d'un web sol, amb dues diferències:
+
+- Mentre dura, **tots els webs que serveix la plataforma** diuen que tornen de
+  seguida, no només el panell des d'on s'ha premut el botó.
+- Després de canviar els fitxers només es posa al dia la base de dades **de la
+  plataforma**. Les dels clients es fan a part, des d'**Instàncies**, amb el botó
+  d'actualitzar-les totes: així se sap quantes se'n toquen i quan.
+
+L'adreça del manifest i el testimoni, si en cal, es posen a **Configuració →
+Actualitzacions** del mateix panell.
+
 ## Configuració
 
 A **Configuració → Actualitzacions**:

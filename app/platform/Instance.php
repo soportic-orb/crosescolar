@@ -339,6 +339,9 @@ class Instance
         $error = '';
         try {
             Db::setConnection(Db::connect((array) ($config['db'] ?? []) + ['charset' => 'utf8mb4', 'timeout' => 10]));
+            // A partir d'aquí manem sobre el web d'un client: la configuració
+            // que s'hi escriu és la seva, no la de la plataforma.
+            Settings::useSchema(null);
             $applied = Migrator::run();
         } catch (\Throwable $e) {
             $error = $e->getMessage();

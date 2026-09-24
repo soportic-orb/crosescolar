@@ -248,7 +248,14 @@ class Updater
      * Aplica un paquet d'actualització.
      * @return array<int,string> registre de passos
      */
-    public static function apply(string $zipPath, bool $makeBackup = true): array
+    /**
+     * @param callable|null $migrate què s'ha de posar al dia després de copiar
+     *                               els fitxers. Per defecte, la base de dades
+     *                               d'aquesta instal·lació; la plataforma hi
+     *                               passa la seva, que té les seves pròpies
+     *                               taules i les seves pròpies migracions.
+     */
+    public static function apply(string $zipPath, bool $makeBackup = true, ?callable $migrate = null): array
     {
         $log = [];
         if (!class_exists(ZipArchive::class)) {
@@ -295,7 +302,7 @@ class Updater
             $copied = self::copyTree($source, CROS_ROOT);
             $log[] = $copied . ' fitxers actualitzats.';
 
-            $migrations = Migrator::run();
+            $migrations = $migrate !== null ? $migrate() : Migrator::run();
             $log[] = $migrations ? count($migrations) . ' migracions aplicades.' : 'Cap migració pendent.';
 
             Settings::set('last_update_at', date('Y-m-d H:i:s'));
@@ -407,9 +414,17 @@ class Updater
         }
     }
 
+    /**
+     * Estem actualitzant?
+     *
+     * Si qui actualitza és la plataforma, el codi és el mateix per a tots els
+     * cros que serveix: mentre duri, tots han de dir que tornen de seguida, no
+     * només el web des d'on s'ha premut el botó.
+     */
     public static function inMaintenance(): bool
     {
-        return is_file(storage_path('maintenance.flag'));
+        return is_file(storage_path('maintenance.flag'))
+            || is_file(CROS_ROOT . '/storage/maintenance.flag');
     }
 
     /** Troba l'arrel real del paquet descomprimit. */

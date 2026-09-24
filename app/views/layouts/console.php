@@ -18,14 +18,24 @@ $pending = Request::pending();
 <meta name="robots" content="noindex, nofollow">
 <link rel="stylesheet" href="<?= e(asset('css/fonts.css')) ?>">
 <link rel="stylesheet" href="<?= e(asset('css/admin.css')) ?>">
-<style>:root{--a-green:#1f4f5f;}</style>
+<style>:root{--a-green: <?= e(setting('color_primary', '#1f4f5f')) ?>;}</style>
+<?php if ($icona = (string) setting('platform_favicon', '')): ?>
+  <link rel="icon" href="<?= e(upload_url($icona)) ?>">
+<?php endif; ?>
 </head>
 <body class="admin">
 <div class="admin-layout">
   <aside class="sidebar">
     <a class="sidebar__brand" href="<?= e(url('/')) ?>">
-      <span class="sidebar__mark"><?= Icons::svg('run', 'icon', 22) ?></span>
-      <span><strong>Plataforma</strong><small><?= e(Platform::domain()) ?></small></span>
+      <?php $logo = (string) setting('platform_logo', ''); ?>
+      <span class="sidebar__mark">
+        <?php if ($logo !== ''): ?>
+          <img src="<?= e(upload_url($logo)) ?>" alt="" style="max-width:26px;max-height:26px">
+        <?php else: ?>
+          <?= Icons::svg('run', 'icon', 22) ?>
+        <?php endif; ?>
+      </span>
+      <span><strong><?= e(setting('site_name', 'Plataforma')) ?></strong><small><?= e(Platform::domain()) ?></small></span>
     </a>
 
     <a class="nav-link<?= $path === '/' ? ' is-active' : '' ?>" href="<?= e(url('/')) ?>"><?= Icons::svg('chart', 'icon', 18) ?> Tauler</a>
@@ -36,7 +46,15 @@ $pending = Request::pending();
     <a class="nav-link<?= $isActive('/instancies') ? ' is-active' : '' ?>" href="<?= e(url('/instancies')) ?>"><?= Icons::svg('run', 'icon', 18) ?> Instàncies</a>
     <a class="nav-link<?= $isActive('/clients') ? ' is-active' : '' ?>" href="<?= e(url('/clients')) ?>"><?= Icons::svg('users', 'icon', 18) ?> Clients</a>
 
+    <div class="sidebar__section">Configuració</div>
+    <?php foreach (\Cros\Core\Settings::schema() as $groupKey => $group): ?>
+      <a class="nav-link<?= $path === '/configuracio/' . $groupKey ? ' is-active' : '' ?>" href="<?= e(url('/configuracio/' . $groupKey)) ?>">
+        <?= Icons::svg((string) ($group['icon'] ?? 'settings'), 'icon', 18) ?> <?= e($group['title']) ?>
+      </a>
+    <?php endforeach; ?>
+
     <div class="sidebar__section">Sistema</div>
+    <a class="nav-link<?= $isActive('/actualitzacions') ? ' is-active' : '' ?>" href="<?= e(url('/actualitzacions')) ?>"><?= Icons::svg('refresh', 'icon', 18) ?> Actualitzacions</a>
     <a class="nav-link<?= $isActive('/registre') ? ' is-active' : '' ?>" href="<?= e(url('/registre')) ?>"><?= Icons::svg('file', 'icon', 18) ?> Registre</a>
     <a class="nav-link" href="https://<?= e(Platform::domain()) ?>" target="_blank" rel="noopener"><?= Icons::svg('eye', 'icon', 18) ?> Veure el web</a>
     <div style="padding:1rem 1.3rem;font-size:.75rem;color:rgba(255,255,255,.4)">Versió <?= e(app_version()) ?></div>

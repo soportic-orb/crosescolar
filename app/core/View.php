@@ -43,19 +43,24 @@ class View
 
     private static function capture(string $template, array $data): string
     {
-        $file = CROS_APP . '/views/' . ltrim($template, '/') . '.php';
-        if (!is_file($file)) {
+        // Els noms de les variables d'aquí duen dos guions baixos a posta: el
+        // que arriba a la vista s'escampa com a variables i, si una es digués
+        // «file» o «data», trepitjaria les d'aquesta funció i la vista no es
+        // dibuixaria (amb la pàgina en blanc que això vol dir).
+        $__file = CROS_APP . '/views/' . ltrim($template, '/') . '.php';
+        if (!is_file($__file)) {
             throw new \RuntimeException('No s\'ha trobat la vista: ' . $template);
         }
         extract(self::$shared, EXTR_SKIP);
         extract($data, EXTR_OVERWRITE);
         ob_start();
         try {
-            include $file;
+            include $__file;
         } catch (\Throwable $e) {
             ob_end_clean();
             throw $e;
         }
+
         return (string) ob_get_clean();
     }
 }

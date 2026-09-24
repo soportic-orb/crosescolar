@@ -31,6 +31,13 @@ class SiteController extends Controller
     public function request(): void
     {
         $this->checkCsrf();
+        // Si les altes estan tancades, el formulari no hi és; una petició que
+        // arribi igualment tampoc no s'accepta.
+        if (!\Cros\Core\Settings::bool('platform_requests_open', true)) {
+            flash('error', (string) setting('platform_requests_closed_text',
+                'Ara mateix no donem altes noves.'));
+            redirect('/');
+        }
         // Parany per a robots: un camp que ningú no veu i que només ells omplen.
         if (trim((string) input('website_url')) !== '') {
             redirect('/');

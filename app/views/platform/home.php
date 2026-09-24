@@ -14,8 +14,11 @@ $old = static fn (string $key, string $default = ''): string => (string) old($ke
 <section class="platform-hero">
   <div class="container">
     <span class="eyebrow">Per a escoles, AFA i clubs</span>
-    <h1>El web del vostre cros, a punt en una setmana</h1>
+    <h1><?= e(setting('platform_tagline', 'El web del vostre cros, a punt en una setmana')) ?></h1>
     <p class="lead">Inscripcions en línia, dorsals en PDF, resultats per categories i correus a les famílies. Tot amb la vostra imatge i a la vostra adreça.</p>
+    <?php if ($intro = (string) setting('platform_intro', '')): ?>
+      <div class="lead" style="color:rgba(255,255,255,.85)"><?= \Cros\Core\Html::clean($intro) ?></div>
+    <?php endif; ?>
     <div class="flex" style="margin-top:1.6rem">
       <a class="btn btn--accent" href="#formulari"><?= Icons::svg('plus', 'icon', 18) ?> Crea la web per al teu cros</a>
       <a class="btn btn--light" href="#cros">Veure els cros que ja hi són</a>
@@ -24,6 +27,7 @@ $old = static fn (string $key, string $default = ''): string => (string) old($ke
   </div>
 </section>
 
+<?php if (\Cros\Core\Settings::bool('platform_directory', true)): ?>
 <section class="section" id="cros">
   <div class="container">
     <div class="section__head">
@@ -73,6 +77,7 @@ $old = static fn (string $key, string $default = ''): string => (string) old($ke
     <?php endif; ?>
   </div>
 </section>
+<?php endif; ?>
 
 <section class="section section--tint" id="com-va">
   <div class="container">
@@ -93,6 +98,16 @@ $old = static fn (string $key, string $default = ''): string => (string) old($ke
       <h2>Demaneu la vostra instància</h2>
       <p class="lead">És gratuït demanar-la i no hi ha cap pagament en línia.</p>
     </div>
+
+    <?php if (!\Cros\Core\Settings::bool('platform_requests_open', true)): ?>
+      <div class="notice-box">
+        <?= nl2br(e((string) setting('platform_requests_closed_text',
+            'Ara mateix no donem altes noves. Escriviu-nos i us avisarem quan tornem a obrir.'))) ?>
+        <?php if ($contacte = (string) setting('platform_contact_email', '')): ?>
+          <br><a href="mailto:<?= e($contacte) ?>"><?= e($contacte) ?></a>
+        <?php endif; ?>
+      </div>
+    <?php else: ?>
 
     <form method="post" action="<?= e(url('/sollicitud')) ?>" class="card">
       <?= csrf_field() ?>
@@ -194,5 +209,6 @@ $old = static fn (string $key, string $default = ''): string => (string) old($ke
         <span class="field__hint">Us responem en 48 h feineres.</span>
       </div>
     </form>
+    <?php endif; ?>
   </div>
 </section>

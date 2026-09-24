@@ -40,6 +40,7 @@ putenv('CROS_STORAGE');
 require $root . '/app/bootstrap.php';
 
 use Cros\Core\Db;
+use Cros\Core\Settings;
 use Cros\Platform\Backup;
 use Cros\Platform\Console;
 use Cros\Platform\Health;
@@ -110,6 +111,13 @@ $dbTables = static fn (string $name): int => (int) $admin->query(
 foreach (['platform_activity', 'instance_requests', 'instances', 'clients', 'platform_users'] as $table) {
     $pdo->exec('DELETE FROM ' . $table);
 }
+// La configuració també: una plataforma acabada d'instal·lar no en té cap, i
+// el que digui el fitxer de la instal·lació ha de manar.
+$pdo->exec('DROP TABLE IF EXISTS settings');
+$pdo->exec("DELETE FROM platform_migrations WHERE name LIKE '%configuracio%'");
+Platform::migrate();
+Settings::forget();
+Platform::boot($site);
 
 echo "\n== Superadministradors ==\n";
 $userId = Console::save('Superadministradora', 'super@crosescolar.test', 'unaClauBenLlarga1');
@@ -694,6 +702,99 @@ try {
         (string) Instance::find($instanceId)['status'] === 'purged');
     check('I el seu amfitrió ja no existeix',
         $web('GET', '/', [], 'santjordi.crosescolar.test')['status'] === 404);
+
+    echo "\n== La configuració de la plataforma ==\n";
+    $config = $web('GET', '/configuracio/general');
+    check('Hi ha la pantalla de configuració',
+        $config['status'] === 200 && str_contains($config['body'], 'Nom del servei'), 'estat ' . $config['status']);
+    check('I diu què no es toca des d\'aquí',
+        str_contains($config['body'], 'tenants/platform.php') && str_contains($config['body'], 'crosescolar.test'));
+    check('El menú porta a tots els grups',
+        str_contains($config['body'], '/configuracio/mail') && str_contains($config['body'], '/configuracio/appearance'));
+
+    $desat = $web('POST', '/configuracio/general', [
+        '_token' => $token($config['body']),
+        'site_name' => 'Cros Escolar del Penedès',
+        'platform_tagline' => 'El web del vostre cros',
+        'platform_intro' => '<p>Som una colla que <b>organitza</b> curses.</p>',
+        'platform_contact_email' => 'hola@crosescolar.test',
+    ]);
+    check('Es desa el que s\'hi escriu', $desat['status'] === 302);
+    check('I queda a la base de dades',
+        (string) Db::val("SELECT v FROM settings WHERE k = 'site_name'", [], '') === 'Cros Escolar del Penedès');
+    check('El panell ja en porta el nom',
+        str_contains($web('GET', '/')['body'], 'Cros Escolar del Penedès'));
+    check('I la portada pública també',
+        str_contains($web('GET', '/', [], 'crosescolar.test')['body'], 'El web del vostre cros'));
+
+    // Els colors i el logotip.
+    $imatge = $web('GET', '/configuracio/appearance');
+    $web('POST', '/configuracio/appearance', [
+        '_token' => $token($imatge['body']),
+        'color_primary' => '#8a2f2f',
+        'platform_color_accent' => '#c05252',
+        'platform_color_dark' => '#3a1414',
+    ]);
+    check('El color del panell es pot canviar',
+        str_contains($web('GET', '/')['body'], '--a-green: #8a2f2f'));
+    check('I el de la pàgina pública',
+        str_contains($web('GET', '/', [], 'crosescolar.test')['body'], '--platform-dark: #3a1414'));
+
+    // Tancar les altes.
+    // Es guarda un testimoni del formulari obert per poder provar què passa si
+    // algú l'envia igualment un cop tancades les altes.
+    $abans = $token($web('GET', '/', [], 'crosescolar.test')['body']);
+
+    $peticions = $web('GET', '/configuracio/requests');
+    $web('POST', '/configuracio/requests', [
+        '_token' => $token($peticions['body']),
+        'platform_requests_closed_text' => 'Tornem al setembre.',
+    ]);
+    $portada = $web('GET', '/', [], 'crosescolar.test');
+    check('Es poden tancar les altes noves',
+        str_contains($portada['body'], 'Tornem al setembre') && !str_contains($portada['body'], 'name="entity"'));
+    $rebutjada = $web('POST', '/sollicitud', [
+        '_token' => $abans, 'entity' => 'Qui sigui', 'town' => 'Enlloc',
+        'contact_name' => 'Ningú', 'contact_email' => 'ningu@example.cat',
+        'contact_phone' => '600000000', 'consent' => '1',
+    ], 'crosescolar.test');
+    check('I una sol·licitud que arribi igualment no es desa',
+        $rebutjada['status'] === 302
+        && Db::one("SELECT id FROM instance_requests WHERE contact_email = 'ningu@example.cat'") === null,
+        'estat ' . $rebutjada['status']);
+
+    $web('POST', '/configuracio/requests', [
+        '_token' => $token($web('GET', '/configuracio/requests')['body']),
+        'platform_requests_open' => '1',
+        'platform_directory' => '1',
+        'platform_requests_closed_text' => 'Tornem al setembre.',
+    ]);
+    check('I es poden tornar a obrir',
+        str_contains($web('GET', '/', [], 'crosescolar.test')['body'], 'name="entity"'));
+
+    echo "\n== Actualitzacions del sistema ==\n";
+    $updates = $web('GET', '/actualitzacions');
+    check('Hi ha la pantalla d\'actualitzacions',
+        $updates['status'] === 200 && str_contains($updates['body'], 'Versió instal·lada'));
+    check('Amb la versió que hi ha ara', str_contains($updates['body'], app_version()));
+    check('I avisa que falta dir d\'on surten les versions',
+        str_contains($updates['body'], 'adreça del manifest'));
+
+    $copia = $web('POST', '/actualitzacions/copia', ['_token' => $token($updates['body'])]);
+    check('Se\'n pot fer una còpia del sistema', $copia['status'] === 302);
+    $copies = glob($site . '/storage/backups/backup-*.zip') ?: [];
+    check('Que queda desada', count($copies) === 1, implode(', ', array_map('basename', $copies)));
+    $llista = $web('GET', '/actualitzacions');
+    check('I surt a la llista', count($copies) === 1 && str_contains($llista['body'], basename($copies[0])));
+    $baixada = $web('GET', '/actualitzacions/copia/' . rawurlencode(basename($copies[0] ?? 'res.zip')));
+    check('Se la pot descarregar',
+        $baixada['status'] === 200 && str_contains($baixada['headers'], 'application/zip'));
+    check('Un nom inventat no dona res',
+        $web('GET', '/actualitzacions/copia/' . rawurlencode('../platform.php'))['status'] === 404);
+
+    $dolent = $web('POST', '/actualitzacions/instalar', ['_token' => $token($llista['body'])]);
+    check('Sense paquet no s\'actualitza res', $dolent['status'] === 302);
+    check('I el sistema es queda com estava', app_version() === (string) (require $site . '/app/version.php')['version']);
 
     echo "\n== Sortir ==\n";
     $out = $web('GET', '/sortir');

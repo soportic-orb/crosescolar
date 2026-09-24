@@ -37,8 +37,9 @@ class Backup
     public static function keep(?string $root = null): int
     {
         $settings = (array) (Tenancy::settings($root ?? CROS_ROOT)['backups'] ?? []);
+        $file = (int) ($settings['keep'] ?? self::KEEP);
 
-        return max(1, (int) ($settings['keep'] ?? self::KEEP));
+        return max(1, Settings::int('platform_backups_keep', $file));
     }
 
     /**

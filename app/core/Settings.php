@@ -11,6 +11,7 @@ class Settings
 {
     private static ?array $cache = null;
     private static ?array $schema = null;
+    private static ?array $defaults = null;
 
     /** Carrega tots els valors a memòria. */
     public static function load(bool $force = false): array
@@ -111,6 +112,27 @@ class Settings
         return self::$schema;
     }
 
+    /** L'esquema que hi ha actiu ara mateix, sense carregar-ne cap. */
+    public static function currentSchema(): ?array
+    {
+        return self::$schema;
+    }
+
+    /**
+     * Canvia l'esquema de configuració.
+     *
+     * El web d'un cros i el panell de la plataforma tenen coses diferents per
+     * configurar, però la manera de desar-les i de dibuixar-les és la mateixa:
+     * només canvia la llista de camps.
+     *
+     * @param array<string,mixed>|null $schema null per tornar al de sempre
+     */
+    public static function useSchema(?array $schema): void
+    {
+        self::$schema = $schema;
+        self::$defaults = null;
+    }
+
     /** Definició d'un camp concret. */
     public static function field(string $key): array
     {
@@ -127,9 +149,8 @@ class Settings
     /** Valors per defecte de tot l'esquema. */
     public static function defaults(): array
     {
-        static $defaults = null;
-        if ($defaults !== null) {
-            return $defaults;
+        if (self::$defaults !== null) {
+            return self::$defaults;
         }
         $defaults = [];
         foreach (self::schema() as $group) {
@@ -137,7 +158,8 @@ class Settings
                 $defaults[$name] = $field['default'] ?? '';
             }
         }
-        return $defaults;
+
+        return self::$defaults = $defaults;
     }
 
     /** Grups de l'esquema (per al menú del panell). */
