@@ -39,6 +39,27 @@ i el versionatge semàntic.
   correus**: la confirmació a qui l'ha demanada i l'avís a la superadministració.
 - El formulari comprova el subdomini abans d'acceptar-lo, no deixa que una adreça
   n'enviï més de tres al dia i té un parany per a robots.
+- **El panell de superadministració** (`admin.crosescolar.com`), amb els seus propis
+  comptes, a part dels administradors de cada cros: tauler amb les instàncies i les
+  sol·licituds pendents, llistes de sol·licituds, instàncies i clients, la fitxa de
+  cadascuna i el registre d'activitat.
+- **Una instància es crea amb un botó**: el panell li fa la base de dades, un usuari
+  de base de dades que només hi pot entrar a ella, la carpeta, la instal·lació del
+  cros i el correu amb les claus per a qui el gestionarà. Triga menys d'un segon.
+  Si alguna cosa falla pel camí no queda res a mitges: es desfà el que s'hagi fet.
+- El web d'un client **neix amagat**: el publica ell quan ho té a punt, i llavors
+  surt al llistat de la portada.
+- **D'una sol·licitud a una instància sense tornar a escriure res**: des de la fitxa
+  de la sol·licitud s'obre el formulari d'alta ja omplert, i en crear-la queden
+  lligades la sol·licitud, la fitxa del client i la instància.
+- Una sol·licitud es pot **desestimar amb un motiu**, que s'envia per correu a qui
+  la va enviar.
+- Des de la fitxa d'una instància es pot **aturar, tornar a engegar, donar de baixa**
+  (escrivint-ne el nom, perquè no passi sense voler) i **actualitzar-ne les dades**
+  llegint el seu web.
+- **Eina de consola de la plataforma** (`php tools/platform.php`): posar al dia la
+  base de dades, crear superadministradors, llistar i repassar instàncies i esborrar
+  les baixes que ja han passat els 90 dies.
 - **L'instal·lador es pot cridar des del codi**: tota la feina de posar en marxa un
   web (escriure la configuració, crear les taules, el compte d'administració, la
   configuració inicial i els continguts d'exemple) passa a la classe
@@ -57,6 +78,9 @@ i el versionatge semàntic.
   del codi, cadascuna amb les seves dades i el seu subdomini.
 - Bateria de proves nova (`tests/tenants.php`) que comprova que dues instal·lacions
   amb el mateix codi no es trepitgen els fitxers ni els registres.
+- Bateria de proves nova (`tests/console.php`) que dona d'alta instàncies de debò
+  contra un MySQL real i les serveix: accés al panell, alta, publicació, aturada,
+  baixa i esborrat definitiu.
 
 ## [1.24.0] — 2026-09-23
 

@@ -11,29 +11,30 @@
 declare(strict_types=1);
 
 use Cros\Core\Router;
-use Cros\Core\View;
+use Cros\Platform\Controllers\ConsoleController;
+use Cros\Platform\Controllers\InstanceController;
+use Cros\Platform\Controllers\RequestController;
 use Cros\Platform\Controllers\SiteController;
 
 $router = new Router();
 
 if (($mode ?? 'platform') === 'console') {
-    // El panell encara s'està construint: de moment, només ho diu.
-    $router->any('/{path}', static function (): void {
-        http_response_code(503);
-        View::render('errors/platform-soon', [
-            'title' => 'Panell de superadministració',
-            'console' => true,
-            'noindex' => true,
-        ], 'layouts/minimal');
-    });
-    $router->any('/', static function (): void {
-        http_response_code(503);
-        View::render('errors/platform-soon', [
-            'title' => 'Panell de superadministració',
-            'console' => true,
-            'noindex' => true,
-        ], 'layouts/minimal');
-    });
+    $router->any('/acces', [ConsoleController::class, 'login']);
+    $router->get('/sortir', [ConsoleController::class, 'logout']);
+
+    $router->get('/', [ConsoleController::class, 'home']);
+    $router->get('/clients', [ConsoleController::class, 'clients']);
+    $router->get('/registre', [ConsoleController::class, 'activity']);
+
+    $router->get('/sollicituds', [RequestController::class, 'index']);
+    $router->get('/sollicituds/{id:\d+}', [RequestController::class, 'show']);
+    $router->post('/sollicituds/{id:\d+}/decidir', [RequestController::class, 'decide']);
+
+    $router->get('/instancies', [InstanceController::class, 'index']);
+    $router->get('/instancies/nova', [InstanceController::class, 'create']);
+    $router->post('/instancies/nova', [InstanceController::class, 'store']);
+    $router->get('/instancies/{id:\d+}', [InstanceController::class, 'show']);
+    $router->post('/instancies/{id:\d+}/accio', [InstanceController::class, 'action']);
 
     return $router;
 }

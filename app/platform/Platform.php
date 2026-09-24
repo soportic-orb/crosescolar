@@ -38,6 +38,17 @@ class Platform
     }
 
     /**
+     * Torna a deixar a memòria la configuració de la plataforma.
+     * Cal després d'haver treballat amb la base de dades d'una instància:
+     * en tancar-la es buida la memòria de configuració i, si no es refà, el
+     * correu de la plataforma sortiria amb els valors per defecte.
+     */
+    public static function prime(?string $root = null): void
+    {
+        self::primeSettings(Tenancy::settings($root ?? CROS_ROOT));
+    }
+
+    /**
      * La plataforma no té taula de configuració, però el correu i les vistes
      * demanen valors com el nom de qui envia: es posen a memòria des del
      * fitxer de la plataforma.

@@ -332,9 +332,10 @@ try {
     check('Hi ha el botó de crear-ne un', str_contains(html_entity_decode($home['body']), 'Crea la web per al teu cros'));
     check('I el formulari', str_contains($home['body'], 'name="entity"') && str_contains($home['body'], 'name="contact_email"'));
 
-    // El panell encara no hi és, però l'adreça ja la reconeix.
+    // El subdomini del panell no és el web de cap client: hi mena el panell.
+    $console = $web('GET', '/', [], 'admin.crosescolar.test');
     check('El subdomini del panell no és cap client',
-        $web('GET', '/', [], 'admin.crosescolar.test')['status'] === 503);
+        $console['status'] === 302 && str_contains($console['headers'], '/acces'));
     check('Un subdomini que no existeix contesta 404',
         $web('GET', '/', [], 'ningu.crosescolar.test')['status'] === 404);
 

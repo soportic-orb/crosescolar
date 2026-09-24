@@ -15,10 +15,29 @@ class Instance
         'active' => 'Activa',
         'suspended' => 'Aturada',
         'cancelled' => 'Donada de baixa',
+        'purged' => 'Esborrada',
     ];
 
     /** Dies que es guarden les dades d'una instància donada de baixa. */
     public const PURGE_DAYS = 90;
+
+    /** Color amb què es pinta cada estat al panell. */
+    public static function tone(string $status): string
+    {
+        return [
+            'new' => 'blue',
+            'active' => 'green',
+            'suspended' => 'amber',
+            'cancelled' => 'red',
+            'purged' => 'red',
+        ][$status] ?? '';
+    }
+
+    /** Nom de l'estat tal com es llegeix. */
+    public static function label(string $status): string
+    {
+        return self::STATUSES[$status] ?? $status;
+    }
 
     public static function find(int $id): ?array
     {
@@ -212,6 +231,11 @@ class Instance
                 'published' => (string) ($settings['coming_soon'] ?? '0') === '1' ? 0 : 1,
                 'synced_at' => date('Y-m-d H:i:s'),
             ];
+            // Una instància deixa d'estar «sense estrenar» quan el client
+            // publica el web o comença a rebre inscripcions.
+            if ((string) $instance['status'] === 'new' && ($fields['published'] === 1 || $fields['registrations'] > 0)) {
+                $fields['status'] = 'active';
+            }
         } catch (\Throwable $e) {
             log_line('platform', 'No s\'ha pogut llegir la instància', ['slug' => $instance['slug'], 'error' => $e->getMessage()]);
             Db::setConnection($platform);

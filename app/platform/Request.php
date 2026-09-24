@@ -90,6 +90,21 @@ class Request
         return $count >= self::PER_DAY;
     }
 
+    /**
+     * Quantes n'hi ha de cada estat, per ensenyar-ho a les pestanyes.
+     * @return array<string,int>
+     */
+    public static function counts(): array
+    {
+        $counts = array_fill_keys(array_keys(self::STATUSES), 0);
+        foreach (Db::all('SELECT status, COUNT(*) AS total FROM instance_requests GROUP BY status') as $row) {
+            $counts[(string) $row['status']] = (int) $row['total'];
+        }
+        $counts['all'] = array_sum($counts);
+
+        return $counts;
+    }
+
     /** Marca com a resolta una sol·licitud. */
     public static function decide(int $id, string $status, string $reason = '', ?int $instanceId = null, ?int $userId = null): void
     {

@@ -114,6 +114,20 @@ jobs:
           CROS_DB_TENANT: cros_instancia
         run: php tests/platform.php
 
+      - name: Proves del panell de superadministració (MySQL real)
+        env:
+          CROS_DB_HOST: 127.0.0.1
+          CROS_DB_PORT: '3306'
+          CROS_DB_USER: cros
+          CROS_DB_PASS: cros
+          CROS_DB_PLATFORM: cros_consola
+          CROS_DB_ADMIN_USER: root
+          CROS_DB_ADMIN_PASS: root
+          CROS_DB_GRANT_HOST: '%'
+        run: |
+          mysql -h127.0.0.1 -uroot -proot -e "CREATE DATABASE IF NOT EXISTS cros_consola CHARACTER SET utf8mb4; GRANT ALL ON cros_consola.* TO 'cros'@'%';"
+          php tests/console.php
+
       - name: Generar el paquet
         env:
           VERSION: ${{ steps.versio.outputs.version }}

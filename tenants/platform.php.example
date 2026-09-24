@@ -27,4 +27,33 @@ return [
         'charset' => 'utf8mb4',
         'socket' => '',
     ],
+
+    // Qui pot crear bases de dades: s'usa només en donar d'alta una instància.
+    'provision' => [
+        'db_host' => 'localhost',
+        'db_port' => 3306,
+        'db_socket' => '',
+        'admin_user' => 'root',
+        'admin_pass' => '',
+        // Prefix dels noms de base de dades i d'usuari de cada instància.
+        'db_prefix' => 'cros_',
+        // Des d'on es connecten les instàncies (el GRANT es fa per a aquest amfitrió).
+        'tenant_from' => 'localhost',
+        // Amfitrió que es desa al config.php de cada instància.
+        'tenant_host' => 'localhost',
+    ],
+
+    // Correu de la plataforma (avisos de sol·licituds i claus dels clients).
+    'mail' => [
+        'from_name' => 'Cros Escolar',
+        'from_email' => 'no-reply@crosescolar.com',
+        'notify' => 'hola@crosescolar.com',
+        // 'mail' (funció de PHP), 'smtp' o 'log' (assaig: no surt res del servidor).
+        'transport' => 'mail',
+        'smtp_host' => '',
+        'smtp_port' => 587,
+        'smtp_user' => '',
+        'smtp_pass' => '',
+        'smtp_secure' => 'tls',
+    ],
 ];

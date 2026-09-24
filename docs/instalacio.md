@@ -142,6 +142,46 @@ Al servidor calen tres coses: un registre **A** per al domini i un de **comodí*
 DNS-01) i el bloc d'nginx de [`docs/nginx-plataforma.conf`](nginx-plataforma.conf),
 que serveix els fitxers pujats de cada instància des de la seva carpeta.
 
+### Posar en marxa el panell de superadministració
+
+El panell viu a `admin.crosescolar.com` i té els seus propis usuaris, que no
+tenen res a veure amb els administradors de cada cros. Un cop copiat i omplert
+`tenants/platform.php`:
+
+```bash
+php tools/platform.php migrar
+php tools/platform.php usuari "Nom i cognoms" adreca@crosescolar.com
+```
+
+La segona ordre crea el primer superadministrador i escriu la contrasenya per
+pantalla (si no se n'indica cap, se'n genera una). A partir d'aquí ja s'hi entra
+per `https://admin.crosescolar.com`.
+
+Per donar d'alta instàncies des del panell cal el bloc `provision` del fitxer de
+configuració: hi va un usuari de MySQL que pugui **crear bases de dades i
+usuaris**, perquè cada client té la seva. En crear una instància, el panell fa
+tot el camí de cop: base de dades, usuari amb permisos només sobre aquella base,
+carpeta a `tenants/`, instal·lació del cros i correu amb les claus a qui el
+gestionarà. El web neix en mode «en preparació»: el publica el client quan ho
+tingui a punt. Si alguna cosa falla pel camí, no queda res a mitges.
+
+Altres ordres de la mateixa eina:
+
+| Ordre | Què fa |
+| --- | --- |
+| `php tools/platform.php instancies` | llista les instàncies i el seu estat |
+| `php tools/platform.php repassar` | actualitza inscrits, data i estat de publicació de totes |
+| `php tools/platform.php purgar` | diu quines baixes ja han passat els 90 dies |
+| `php tools/platform.php purgar --de-veritat` | les esborra de debò (base de dades i carpeta) |
+
+Va bé posar `repassar` al cron un cop al dia, i `purgar --de-veritat` un cop a la
+setmana:
+
+```
+30 4 * * *  cd /var/www/crosescolar && php tools/platform.php repassar
+15 5 * * 1  cd /var/www/crosescolar && php tools/platform.php purgar --de-veritat
+```
+
 ## Resolució de problemes
 
 | Símptoma | Solució |
