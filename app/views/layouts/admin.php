@@ -72,6 +72,9 @@ $pending = (int) \Cros\Core\Db::val('SELECT COUNT(*) FROM orders WHERE status = 
       <a class="nav-link<?= $isActive('/admin/actualitzacions') ? ' is-active' : '' ?>" href="<?= e(url('/admin/actualitzacions')) ?>"><?= Icons::svg('refresh', 'icon', 18) ?> Actualitzacions</a>
     <?php endif; ?>
     <a class="nav-link<?= $isActive('/admin/correus') ? ' is-active' : '' ?>" href="<?= e(url('/admin/correus')) ?>"><?= Icons::svg('mail', 'icon', 18) ?> Correus</a>
+    <?php if (Auth::isAdmin()): ?>
+      <a class="nav-link<?= $isActive('/admin/dades') ? ' is-active' : '' ?>" href="<?= e(url('/admin/dades')) ?>"><?= Icons::svg('download', 'icon', 18) ?> Les meves dades</a>
+    <?php endif; ?>
     <a class="nav-link<?= $isActive('/admin/registre') ? ' is-active' : '' ?>" href="<?= e(url('/admin/registre')) ?>"><?= Icons::svg('file', 'icon', 18) ?> Registre</a>
     <div style="padding:1rem 1.3rem;font-size:.75rem;color:rgba(255,255,255,.4)">Versió <?= e(app_version()) ?></div>
   </aside>

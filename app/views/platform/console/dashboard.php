@@ -26,6 +26,16 @@ use Cros\Platform\Instance;
   </div>
 </div>
 
+<?php if ((int) $stats['outdated'] > 0): ?>
+  <div class="alert alert--warning mt-2 flex-between">
+    <span>
+      <strong><?= (int) $stats['outdated'] === 1 ? 'Una instància' : (int) $stats['outdated'] . ' instàncies' ?></strong>
+      no <?= (int) $stats['outdated'] === 1 ? 'té' : 'tenen' ?> la versió <?= e(app_version()) ?>.
+    </span>
+    <a class="btn btn--sm" href="<?= e(url('/instancies')) ?>">Actualitzar-les</a>
+  </div>
+<?php endif; ?>
+
 <?php if ($requests): ?>
   <div class="panel mt-2">
     <div class="panel__head">

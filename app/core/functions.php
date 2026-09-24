@@ -103,7 +103,7 @@ function upload_url(?string $path): string
 }
 
 /** Ruta absoluta d'un fitxer pujat. */
-function upload_path(?string $path): string
+function upload_path(?string $path = ''): string
 {
     return CROS_UPLOADS . '/' . ltrim((string) $path, '/');
 }

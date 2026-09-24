@@ -53,6 +53,7 @@ class ConsoleController extends Controller
             'clients' => (int) Db::val('SELECT COUNT(*) FROM clients WHERE status = :s', ['s' => 'active'], 0),
             'registrations' => (int) Db::val('SELECT COALESCE(SUM(registrations), 0) FROM instances', [], 0),
             'pending' => Request::pending(),
+            'outdated' => count(Instance::outdated()),
         ];
         $upcoming = Db::all(
             'SELECT * FROM instances WHERE status = :s AND event_date >= :today ORDER BY event_date LIMIT 6',

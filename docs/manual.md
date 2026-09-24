@@ -478,3 +478,9 @@ queden antics.
 - Totes les llistes es poden **reordenar arrossegant** les files.
 - **Sistema → Registre** mostra qui ha fet cada canvi.
 - **Sistema → Correus** mostra els correus enviats i permet fer una prova d'enviament.
+- **Sistema → Les meves dades** us descarrega **tot el que hi ha al web** en un sol
+  fitxer ZIP: un full de càlcul per cada llista (inscripcions, resultats, categories,
+  comandes, configuració…), una còpia completa de la base de dades per si algun dia
+  voleu muntar el web en un altre servidor, i les imatges i documents que heu pujat.
+  Ho podeu fer tantes vegades com vulgueu i no cal demanar-ho a ningú. Compte on el
+  deseu: hi ha dades personals de les famílies inscrites.

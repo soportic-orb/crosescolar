@@ -33,6 +33,7 @@ if (($mode ?? 'platform') === 'console') {
     $router->get('/instancies', [InstanceController::class, 'index']);
     $router->get('/instancies/nova', [InstanceController::class, 'create']);
     $router->post('/instancies/nova', [InstanceController::class, 'store']);
+    $router->post('/instancies/actualitzar', [InstanceController::class, 'upgradeAll']);
     $router->get('/instancies/{id:\d+}', [InstanceController::class, 'show']);
     $router->post('/instancies/{id:\d+}/accio', [InstanceController::class, 'action']);
 

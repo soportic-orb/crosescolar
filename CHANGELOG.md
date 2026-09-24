@@ -57,9 +57,16 @@ i el versionatge semàntic.
 - Des de la fitxa d'una instància es pot **aturar, tornar a engegar, donar de baixa**
   (escrivint-ne el nom, perquè no passi sense voler) i **actualitzar-ne les dades**
   llegint el seu web.
+- **Actualitzar totes les instàncies d'un cop**: el panell avisa de quantes no tenen
+  l'última versió i les posa totes al dia amb un botó (o una per una, des de la seva
+  fitxa). Només aplica els canvis d'estructura pendents; no toca cap dada.
+- **«Les meves dades»** al panell de cada cros: qui el gestiona es descarrega tot el
+  que hi ha en un ZIP —un full de càlcul per cada llista, una còpia completa de la
+  base de dades i els fitxers pujats—, tantes vegades com vulgui i sense demanar-ho
+  a ningú. El fitxer no es queda al servidor.
 - **Eina de consola de la plataforma** (`php tools/platform.php`): posar al dia la
   base de dades, crear superadministradors, llistar i repassar instàncies i esborrar
-  les baixes que ja han passat els 90 dies.
+  les baixes que ja han passat els 90 dies, i actualitzar-les totes.
 - **L'instal·lador es pot cridar des del codi**: tota la feina de posar en marxa un
   web (escriure la configuració, crear les taules, el compte d'administració, la
   configuració inicial i els continguts d'exemple) passa a la classe

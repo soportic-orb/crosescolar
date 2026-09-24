@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace Cros\Platform;
 
 use Cros\Core\Db;
+use Cros\Core\Migrator;
+use Cros\Core\Settings;
 use Cros\Core\Tenancy;
 
 /** Les instàncies: el web de cada client, amb el seu subdomini. */
@@ -197,6 +199,61 @@ class Instance
         ]);
 
         return true;
+    }
+
+    /**
+     * Posa al dia el codi d'una instància: aplica les migracions que li falten
+     * i apunta amb quina versió es queda. El codi és el mateix per a tothom
+     * (una sola còpia), de manera que aquí només es toca la base de dades.
+     *
+     * @return array{ok:bool,applied:array<int,string>,error:string}
+     */
+    public static function upgrade(int $id, ?string $root = null): array
+    {
+        $root = $root ?? CROS_ROOT;
+        $instance = self::find($id);
+        if (!$instance || in_array((string) $instance['status'], ['cancelled', 'purged'], true)) {
+            return ['ok' => false, 'applied' => [], 'error' => 'La instància no s\'ha d\'actualitzar.'];
+        }
+        $dir = Tenancy::dir($root, (string) $instance['slug']);
+        if ($dir === '' || !is_file($dir . '/config.php')) {
+            return ['ok' => false, 'applied' => [], 'error' => 'No hi ha la carpeta de la instància.'];
+        }
+        $config = require $dir . '/config.php';
+        $platform = Db::connection();
+        $applied = [];
+        $error = '';
+        try {
+            Db::setConnection(Db::connect((array) ($config['db'] ?? []) + ['charset' => 'utf8mb4', 'timeout' => 10]));
+            $applied = Migrator::run();
+        } catch (\Throwable $e) {
+            $error = $e->getMessage();
+            log_line('platform', 'No s\'ha pogut actualitzar la instància', ['slug' => $instance['slug'], 'error' => $error]);
+        } finally {
+            Db::setConnection($platform);
+            // Treballar amb la base de dades del client buida la configuració
+            // que hi havia a memòria: es torna a posar la de la plataforma.
+            Settings::forget();
+            Platform::prime($root);
+        }
+        if ($error === '') {
+            self::update($id, ['version' => app_version()]);
+        }
+
+        return ['ok' => $error === '', 'applied' => $applied, 'error' => $error];
+    }
+
+    /**
+     * Les instàncies que encara no tenen l'última versió.
+     * @return array<int,array<string,mixed>>
+     */
+    public static function outdated(): array
+    {
+        return Db::all(
+            "SELECT * FROM instances WHERE status NOT IN ('cancelled', 'purged')
+             AND (version IS NULL OR version <> :version) ORDER BY slug",
+            ['version' => app_version()]
+        );
     }
 
     /**

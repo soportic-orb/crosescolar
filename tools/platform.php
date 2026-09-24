@@ -6,6 +6,7 @@
  *   php tools/platform.php usuari "Nom" correu [clau] crea o actualitza un superadministrador
  *   php tools/platform.php instancies                 llista les instàncies
  *   php tools/platform.php repassar                   actualitza les dades de totes
+ *   php tools/platform.php actualitzar                aplica els canvis pendents a totes
  *   php tools/platform.php purgar [--de-veritat]      esborra les baixes que ja han passat els 90 dies
  */
 declare(strict_types=1);
@@ -96,6 +97,25 @@ switch ($command) {
         }
         break;
 
+    case 'actualitzar':
+        $pending = Instance::outdated();
+        if (!$pending) {
+            echo "Totes les instàncies ja tenen la versió " . app_version() . ".\n";
+            break;
+        }
+        foreach ($pending as $row) {
+            $result = Instance::upgrade((int) $row['id'], $root);
+            if (!$result['ok']) {
+                echo '  ' . $row['slug'] . ": ERROR " . $result['error'] . "\n";
+                continue;
+            }
+            echo '  ' . $row['slug'] . ': ' . ($result['applied']
+                ? count($result['applied']) . ' canvi(s) aplicats'
+                : 'ja estava al dia') . "\n";
+        }
+        echo "Fet.\n";
+        break;
+
     case 'purgar':
         $real = in_array('--de-veritat', $argv, true);
         $rows = Db::all(
@@ -118,5 +138,5 @@ switch ($command) {
         break;
 
     default:
-        echo "Ordres: migrar · usuari · instancies · repassar · purgar\n";
+        echo "Ordres: migrar · usuari · instancies · repassar · actualitzar · purgar\n";
 }

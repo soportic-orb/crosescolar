@@ -162,6 +162,8 @@ $router->post('/admin/actualitzacions/pujar', [UpdateController::class, 'upload'
 $router->post('/admin/actualitzacions/copia', [UpdateController::class, 'backup']);
 $router->get('/admin/actualitzacions/descarregar/{file}', [UpdateController::class, 'download']);
 
+$router->get('/admin/dades', [ToolsController::class, 'data']);
+$router->post('/admin/dades', [ToolsController::class, 'download']);
 $router->get('/admin/registre', [ToolsController::class, 'activity']);
 $router->get('/admin/correus', [ToolsController::class, 'emails']);
 $router->post('/admin/correus/prova', [ToolsController::class, 'testEmail']);

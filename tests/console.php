@@ -218,6 +218,42 @@ try {
     check('Ara surt al llistat públic',
         str_contains($web('GET', '/', [], 'crosescolar.test')['body'], 'Cros Escola Sant Jordi'));
 
+    echo "\n== Actualitzar les instàncies ==\n";
+    check('Una instància acabada de crear ja té la versió del codi',
+        (string) $instance['version'] === app_version());
+    check('I no consta pendent d\'actualitzar', Instance::outdated() === []);
+
+    // Una instància que es va quedar en una versió antiga i a qui, a més, li
+    // falta un canvi a la base de dades.
+    Db::update('instances', ['version' => '0.9.0'], 'id = :id', ['id' => $instanceId]);
+    $tenant = require $site . '/tenants/santjordi/config.php';
+    $tenantPdo = Db::connect((array) $tenant['db'] + ['charset' => 'utf8mb4']);
+    $last = (string) $tenantPdo->query('SELECT name FROM migrations ORDER BY name DESC LIMIT 1')->fetchColumn();
+    $tenantPdo->exec('DELETE FROM migrations WHERE name = ' . $tenantPdo->quote($last));
+    $tenantPdo = null;
+
+    $pending = Instance::outdated();
+    check('La plataforma veu que li falta la versió nova',
+        count($pending) === 1 && (int) $pending[0]['id'] === $instanceId);
+    $list = $web('GET', '/instancies');
+    check('I el panell ho avisa', str_contains($list['body'], 'Actualitzar-les totes'));
+
+    $upgrade = $web('POST', '/instancies/actualitzar', ['_token' => $token($list['body'])]);
+    $instance = Instance::find($instanceId);
+    check('S\'actualitzen totes de cop', $upgrade['status'] === 302);
+    check('I queda apuntada la versió nova', (string) $instance['version'] === app_version());
+    check('Cap instància queda pendent', Instance::outdated() === []);
+
+    $tenant = require $site . '/tenants/santjordi/config.php';
+    $tenantPdo = Db::connect((array) $tenant['db'] + ['charset' => 'utf8mb4']);
+    check('El canvi que faltava s\'ha aplicat a la seva base de dades',
+        (string) $tenantPdo->query('SELECT COUNT(*) FROM migrations WHERE name = '
+            . $tenantPdo->quote($last))->fetchColumn() === '1');
+    $tenantPdo = null;
+
+    check('La plataforma no ha perdut la seva connexió',
+        (int) Db::val('SELECT COUNT(*) FROM instances', [], 0) > 0);
+
     echo "\n== Aturar i tornar a engegar ==\n";
     $detail = $web('GET', '/instancies/' . $instanceId);
     $web('POST', '/instancies/' . $instanceId . '/accio', ['_token' => $token($detail['body']), 'action' => 'suspend']);
@@ -230,6 +266,65 @@ try {
     $web('POST', '/instancies/' . $instanceId . '/accio', ['_token' => $token($detail['body']), 'action' => 'resume']);
     check('En tornar-la a engegar, el web torna',
         $web('GET', '/', [], 'santjordi.crosescolar.test')['status'] === 200);
+
+    echo "\n== El client s'emporta les seves dades ==\n";
+    // El web d'una instància s'adreça per https; per poder-hi entrar amb curl
+    // durant la prova, se li diu que de moment parla per http.
+    $configFile = $site . '/tenants/santjordi/config.php';
+    file_put_contents($configFile, str_replace(
+        "'base_url' => 'https://santjordi.crosescolar.test'",
+        "'base_url' => 'http://santjordi.crosescolar.test'",
+        (string) file_get_contents($configFile)
+    ));
+    $tenant = require $configFile;
+    $tenantPdo = Db::connect((array) $tenant['db'] + ['charset' => 'utf8mb4']);
+    $tenantPdo->prepare('UPDATE users SET password_hash = ? WHERE email = ?')
+        ->execute([password_hash('unaAltraClauLlarga1', PASSWORD_DEFAULT), 'laia@example.cat']);
+    $tenantPdo = null;
+
+    $login = $web('GET', '/admin/acces', [], 'santjordi.crosescolar.test');
+    $entered = $web('POST', '/admin/acces', [
+        '_token' => $token($login['body']), 'email' => 'laia@example.cat', 'password' => 'unaAltraClauLlarga1',
+    ], 'santjordi.crosescolar.test');
+    check('Qui gestiona el cros entra al seu panell', $entered['status'] === 302);
+
+    $page = $web('GET', '/admin/dades', [], 'santjordi.crosescolar.test');
+    check('Hi té la pàgina de les seves dades',
+        $page['status'] === 200 && str_contains($page['body'], 'Emporteu-vos les vostres dades'));
+    check('I l\'avís de les dades personals', str_contains($page['body'], 'dades personals'));
+
+    $download = $web('POST', '/admin/dades', ['_token' => $token($page['body'])], 'santjordi.crosescolar.test');
+    check('La descàrrega respon un ZIP',
+        $download['status'] === 200 && str_contains($download['headers'], 'application/zip'), 'estat ' . $download['status']);
+    check('Amb nom de fitxer', str_contains($download['headers'], '.zip"'));
+
+    $zipFile = sys_get_temp_dir() . '/cros-export-' . bin2hex(random_bytes(3)) . '.zip';
+    file_put_contents($zipFile, $download['body']);
+    $zip = new ZipArchive();
+    $opened = $zip->open($zipFile) === true;
+    check('El fitxer s\'obre', $opened);
+    if ($opened) {
+        $names = [];
+        for ($i = 0; $i < $zip->numFiles; $i++) {
+            $names[] = (string) $zip->getNameIndex($i);
+        }
+        check('Hi ha l\'explicació de què conté', in_array('llegeix-me.txt', $names, true));
+        check('Els fulls de càlcul de les llistes',
+            in_array('fulls/inscripcions.csv', $names, true) && in_array('fulls/configuracio.csv', $names, true));
+        check('I la còpia de la base de dades', in_array('base-de-dades.sql', $names, true));
+        $sql = (string) $zip->getFromName('base-de-dades.sql');
+        check('La còpia porta l\'estructura', str_contains($sql, 'CREATE TABLE'));
+        check('I les dades de configuració', str_contains($sql, 'INSERT INTO `settings`'));
+        check('Amb el nom del cros dins', str_contains($sql, 'Cros Escola Sant Jordi'));
+        $csv = (string) $zip->getFromName('fulls/configuracio.csv');
+        check('Els fulls porten capçaleres', str_contains($csv, 'k;v') || str_contains($csv, '"k";"v"'));
+        check('No s\'hi cola la taula de control de versions',
+            !in_array('fulls/migrations.csv', $names, true));
+        $zip->close();
+    }
+    @unlink($zipFile);
+    check('El servidor no es queda el fitxer',
+        (glob($site . '/tenants/santjordi/storage/exports/*.zip') ?: []) === []);
 
     echo "\n== D'una sol·licitud a una instància ==\n";
     $home = $web('GET', '/', [], 'crosescolar.test');

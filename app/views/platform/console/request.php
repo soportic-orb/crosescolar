@@ -34,7 +34,6 @@ $status = (string) $request['status'];
           <?= $request['contact_phone'] ? ' · ' . e($request['contact_phone']) : '' ?>
         </td></tr>
         <tr><th>Adreça demanada</th><td><?= $request['slug'] ? '<code>' . e($request['slug']) . '</code>' : '—' ?></td></tr>
-        <tr><th>Idioma</th><td><?= $request['language'] === 'es' ? 'Castellà' : 'Català' ?></td></tr>
         <tr><th>Cursa prevista</th><td><?= $request['event_date'] ? e(ca_date((string) $request['event_date'], true)) : '—' ?></td></tr>
         <tr><th>Participants previstos</th><td><?= $request['participants'] ? (int) $request['participants'] : '—' ?></td></tr>
         <?php if ($request['referral']): ?><tr><th>Com ens han conegut</th><td><?= e($request['referral']) ?></td></tr><?php endif; ?>

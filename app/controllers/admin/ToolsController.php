@@ -6,6 +6,7 @@ namespace Cros\Controllers\Admin;
 use Cros\Core\Auth;
 use Cros\Core\Controller;
 use Cros\Core\Db;
+use Cros\Core\Exporter;
 use Cros\Core\Mailer;
 use Cros\Core\Stripe;
 use Cros\Models\Ticket;
@@ -13,6 +14,73 @@ use Cros\Models\Ticket;
 /** Eines: validació de tiquets, registres i proves de configuració. */
 class ToolsController extends Controller
 {
+    /** «Les meves dades»: on el client se les pot endur totes. */
+    public function data(): void
+    {
+        Auth::requireAdmin();
+        $counts = [];
+        foreach (['registrations' => 'Inscripcions', 'results' => 'Resultats', 'orders' => 'Comandes',
+                  'tickets' => 'Tiquets', 'email_log' => 'Correus enviats'] as $table => $label) {
+            try {
+                $counts[$label] = (int) Db::val('SELECT COUNT(*) FROM `' . $table . '`', [], 0);
+            } catch (\Throwable $e) {
+                // Una taula que encara no hi és no ha d'espatllar la pàgina.
+            }
+        }
+        $uploads = 0;
+        $bytes = 0;
+        $folder = rtrim(upload_path(''), '/');
+        if (is_dir($folder)) {
+            foreach (new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($folder, \FilesystemIterator::SKIP_DOTS)
+            ) as $file) {
+                /** @var \SplFileInfo $file */
+                if ($file->isFile()) {
+                    $uploads++;
+                    $bytes += $file->getSize();
+                }
+            }
+        }
+
+        $this->adminView('tools/data', [
+            'title' => 'Les meves dades',
+            'counts' => $counts,
+            'tables' => Exporter::tables(),
+            'uploads' => $uploads,
+            'bytes' => $bytes,
+        ]);
+    }
+
+    /** Prepara el ZIP amb tot i l'envia al navegador. */
+    public function download(): void
+    {
+        Auth::requireAdmin();
+        $this->checkCsrf();
+
+        // Un cros amb moltes inscripcions i fotos pot trigar una mica.
+        @set_time_limit(300);
+        try {
+            $file = Exporter::create();
+        } catch (\Throwable $e) {
+            log_line('export', 'No s\'ha pogut exportar les dades', ['error' => $e->getMessage()]);
+            flash('error', 'No s\'han pogut preparar les dades: ' . $e->getMessage());
+            redirect('/admin/dades');
+        }
+        Auth::logActivity('data_export', 'site', 0, ['mida' => filesize($file)]);
+
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+        header('Content-Type: application/zip');
+        header('Content-Disposition: attachment; filename="' . basename($file) . '"');
+        header('Content-Length: ' . (string) filesize($file));
+        header('X-Content-Type-Options: nosniff');
+        readfile($file);
+        // El fitxer no es queda al servidor: ja se l'han endut.
+        @unlink($file);
+        exit;
+    }
+
     /** Pantalla de validació de tiquets (lector de QR). */
     public function scanner(): void
     {

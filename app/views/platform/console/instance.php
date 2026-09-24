@@ -33,9 +33,13 @@ $status = (string) $instance['status'];
         <tr><th>Administrador</th><td><?= e((string) ($instance['admin_email'] ?? '—')) ?></td></tr>
         <tr><th>Cursa</th><td><?= $instance['event_date'] ? e(ca_date((string) $instance['event_date'], true)) : '—' ?></td></tr>
         <tr><th>Inscripcions</th><td><?= (int) $instance['registrations'] ?></td></tr>
-        <tr><th>Idioma</th><td><?= $instance['language'] === 'es' ? 'Castellà' : 'Català' ?></td></tr>
         <tr><th>Base de dades</th><td><code><?= e($instance['db_name']) ?></code><?= $instance['db_user'] ? ' · usuari <code>' . e($instance['db_user']) . '</code>' : '' ?></td></tr>
-        <tr><th>Versió instal·lada</th><td><?= e($instance['version'] ?? '—') ?></td></tr>
+        <tr><th>Versió instal·lada</th><td>
+          <?= e($instance['version'] ?? '—') ?>
+          <?php if (($instance['version'] ?? '') !== app_version() && !in_array($status, ['cancelled', 'purged'], true)): ?>
+            <span class="badge badge--amber">n'hi ha una de nova: <?= e(app_version()) ?></span>
+          <?php endif; ?>
+        </td></tr>
         <tr><th>Creada</th><td><?= e(ca_date(substr((string) $instance['created_at'], 0, 10), true)) ?></td></tr>
         <tr><th>Últim repàs</th><td><?= $instance['synced_at'] ? e(substr((string) $instance['synced_at'], 0, 16)) : '<span class="text-soft">mai</span>' ?></td></tr>
         <?php if ($instance['cancelled_at']): ?>
@@ -86,6 +90,15 @@ $status = (string) $instance['status'];
         <input type="hidden" name="action" value="sync">
         <button class="btn btn--ghost" type="submit">Actualitzar les dades des del seu web</button>
       </form>
+      <?php if (!in_array($status, ['cancelled', 'purged'], true)): ?>
+        <form method="post" action="<?= e(url('/instancies/' . (int) $instance['id'] . '/accio')) ?>">
+          <?= csrf_field() ?>
+          <input type="hidden" name="action" value="upgrade">
+          <button class="btn btn--ghost" type="submit">
+            <?= ($instance['version'] ?? '') === app_version() ? 'Repassar la versió' : 'Posar-la a la versió ' . e(app_version()) ?>
+          </button>
+        </form>
+      <?php endif; ?>
       <?php if ($status === 'suspended'): ?>
         <form method="post" action="<?= e(url('/instancies/' . (int) $instance['id'] . '/accio')) ?>">
           <?= csrf_field() ?>

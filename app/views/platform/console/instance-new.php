@@ -50,14 +50,6 @@ $slug = $prefill('slug', (string) ($request['slug'] ?? ''));
           <p class="hint">Es pot deixar buida i posar-la després des del seu panell.</p>
         </div>
         <div class="field">
-          <label for="language">Idioma</label>
-          <select id="language" name="language">
-            <?php $lang = $prefill('language', (string) ($request['language'] ?? 'ca')); ?>
-            <option value="ca"<?= $lang === 'ca' ? ' selected' : '' ?>>Català</option>
-            <option value="es"<?= $lang === 'es' ? ' selected' : '' ?>>Castellà</option>
-          </select>
-        </div>
-        <div class="field">
           <span class="label">Opcions</span>
           <label class="switch"><input type="checkbox" name="listed" value="1" checked> Surt al llistat de crosescolar.com</label>
           <label class="switch"><input type="checkbox" name="demo" value="1"> Omplir-lo amb dades d'exemple</label>

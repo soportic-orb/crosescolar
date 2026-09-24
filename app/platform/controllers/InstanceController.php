@@ -36,6 +36,7 @@ class InstanceController extends Controller
             'status' => $status,
             'counts' => $counts,
             'instances' => Instance::all($status),
+            'outdated' => count(Instance::outdated()),
         ], 'layouts/console');
     }
 
@@ -119,6 +120,48 @@ class InstanceController extends Controller
         redirect('/instancies/' . $result['instance_id']);
     }
 
+    /**
+     * Posa al dia totes les instàncies.
+     * El codi ja és el mateix per a tothom; el que cal repassar és la base de
+     * dades de cadascuna, que pot tenir migracions pendents.
+     */
+    public function upgradeAll(): void
+    {
+        Console::requireLogin();
+        $this->checkCsrf();
+
+        $done = 0;
+        $already = 0;
+        $failed = [];
+        foreach (Instance::outdated() as $row) {
+            $result = Instance::upgrade((int) $row['id']);
+            if (!$result['ok']) {
+                $failed[] = (string) $row['slug'];
+            } elseif ($result['applied']) {
+                $done++;
+            } else {
+                $already++;
+            }
+        }
+        Console::log('instances_upgrade', 'instance', null, ['fetes' => $done, 'fallides' => $failed]);
+
+        if (!$done && !$already && !$failed) {
+            flash('success', 'Totes les instàncies ja estaven al dia.');
+        } else {
+            $parts = [];
+            if ($done) {
+                $parts[] = $done . ($done === 1 ? ' instància actualitzada' : ' instàncies actualitzades');
+            }
+            if ($already) {
+                $parts[] = $already . ' que ja ho estaven';
+            }
+            flash($failed ? 'error' : 'success', implode(', ', $parts ?: ['Cap canvi'])
+                . ($failed ? '. No s\'han pogut actualitzar: ' . implode(', ', $failed) . '.' : '.'));
+        }
+
+        redirect('/instancies');
+    }
+
     /** Fitxa d'una instància. */
     public function show(array $params): void
     {
@@ -180,6 +223,18 @@ class InstanceController extends Controller
                 Console::log('instance_cancel', 'instance', $id, ['slug' => $instance['slug']]);
                 flash('success', 'Instància donada de baixa. Les dades es guarden '
                     . Instance::PURGE_DAYS . ' dies abans d\'esborrar-se.');
+                break;
+            case 'upgrade':
+                $result = Instance::upgrade($id);
+                Console::log('instance_upgrade', 'instance', $id, ['slug' => $instance['slug'], 'ok' => $result['ok']]);
+                flash(
+                    $result['ok'] ? 'success' : 'error',
+                    $result['ok']
+                        ? ($result['applied']
+                            ? 'Actualitzada: ' . count($result['applied']) . ' canvi(s) aplicats.'
+                            : 'Ja estava al dia.')
+                        : 'No s\'ha pogut actualitzar: ' . $result['error']
+                );
                 break;
             case 'sync':
                 $synced = Instance::sync($id);

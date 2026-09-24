@@ -157,13 +157,6 @@ $old = static fn (string $key, string $default = ''): string => (string) old($ke
           <?php if (isset($errors['slug'])): ?><span class="field__error"><?= e($errors['slug']) ?></span><?php endif; ?>
         </div>
         <div class="field">
-          <label for="language">Idioma del web</label>
-          <select id="language" name="language">
-            <option value="ca" <?= $old('language', 'ca') === 'ca' ? 'selected' : '' ?>>Català</option>
-            <option value="es" <?= $old('language') === 'es' ? 'selected' : '' ?>>Castellà</option>
-          </select>
-        </div>
-        <div class="field">
           <label for="event_date">Data prevista de la cursa</label>
           <input type="date" id="event_date" name="event_date" value="<?= e($old('event_date')) ?>">
         </div>

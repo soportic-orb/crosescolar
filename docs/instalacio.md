@@ -171,6 +171,7 @@ Altres ordres de la mateixa eina:
 | --- | --- |
 | `php tools/platform.php instancies` | llista les instàncies i el seu estat |
 | `php tools/platform.php repassar` | actualitza inscrits, data i estat de publicació de totes |
+| `php tools/platform.php actualitzar` | aplica els canvis pendents de la versió nova a totes |
 | `php tools/platform.php purgar` | diu quines baixes ja han passat els 90 dies |
 | `php tools/platform.php purgar --de-veritat` | les esborra de debò (base de dades i carpeta) |
 
@@ -181,6 +182,15 @@ setmana:
 30 4 * * *  cd /var/www/crosescolar && php tools/platform.php repassar
 15 5 * * 1  cd /var/www/crosescolar && php tools/platform.php purgar --de-veritat
 ```
+
+### Actualitzar totes les instàncies
+
+Com que el codi és un de sol, en actualitzar-lo ja el tenen tots els clients; el que
+va per instància és la seva base de dades. Al panell, a **Instàncies**, surt un avís
+amb quantes n'hi ha que encara no tenen l'última versió i un botó per posar-les totes
+al dia d'un cop (o una per una, des de la seva fitxa). Fa el mateix que
+`php tools/platform.php actualitzar` i no toca cap dada dels clients: només hi aplica
+els canvis d'estructura que els falten.
 
 ## Resolució de problemes
 

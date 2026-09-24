@@ -5,6 +5,20 @@ use Cros\Platform\Platform;
 
 $tabs = ['' => 'Totes'] + Instance::STATUSES;
 ?>
+<?php if ($outdated > 0): ?>
+  <div class="alert alert--warning flex-between">
+    <span>
+      <strong><?= $outdated === 1 ? 'Una instància' : $outdated . ' instàncies' ?></strong>
+      no <?= $outdated === 1 ? 'té' : 'tenen' ?> la versió <?= e(app_version()) ?>.
+      Actualitzar-les repassa la seva base de dades; no els toca cap dada.
+    </span>
+    <form method="post" action="<?= e(url('/instancies/actualitzar')) ?>">
+      <?= csrf_field() ?>
+      <button class="btn btn--sm" type="submit">Actualitzar-les totes</button>
+    </form>
+  </div>
+<?php endif; ?>
+
 <div class="panel">
   <div class="panel__head">
     <h2>Instàncies</h2>
