@@ -69,7 +69,9 @@ $pending = (int) \Cros\Core\Db::val('SELECT COUNT(*) FROM orders WHERE status = 
     <div class="sidebar__section">Sistema</div>
     <?php if (Auth::isAdmin()): ?>
       <a class="nav-link<?= $isActive('/admin/usuaris') ? ' is-active' : '' ?>" href="<?= e(url('/admin/usuaris')) ?>"><?= Icons::svg('users', 'icon', 18) ?> Usuaris</a>
-      <a class="nav-link<?= $isActive('/admin/actualitzacions') ? ' is-active' : '' ?>" href="<?= e(url('/admin/actualitzacions')) ?>"><?= Icons::svg('refresh', 'icon', 18) ?> Actualitzacions</a>
+      <?php if (\Cros\Core\Tenancy::mode() !== 'tenant'): ?>
+        <a class="nav-link<?= $isActive('/admin/actualitzacions') ? ' is-active' : '' ?>" href="<?= e(url('/admin/actualitzacions')) ?>"><?= Icons::svg('refresh', 'icon', 18) ?> Actualitzacions</a>
+      <?php endif; ?>
     <?php endif; ?>
     <a class="nav-link<?= $isActive('/admin/correus') ? ' is-active' : '' ?>" href="<?= e(url('/admin/correus')) ?>"><?= Icons::svg('mail', 'icon', 18) ?> Correus</a>
     <?php if (Auth::isAdmin()): ?>

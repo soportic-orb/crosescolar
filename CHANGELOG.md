@@ -3,6 +3,25 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.25.1] — 2026-09-24
+
+### Canviat
+- **El codi d'un web que forma part d'una plataforma ja no el pot actualitzar el
+  client**: la còpia del codi és compartida per tots els cros i, si l'actualitzés
+  un, l'actualitzaria a tothom. L'apartat d'actualitzacions desapareix del seu
+  panell i, si s'hi arriba a mà, contesta que d'això se n'encarrega qui administra
+  la plataforma. Una instal·lació d'un sol web continua actualitzant-se com sempre.
+
+### Corregit
+- La configuració d'nginx de la plataforma deia que l'arrel del web era una carpeta
+  `public/` que aquest projecte no té. Ara diu la bona i, de passada, tanca també
+  `tools/`, `docs/` i l'instal·lador, que en una plataforma no pinten res.
+
+### Afegit
+- Guia per muntar la plataforma en un VPS acabat de crear
+  ([`docs/vps.md`](docs/vps.md)): servidor, bases de dades, certificat comodí per
+  als dos dominis, feines del cron i com portar-hi un cros que ja existia.
+
 ## [1.25.0] — 2026-09-24
 
 ### Afegit

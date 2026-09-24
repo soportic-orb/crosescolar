@@ -366,6 +366,11 @@ try {
     ], 'santjordi.crosescolar.test');
     check('Qui gestiona el cros entra amb la contrasenya que s\'ha triat', $entered['status'] === 302);
 
+    check('El client no pot actualitzar el codi de tothom',
+        $web('GET', '/admin/actualitzacions', [], 'santjordi.crosescolar.test')['status'] === 403);
+    check('Ni li surt al menú',
+        !str_contains($web('GET', '/admin', [], 'santjordi.crosescolar.test')['body'], '/admin/actualitzacions'));
+
     $page = $web('GET', '/admin/dades', [], 'santjordi.crosescolar.test');
     check('Hi té la pàgina de les seves dades',
         $page['status'] === 200 && str_contains($page['body'], 'Emporteu-vos les vostres dades'));

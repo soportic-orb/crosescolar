@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace Cros\Controllers\Admin;
 
 use Cros\Core\Auth;
+use Cros\Core\HttpException;
+use Cros\Core\Tenancy;
 use Cros\Core\Controller;
 use Cros\Core\Migrator;
 use Cros\Core\Updater;
@@ -11,9 +13,25 @@ use Cros\Core\Updater;
 /** Actualitzacions OTA i còpies de seguretat. */
 class UpdateController extends Controller
 {
+    /**
+     * El codi d'un web que forma part d'una plataforma no el toca el client.
+     *
+     * La còpia del codi és compartida per tots els cros: si l'actualitzés un,
+     * l'actualitzaria a tothom. Qui la manté ho fa des del panell de la
+     * plataforma, que les posa totes al dia alhora.
+     */
+    private static function onlyOwnInstall(): void
+    {
+        if (Tenancy::mode() === 'tenant') {
+            throw new HttpException(403, 'Aquest web forma part d\'una plataforma: '
+                . 'de mantenir el sistema al dia se n\'encarrega qui l\'administra.');
+        }
+    }
+
     public function index(): void
     {
         Auth::requireAdmin();
+        self::onlyOwnInstall();
         $result = json_decode((string) setting('update_last_result', ''), true);
         $this->adminView('updates/index', [
             'title' => 'Actualitzacions',
@@ -30,6 +48,7 @@ class UpdateController extends Controller
     public function check(): void
     {
         Auth::requireAdmin();
+        self::onlyOwnInstall();
         $this->checkCsrf();
         $result = Updater::check(true);
         if ($result['error'] !== '') {
@@ -47,6 +66,7 @@ class UpdateController extends Controller
     public function install(): void
     {
         Auth::requireAdmin();
+        self::onlyOwnInstall();
         $this->checkCsrf();
         $result = Updater::check(false);
         if (empty($result['zip_url'])) {
@@ -73,6 +93,7 @@ class UpdateController extends Controller
     public function upload(): void
     {
         Auth::requireAdmin();
+        self::onlyOwnInstall();
         $this->checkCsrf();
         if (!isset($_FILES['package']) || (int) $_FILES['package']['error'] !== UPLOAD_ERR_OK) {
             flash('error', 'Cal seleccionar un fitxer ZIP.');
@@ -99,6 +120,7 @@ class UpdateController extends Controller
     public function backup(): void
     {
         Auth::requireAdmin();
+        self::onlyOwnInstall();
         $this->checkCsrf();
         try {
             @set_time_limit(300);
@@ -114,6 +136,7 @@ class UpdateController extends Controller
     public function download(array $params): void
     {
         Auth::requireAdmin();
+        self::onlyOwnInstall();
         $name = basename((string) $params['file']);
         $path = storage_path('backups') . '/' . $name;
         if (!preg_match('/^backup-[\w.\-]+\.zip$/', $name) || !is_file($path)) {
