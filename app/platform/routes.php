@@ -37,7 +37,7 @@ if (($mode ?? 'platform') === 'console') {
     $router->post('/actualitzacions/instalar', [UpdatesController::class, 'install']);
     $router->post('/actualitzacions/pujar', [UpdatesController::class, 'upload']);
     $router->post('/actualitzacions/copia', [UpdatesController::class, 'backup']);
-    $router->get('/actualitzacions/copia/{file}', [UpdatesController::class, 'download']);
+    $router->get('/actualitzacions/copia', [UpdatesController::class, 'download']);
 
     $router->get('/sollicituds', [RequestController::class, 'index']);
     $router->get('/sollicituds/{id:\d+}', [RequestController::class, 'show']);

@@ -786,11 +786,12 @@ try {
     check('Que queda desada', count($copies) === 1, implode(', ', array_map('basename', $copies)));
     $llista = $web('GET', '/actualitzacions');
     check('I surt a la llista', count($copies) === 1 && str_contains($llista['body'], basename($copies[0])));
-    $baixada = $web('GET', '/actualitzacions/copia/' . rawurlencode(basename($copies[0] ?? 'res.zip')));
+    $baixada = $web('GET', '/actualitzacions/copia?fitxer=' . rawurlencode(basename($copies[0] ?? 'res.zip')));
     check('Se la pot descarregar',
-        $baixada['status'] === 200 && str_contains($baixada['headers'], 'application/zip'));
+        $baixada['status'] === 200 && str_contains($baixada['headers'], 'application/zip'),
+        'estat ' . $baixada['status'] . ', ' . trim(strtok($baixada['headers'], "\n")));
     check('Un nom inventat no dona res',
-        $web('GET', '/actualitzacions/copia/' . rawurlencode('../platform.php'))['status'] === 404);
+        $web('GET', '/actualitzacions/copia?fitxer=' . rawurlencode('../tenants/platform.php'))['status'] === 404);
 
     $dolent = $web('POST', '/actualitzacions/instalar', ['_token' => $token($llista['body'])]);
     check('Sense paquet no s\'actualitza res', $dolent['status'] === 302);

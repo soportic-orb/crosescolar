@@ -133,11 +133,14 @@ class UpdateController extends Controller
         redirect('/admin/actualitzacions');
     }
 
-    public function download(array $params): void
+    public function download(): void
     {
         Auth::requireAdmin();
         self::onlyOwnInstall();
-        $name = basename((string) $params['file']);
+        // El nom va per paràmetre i no dins del camí: si l'adreça acaba en
+        // «.zip» hi ha servidors que la volen servir com un fitxer i no hi
+        // arriba mai.
+        $name = basename((string) ($_GET['fitxer'] ?? ''));
         $path = storage_path('backups') . '/' . $name;
         if (!preg_match('/^backup-[\w.\-]+\.zip$/', $name) || !is_file($path)) {
             abort(404, 'Còpia no trobada.');

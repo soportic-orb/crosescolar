@@ -163,7 +163,7 @@ $router->post('/admin/actualitzacions/comprovar', [UpdateController::class, 'che
 $router->post('/admin/actualitzacions/instalar', [UpdateController::class, 'install']);
 $router->post('/admin/actualitzacions/pujar', [UpdateController::class, 'upload']);
 $router->post('/admin/actualitzacions/copia', [UpdateController::class, 'backup']);
-$router->get('/admin/actualitzacions/descarregar/{file}', [UpdateController::class, 'download']);
+$router->get('/admin/actualitzacions/descarregar', [UpdateController::class, 'download']);
 
 $router->get('/admin/dades', [ToolsController::class, 'data']);
 $router->post('/admin/dades', [ToolsController::class, 'download']);

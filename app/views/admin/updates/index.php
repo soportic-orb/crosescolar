@@ -130,7 +130,7 @@ use Cros\Core\Icons;
               <td><?= e($backup['date']) ?></td>
               <td><?= e(number_format($backup['size'] / 1048576, 1, ',', '.')) ?> MB</td>
               <td class="actions">
-                <a class="btn btn--ghost btn--sm" href="<?= e(url('/admin/actualitzacions/descarregar/' . $backup['name'])) ?>">Descarregar</a>
+                <a class="btn btn--ghost btn--sm" href="<?= e(url('/admin/actualitzacions/descarregar?fitxer=' . rawurlencode($backup['name']))) ?>">Descarregar</a>
               </td>
             </tr>
           <?php endforeach; ?>

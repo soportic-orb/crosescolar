@@ -142,10 +142,17 @@ class UpdatesController extends Controller
         redirect('/actualitzacions');
     }
 
-    public function download(array $params): void
+    /**
+     * Es descarrega una còpia del sistema.
+     *
+     * El nom va per paràmetre i no pas dins del camí: hi ha servidors (el de
+     * proves de PHP, sense anar més lluny) que, si l'adreça acaba en «.zip»,
+     * la volen servir com un fitxer estàtic i responen que no hi és.
+     */
+    public function download(): void
     {
         Console::requireLogin();
-        $name = basename((string) $params['file']);
+        $name = basename((string) ($_GET['fitxer'] ?? ''));
         $path = storage_path('backups') . '/' . $name;
         if (!preg_match('/^backup-[\w.\-]+\.zip$/', $name) || !is_file($path)) {
             throw new HttpException(404, 'Aquesta còpia ja no hi és.');
@@ -156,6 +163,7 @@ class UpdatesController extends Controller
         header('Content-Type: application/zip');
         header('Content-Disposition: attachment; filename="' . $name . '"');
         header('Content-Length: ' . (string) filesize($path));
+        header('X-Content-Type-Options: nosniff');
         readfile($path);
         exit;
     }

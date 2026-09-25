@@ -128,7 +128,7 @@ $nova = $result && !empty($result['available']);
             <td><code><?= e($copy['name']) ?></code></td>
             <td><?= e($mida((int) $copy['size'])) ?></td>
             <td class="text-right">
-              <a class="btn btn--ghost btn--sm" href="<?= e(url('/actualitzacions/copia/' . rawurlencode($copy['name']))) ?>">Descarregar</a>
+              <a class="btn btn--ghost btn--sm" href="<?= e(url('/actualitzacions/copia?fitxer=' . rawurlencode($copy['name']))) ?>">Descarregar</a>
             </td>
           </tr>
         <?php endforeach; ?>
