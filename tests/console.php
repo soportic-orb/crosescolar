@@ -657,6 +657,24 @@ try {
     check('Ara és l\'adreça vella la que hi mena',
         $back['status'] === 301 && str_contains($back['headers'], 'elbosc.crosescolar.test'));
 
+    echo "\n== El mapa del web de la plataforma ==\n";
+    $mapa = $web('GET', '/sitemap.xml', [], 'crosescolar.test');
+    check('La plataforma té mapa del web',
+        $mapa['status'] === 200 && str_contains($mapa['body'], '<urlset'), 'estat ' . $mapa['status']);
+    check('Amb la seva portada', str_contains($mapa['body'], '<loc>https://crosescolar.test/</loc>'));
+    $directori = Instance::directory();
+    $hiSurten = $directori !== [];
+    foreach ($directori as $fitxa) {
+        $hiSurten = $hiSurten && str_contains($mapa['body'], Instance::url($fitxa, $site));
+    }
+    check('I el web de cada cros publicat, perquè Google els trobi',
+        $hiSurten, count($directori) . ' al llistat');
+    $robotsPlataforma = $web('GET', '/robots.txt', [], 'crosescolar.test');
+    check('El robots.txt diu on és el mapa',
+        str_contains($robotsPlataforma['body'], 'Sitemap: https://crosescolar.test/sitemap.xml'));
+    check('I no deixa rastrejar les sol·licituds enviades',
+        str_contains($robotsPlataforma['body'], 'Disallow: /sollicitud/'));
+
     echo "\n== Desestimar una sol·licitud ==\n";
     $home = $web('GET', '/', [], 'crosescolar.test');
     $web('POST', '/sollicitud', [

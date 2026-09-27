@@ -15,7 +15,25 @@ $name = (string) setting('site_name', 'Cros Escolar');
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e(($title ?? $name) . ' · ' . $domain) ?></title>
 <?php if (!empty($description)): ?><meta name="description" content="<?= e($description) ?>"><?php endif; ?>
-<?php if (!empty($noindex)): ?><meta name="robots" content="noindex, nofollow"><?php endif; ?>
+<meta name="robots" content="<?= !empty($noindex) ? 'noindex, nofollow' : 'index, follow, max-image-preview:large' ?>">
+<?php
+// Adreça canònica: sempre el domini principal, encara que s'hi hagi arribat
+// pel secundari, perquè els dos webs no competeixin entre ells.
+$canonical = 'https://' . $domain . rtrim((string) ($currentPath ?? '/'), '/');
+$platformLogo = (string) setting('platform_logo', '');
+?>
+<link rel="canonical" href="<?= e($canonical === 'https://' . $domain ? $canonical . '/' : $canonical) ?>">
+<meta property="og:type" content="website">
+<meta property="og:title" content="<?= e($title ?? $name) ?>">
+<meta property="og:site_name" content="<?= e($name) ?>">
+<meta property="og:locale" content="ca_ES">
+<meta property="og:url" content="<?= e($canonical) ?>">
+<?php if (!empty($description)): ?><meta property="og:description" content="<?= e($description) ?>"><?php endif; ?>
+<?php if ($platformLogo !== ''): ?><meta property="og:image" content="<?= e(upload_url($platformLogo)) ?>"><?php endif; ?>
+<meta name="twitter:card" content="summary">
+<?php if (trim((string) setting('google_verification', '')) !== ''): ?>
+<meta name="google-site-verification" content="<?= e(trim((string) setting('google_verification', ''))) ?>">
+<?php endif; ?>
 <link rel="stylesheet" href="<?= e(asset('css/fonts.css')) ?>">
 <link rel="stylesheet" href="<?= e(asset('css/site.css')) ?>">
 <link rel="stylesheet" href="<?= e(asset('css/platform.css')) ?>">

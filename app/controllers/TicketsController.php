@@ -278,6 +278,7 @@ class TicketsController extends Controller
         }
         $png = Qr::png(Ticket::qrPayload($ticket), 6, 3, 'M');
         header('Content-Type: image/png');
+        header('X-Robots-Tag: noindex, noimageindex');
         header('Cache-Control: private, max-age=86400');
         header('Content-Length: ' . strlen($png));
         echo $png;

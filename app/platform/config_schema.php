@@ -63,6 +63,20 @@ return [
         ],
     ],
 
+    'seo' => [
+        'title' => 'SEO i cercadors',
+        'icon' => 'globe',
+        'description' => 'Com es veu la portada de la plataforma a Google.',
+        'fields' => [
+            'platform_meta_description' => ['label' => 'Descripció per a cercadors', 'type' => 'textarea', 'rows' => 2, 'default' => '',
+                'help' => 'Les dues línies que Google ensenya sota el títol. Si es deixa buit, es fa servir la frase de la portada.'],
+            'google_verification' => ['label' => 'Verificació de Google Search Console', 'type' => 'text', 'default' => '',
+                'help' => 'A Search Console, trieu «Etiqueta HTML» i enganxeu aquí només el codi de dins de content="…".'],
+            'platform_noindex' => ['label' => 'Demanar als cercadors que no indexin la portada', 'type' => 'bool', 'default' => '0',
+                'help' => 'Els webs dels clients no en depenen: cadascun ho decideix al seu panell.'],
+        ],
+    ],
+
     'requests' => [
         'title' => 'Sol·licituds',
         'icon' => 'mail',

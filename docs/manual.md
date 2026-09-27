@@ -437,9 +437,61 @@ es demana acceptar-lo. El text admet els mateixos marcadors que els textos legal
 > Les inscripcions fetes abans d'activar la casella queden marcades com a acceptades: es
 > van fer quan encara no existia.
 
+## SEO: sortir bé a Google
+
+**Configuració → SEO i cercadors** és on es diu com ha de sortir el web als cercadors i
+què es veu quan algú el comparteix per WhatsApp, Facebook o X.
+
+| Camp | Per a què serveix |
+|---|---|
+| **Títol per a cercadors** | El títol de la portada als resultats de Google. Si es deixa buit, s'hi posa el nom del web i el lema. Entre 50 i 60 lletres. |
+| **Descripció per a cercadors** | Les dues línies que Google ensenya sota el títol. Entre 120 i 160 lletres. |
+| **Imatge destacada per a xarxes socials** | La foto que surt quan es comparteix un enllaç del web. Apaisada i de 1200×630 píxels. Si no n'hi ha, es fa servir la del banner de la portada. |
+| **Descripció de la imatge destacada** | Què es veu a la foto, per a qui no la pot veure. |
+| **Paraules clau** | Separades per comes. Google fa anys que no les té en compte per posicionar; s'envien a les dades estructurades i encara les llegeixen alguns cercadors. |
+| **Compte d'X** | Amb arrova. Surt a la targeta que es veu quan es comparteix una pàgina. |
+| **Enviar dades estructurades** | Explica a Google, en el format que entén (schema.org), que això és una cursa, quin dia és i on. És el que fa que pugui sortir a la fitxa d'esdeveniments. |
+| **Demanar que no s'indexi** | Amaga el web de tots els cercadors sense treure'l de circulació. Per a còpies de proves. |
+| **Verificació de Google Search Console / Bing** | El codi que donen aquestes eines per demostrar que el web és vostre. |
+
+Cada pàgina del web ja porta, sense haver de fer res:
+
+- el **títol** i la **descripció** propis (els d'aquell apartat, no els de la portada);
+- l'**adreça canònica**, que evita que la mateixa pàgina compti dues vegades;
+- les etiquetes d'**Open Graph** i la **targeta d'X** per compartir-la;
+- el **camí de molles de pa** (Inici → apartat) que Google ensenya sobre el títol;
+- a les **preguntes freqüents**, les preguntes i respostes en el format que Google pot
+  ensenyar desplegades al resultat.
+
+### El mapa del web i el robots.txt
+
+- `/sitemap.xml` es fa sol amb les pàgines que hi ha publicades: si els resultats no
+  s'han publicat o el reglament és buit, aquelles adreces no hi surten. Cada adreça
+  porta la data de l'últim canvi.
+- `/robots.txt` deixa fora el panell, les pàgines que demanen un codi per correu i els
+  dorsals i tiquets de cadascú, i diu on és el mapa.
+- Amb **«Demanar que no s'indexi»** marcat, o amb el web **en preparació**, el mapa
+  desapareix i el `robots.txt` tanca el web sencer.
+
+### Per donar-lo d'alta a Google
+
+1. Entreu a [Google Search Console](https://search.google.com/search-console), afegiu-hi
+   el domini del web i trieu la verificació per **etiqueta HTML**.
+2. Enganxeu el codi al camp **Verificació de Google Search Console** i deseu.
+3. Torneu a Search Console i premeu **Verificar**.
+4. A **Sitemaps**, afegiu-hi `sitemap.xml`.
+
+Els webs de la plataforma ja s'enllacen des del llistat de `crosescolar.cat` i surten al
+seu mapa del web, de manera que Google els acaba trobant igualment; amb Search Console,
+però, sabreu amb quines cerques us troba la gent.
+
+> El web no porta cap galeta de seguiment ni cap analítica per defecte. Si en voleu,
+> ompliu **Identificador d'analítica** a **Dades de la cursa** i reviseu la política de
+> privacitat, que ara diu que no n'hi ha.
+
 ## Textos legals
 
-**Configuració → SEO i legal** conté l'**avís legal** i la **política de privacitat** que
+**Configuració → Textos legals** conté l'**avís legal** i la **política de privacitat** que
 es publiquen a `/avis-legal` i `/privacitat`. Hi trobareu uns textos ja redactats a partir
 del que fa aquest web: qui organitza la cursa, quines dades es demanen a la inscripció,
 qui hi té accés, quant de temps es guarden i quins drets té la gent.

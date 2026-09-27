@@ -170,6 +170,8 @@ class RegistrationController extends Controller
         $pdf = Bib::familyPdf($registrations);
         header('Content-Type: application/pdf');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
+        // Un dorsal és d'una persona: no ha de sortir a cap cercador.
+        header('X-Robots-Tag: noindex, noimageindex');
         header('Content-Length: ' . strlen($pdf));
         header('Cache-Control: private, max-age=0, must-revalidate');
         echo $pdf;

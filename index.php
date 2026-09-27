@@ -123,6 +123,30 @@ if (!is_installed()) {
 
 $path = Router::currentPath();
 
+// Una pàgina, una adreça.
+//
+// «/recorreguts/» i «/index.php/recorreguts» ensenyaven el mateix que
+// «/recorreguts», i per a un cercador això són tres pàgines iguals que es fan
+// la competència. Ara les dues primeres hi menen amb un 301 i s'acaba el
+// problema. Només es toquen les visites normals: cap enviament de formulari ni
+// cap avís de pagament no es redirigeix.
+if (in_array(strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')), ['GET', 'HEAD'], true)
+    && !isset($_GET['_p'])
+) {
+    $demanat = rawurldecode((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH));
+    $carpeta = rtrim(str_replace('\\', '/', dirname((string) ($_SERVER['SCRIPT_NAME'] ?? '/index.php'))), '/');
+    if ($carpeta !== '' && str_starts_with($demanat, $carpeta)) {
+        $demanat = substr($demanat, strlen($carpeta));
+    }
+    $bona = url($path);
+    if ($demanat !== ((string) parse_url($bona, PHP_URL_PATH))) {
+        $consulta = [];
+        parse_str((string) ($_SERVER['QUERY_STRING'] ?? ''), $consulta);
+        unset($consulta['_p']);
+        redirect($bona . ($consulta ? '?' . http_build_query($consulta) : ''), 301);
+    }
+}
+
 // Mode manteniment durant les actualitzacions
 if (Updater::inMaintenance() && !str_starts_with($path, '/admin')) {
     http_response_code(503);

@@ -6,6 +6,7 @@ namespace Cros\Controllers;
 use Cros\Core\Controller;
 use Cros\Core\Csrf;
 use Cros\Core\Mailer;
+use Cros\Core\Seo;
 use Cros\Core\Settings;
 use Cros\Models\Content;
 use Cros\Models\RaceResult;
@@ -52,6 +53,11 @@ class PageController extends Controller
         $this->view('public/course', [
             'title' => $course['name'],
             'description' => excerpt(strip_tags((string) $course['description']), 160),
+            // Inici → Recorreguts → aquest recorregut, per als cercadors.
+            'breadcrumbs' => [
+                [(string) setting('courses_title', 'Recorreguts'), '/recorreguts'],
+                [(string) $course['name'], '/recorreguts/' . $course['slug']],
+            ],
             'course' => $course,
             'categories' => $categories,
             'otherCourses' => array_values(array_filter(Content::courses(), fn ($c) => $c['id'] !== $course['id'])),
@@ -90,6 +96,9 @@ class PageController extends Controller
         }
         header('Content-Type: application/pdf');
         header('Content-Disposition: attachment; filename="' . $name . '.pdf"');
+        // El PDF diu el mateix que la pàgina de resultats: que Google indexi la
+        // pàgina i no el fitxer.
+        header('X-Robots-Tag: noindex');
         header('Content-Length: ' . strlen($pdf));
         echo $pdf;
         exit;
@@ -179,38 +188,103 @@ class PageController extends Controller
         redirect('/contacte?enviat=1');
     }
 
+    /**
+     * Mapa del web per als cercadors.
+     *
+     * Només hi surt el que és públic i està obert: si les inscripcions estan
+     * tancades o els resultats no s'han publicat, aquelles adreces no hi
+     * consten. El «lastmod» surt de quan es va tocar la configuració que fa
+     * aquella pàgina, que és l'únic que en sabem de debò.
+     */
     public function sitemap(): void
     {
-        $urls = [url('/'), url('/categories-i-premis'), url('/recorreguts'), url('/punt-de-recarrega'), url('/inscripcio'), url('/contacte')];
-        if (Settings::bool('results_published')) {
-            $urls[] = url('/resultats');
-        }
-        foreach (Content::courses() as $course) {
-            $urls[] = url('/recorreguts/' . $course['slug']);
+        if (Seo::hidden()) {
+            // Un web en preparació o amagat expressament no té mapa.
+            abort(404, 'Aquest web encara no surt als cercadors.');
         }
         header('Content-Type: application/xml; charset=utf-8');
+        header('X-Robots-Tag: noindex');
+
+        $urls = [
+            ['/', Settings::changedAt()],
+            ['/categories-i-premis', Settings::changedAt(['categories_title', 'categories_intro'])],
+            ['/recorreguts', Settings::changedAt(['courses_title', 'courses_intro'])],
+            ['/inscripcio', Settings::changedAt(['registrations_title', 'registrations_intro', 'registrations_closed_text'])],
+            ['/contacte', Settings::changedAt(['contact_email', 'contact_phone'])],
+        ];
+        foreach (Content::courses() as $course) {
+            $urls[] = ['/recorreguts/' . $course['slug'], null];
+        }
+        if (Content::faqs() !== []) {
+            $urls[] = ['/preguntes-frequents', null];
+        }
+        if (trim(strip_tags((string) setting('rules_text', ''))) !== '') {
+            $urls[] = ['/reglament', Settings::changedAt(['rules_text', 'rules_title'])];
+        }
+        // El punt de recàrrega hi surt si hi ha res a dir-hi: o s'hi venen
+        // tiquets o s'hi explica com va.
+        if (TicketsController::saleMode() || trim(strip_tags((string) setting('tickets_intro', ''))) !== '') {
+            $urls[] = ['/punt-de-recarrega', Settings::changedAt(['tickets_title', 'tickets_intro'])];
+        }
+        if (Settings::bool('results_published')) {
+            $urls[] = ['/resultats', Settings::changedAt(['results_published', 'results_intro'])];
+        }
+        $urls[] = ['/avis-legal', Settings::changedAt(['legal_notice'])];
+        $urls[] = ['/privacitat', Settings::changedAt(['privacy_text'])];
+
         echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
         echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
-        foreach ($urls as $url) {
-            echo '  <url><loc>' . e($url) . '</loc></url>' . "\n";
+        foreach ($urls as [$path, $changed]) {
+            echo '  <url><loc>' . e(Seo::canonical($path)) . '</loc>';
+            $stamp = $changed !== null ? strtotime((string) $changed) : false;
+            if ($stamp !== false) {
+                echo '<lastmod>' . date('Y-m-d', $stamp) . '</lastmod>';
+            }
+            echo '</url>' . "\n";
         }
         echo '</urlset>';
         exit;
     }
 
+    /** Instruccions per als cercadors. */
     public function robots(): void
     {
         header('Content-Type: text/plain; charset=utf-8');
         echo "User-agent: *\n";
-        if (\Cros\Core\Settings::bool('coming_soon')) {
-            // Mentre el web està en preparació no s'ha d'indexar res.
+        if (Seo::hidden()) {
+            // Mentre el web està en preparació (o s'ha demanat que no
+            // s'indexi) no s'ha de rastrejar res.
             echo "Disallow: /\n";
             exit;
         }
-        echo "Disallow: /admin\n";
-        echo "Disallow: /tiquets\n";
-        echo "Disallow: /els-meus-tiquets\n";
-        echo 'Sitemap: ' . url('/sitemap.xml') . "\n";
+
+        // Pàgines que no tenen cap sentit al cercador: l'àrea de gestió, el que
+        // demana un codi per correu i els fitxers personals de cadascú.
+        foreach ([
+            '/admin',
+            '/validar',
+            '/inscripcio/confirmada',
+            '/inscripcio/dorsal',
+            '/inscripcio/dorsals',
+            '/les-meves-inscripcions',
+            '/els-meus-tiquets',
+            '/tiquets/',
+            '/qr/',
+            '/uploads/documents/',
+        ] as $path) {
+            echo 'Disallow: ' . $path . "\n";
+        }
+        // El PDF dels resultats no es bloqueja aquí a propòsit: porta una
+        // capçalera que diu que no s'indexi, i per llegir-la el cercador ha de
+        // poder demanar-lo. Si el bloquegéssim, no la veuria mai.
+        //
+        // Els fulls d'estil i les imatges sí que es deixen veure: Google
+        // necessita veure el web tal com el veu la gent per saber que funciona
+        // bé al mòbil.
+        echo "Allow: /assets/\n";
+        echo "Allow: /uploads/\n";
+        echo "\n";
+        echo 'Sitemap: ' . Seo::canonical('/sitemap.xml') . "\n";
         exit;
     }
 }

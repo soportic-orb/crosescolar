@@ -19,9 +19,15 @@ class SiteController extends Controller
 {
     public function home(): void
     {
+        $description = trim((string) setting('platform_meta_description', ''));
+        if ($description === '') {
+            $description = trim((string) setting('platform_tagline', ''))
+                ?: 'Inscripcions, dorsals i resultats per al cros escolar de la vostra escola, AFA o club.';
+        }
         $this->page('platform/home', [
-            'title' => 'Cros Escolar · el web del vostre cros',
-            'description' => 'Inscripcions, dorsals i resultats per al cros escolar de la vostra escola, AFA o club.',
+            'title' => (string) setting('site_name', 'Cros Escolar') . ' · el web del vostre cros',
+            'description' => $description,
+            'noindex' => \Cros\Core\Settings::bool('platform_noindex'),
             'instances' => Instance::directory(),
             'errors' => [],
         ]);
@@ -115,6 +121,46 @@ class SiteController extends Controller
             'request' => $request,
             'noindex' => true,
         ]);
+    }
+
+    /**
+     * Mapa del web de la plataforma.
+     *
+     * Hi surt la portada i, sobretot, el web de cada cros que està publicat i
+     * demana sortir al llistat: és la manera que Google els trobi de seguida
+     * sense esperar que algú els enllaci.
+     */
+    public function sitemap(): void
+    {
+        if (\Cros\Core\Settings::bool('platform_noindex')) {
+            abort(404, 'Aquesta portada no surt als cercadors.');
+        }
+        header('Content-Type: application/xml; charset=utf-8');
+        header('X-Robots-Tag: noindex');
+        echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+        echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+        echo '  <url><loc>' . e('https://' . Platform::domain() . '/') . '</loc></url>' . "\n";
+        foreach (Instance::directory() as $instance) {
+            echo '  <url><loc>' . e(Instance::url($instance) . '/') . '</loc></url>' . "\n";
+        }
+        echo '</urlset>';
+        exit;
+    }
+
+    /** Instruccions per als cercadors. */
+    public function robots(): void
+    {
+        header('Content-Type: text/plain; charset=utf-8');
+        echo "User-agent: *\n";
+        if (\Cros\Core\Settings::bool('platform_noindex')) {
+            echo "Disallow: /\n";
+            exit;
+        }
+        echo "Disallow: /sollicitud/\n";
+        echo "Allow: /assets/\n";
+        echo "\n";
+        echo 'Sitemap: https://' . Platform::domain() . "/sitemap.xml\n";
+        exit;
     }
 
     /** Avisa qui l'ha demanada i la superadministració. */

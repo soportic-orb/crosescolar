@@ -5,7 +5,7 @@ $favicon = (string) setting('favicon', '');
 $background = (string) (setting('coming_soon_image', '') ?: setting('hero_image', ''));
 ?>
 <!doctype html>
-<html lang="ca">
+<html lang="<?= e(in_array((string) setting('site_language', 'ca'), ['ca', 'es'], true) ? setting('site_language', 'ca') : 'ca') ?>">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">

@@ -168,6 +168,28 @@ class Settings
         return self::schema()[$key] ?? null;
     }
 
+    /**
+     * Quan es va tocar per última vegada alguna d'aquestes opcions.
+     *
+     * Serveix per dir al mapa del web quan va canviar cada pàgina: si no se'n
+     * passa cap, es mira tota la configuració. Torna null si no se'n sap res.
+     */
+    public static function changedAt(array $keys = []): ?string
+    {
+        try {
+            if ($keys === []) {
+                $when = Db::val('SELECT MAX(updated_at) FROM settings');
+            } else {
+                $marks = implode(',', array_fill(0, count($keys), '?'));
+                $when = Db::val('SELECT MAX(updated_at) FROM settings WHERE k IN (' . $marks . ')', array_values($keys));
+            }
+        } catch (\Throwable) {
+            return null;
+        }
+
+        return $when ? (string) $when : null;
+    }
+
     /** Escriu tots els valors per defecte que encara no existeixen. */
     public static function seedDefaults(): void
     {

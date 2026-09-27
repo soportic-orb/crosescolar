@@ -3,6 +3,44 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.28.0] — 2026-09-27
+
+### Afegit
+- **Apartat de SEO al panell del cros** (Configuració → SEO i cercadors): títol i
+  descripció per als cercadors, paraules clau, imatge destacada per a xarxes
+  socials amb el seu text alternatiu, compte d'X, dades estructurades,
+  «demanar que no s'indexi» i els codis de verificació de Google Search Console
+  i de Bing. Els textos legals passen a tenir el seu propi apartat
+  (Configuració → Textos legals).
+- **Cada pàgina diu la seva adreça canònica** i porta les etiquetes d'Open Graph
+  i la targeta d'X completes (títol, descripció, imatge amb mida i descripció),
+  de manera que compartir un enllaç ensenya la imatge gran.
+- **Dades estructurades (schema.org)**: la portada s'explica com una cursa
+  (`SportsEvent`) amb el dia, l'hora, el lloc, les coordenades i qui l'organitza;
+  les pàgines internes porten el camí de molles de pa, i les preguntes freqüents,
+  les preguntes i respostes en el format que Google pot ensenyar desplegades.
+- **El mapa del web es fa sol** amb el que hi ha publicat de debò —si els
+  resultats no s'han publicat o el reglament és buit, aquelles adreces no hi
+  surten— i cada adreça porta la data de l'últim canvi.
+- **La plataforma també té `sitemap.xml` i `robots.txt`**, amb el web de cada cros
+  publicat, perquè els cercadors els trobin sense esperar que algú els enllaci, i
+  un apartat de SEO propi al panell de superadministració.
+
+### Corregit
+- **Una pàgina, una adreça**: `/recorreguts/` i `/index.php/recorreguts` ensenyaven
+  el mateix que `/recorreguts` sense dir-ho, i per a un cercador això eren tres
+  pàgines iguals competint entre elles. Ara hi menen amb un 301.
+- Els PDF dels resultats i dels dorsals i les imatges dels codis QR surten dels
+  cercadors (`X-Robots-Tag`): el que s'ha d'indexar és la pàgina, i un dorsal és
+  d'una persona.
+- El `robots.txt` no tancava «Les meves inscripcions», els dorsals ni els tiquets
+  de cadascú; ara sí, i en canvi deixa veure els fulls d'estil i les imatges, que
+  Google necessita per comprovar que el web va bé al mòbil.
+- L'idioma triat en donar d'alta un cros es desava i no es feia servir enlloc: ara
+  va a l'etiqueta `<html lang>` i a Open Graph.
+- El robots del web en preparació ja no deixava indexar res, però el mapa del web
+  s'hi continuava servint. Ara també desapareix.
+
 ## [1.27.0] — 2026-09-24
 
 ### Afegit

@@ -57,5 +57,7 @@ if (($mode ?? 'platform') === 'console') {
 $router->get('/', [SiteController::class, 'home']);
 $router->post('/sollicitud', [SiteController::class, 'request']);
 $router->get('/sollicitud/{code}', [SiteController::class, 'sent']);
+$router->get('/sitemap.xml', [SiteController::class, 'sitemap']);
+$router->get('/robots.txt', [SiteController::class, 'robots']);
 
 return $router;

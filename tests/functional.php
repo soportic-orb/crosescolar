@@ -646,6 +646,9 @@ $regOpen = static function (array $values = []) use ($base) {
         'registrations_enabled' => '1',
         'registrations_notify' => '1',
         'registrations_selfservice' => '1',
+        // Es torna a deixar tal com estava; si no, en repetir la bateria sobre
+        // la mateixa base de dades el confeti es quedaria apagat.
+        'registrations_confetti' => '1',
         'registrations_aside' => '1',
         'registrations_aside_title' => 'Recorda',
         'registrations_aside_text' => '<ul><li>Cal omplir un formulari per cada participant.</li></ul>',
@@ -793,6 +796,123 @@ $asidePage = text(req('GET', $base . '/inscripcio', [], ['anon' => true])['body'
 check('Es pot amagar el requadre sencer', !str_contains($asidePage, 'Abans de començar'));
 check('I el del termini continua sortint-hi', str_contains($asidePage, 'Termini'));
 $regOpen();
+
+echo "\n== SEO i cercadors ==\n";
+$seoForm = req('GET', $base . '/admin/configuracio/seo');
+check('Hi ha l\'apartat de SEO', $seoForm['status'] === 200, 'estat ' . $seoForm['status']);
+check('Amb les paraules clau', str_contains(text($seoForm['body']), 'Paraules clau'));
+check('La imatge destacada per a xarxes', str_contains(text($seoForm['body']), 'Imatge destacada per a xarxes socials'));
+check('I la verificació de Search Console', str_contains(text($seoForm['body']), 'Search Console'));
+$legalForm = req('GET', $base . '/admin/configuracio/legal');
+check('Els textos legals tenen apartat propi',
+    $legalForm['status'] === 200 && str_contains(text($legalForm['body']), 'Avís legal'));
+check('I ja no són a l\'apartat de SEO', !str_contains(text($seoForm['body']), 'Política de privacitat'));
+
+saveSettings($base, 'seo', [
+    'meta_title' => 'Cros Escolar La Granada · cursa entre vinyes',
+    'meta_description' => 'Cursa popular entre vinyes per a totes les edats.',
+    'meta_keywords' => 'cros escolar, cursa popular,  La Granada , cros escolar',
+    'og_image_alt' => 'Infants corrent entre vinyes',
+    'twitter_site' => 'https://x.com/crosgranada',
+    'google_verification' => 'abc123verificacio',
+    'seo_structured_data' => '1',
+    'seo_noindex' => '0',
+]);
+
+// L'adreça canònica surt del «base_url» configurat, que a les proves és
+// localhost encara que hi truquem per 127.0.0.1: és justament el que ha de
+// passar en un servidor de debò amb més d'un nom.
+$canon = rtrim(getenv('CROS_TEST_URL') ?: 'http://localhost:8123', '/');
+$seoHome = req('GET', $base . '/', [], ['anon' => true]);
+check('El títol de la portada és el que s\'ha escrit',
+    str_contains($seoHome['body'], '<title>Cros Escolar La Granada · cursa entre vinyes</title>'));
+check('Hi ha l\'adreça canònica', str_contains($seoHome['body'], '<link rel="canonical" href="' . $canon . '/"'));
+check('I l\'adreça d\'Open Graph', str_contains($seoHome['body'], 'property="og:url" content="' . $canon . '/"'));
+check('Les paraules clau surten netes i sense repeticions',
+    str_contains($seoHome['body'], 'name="keywords" content="cros escolar, cursa popular, La Granada"'));
+check('Diu als cercadors que sí que s\'indexi',
+    str_contains($seoHome['body'], 'name="robots" content="index, follow, max-image-preview:large'));
+check('Hi ha la targeta d\'X', str_contains($seoHome['body'], 'name="twitter:card" content="summary'));
+check('Amb el compte tal com l\'espera X', str_contains($seoHome['body'], 'name="twitter:site" content="@crosgranada"'));
+// Sense imatge configurada no hi ha res a descriure; amb imatge, el text ha
+// d'anar tant a Open Graph com a la targeta d'X.
+check('El text alternatiu acompanya la imatge, si n\'hi ha',
+    !str_contains($seoHome['body'], 'property="og:image"')
+    || str_contains($seoHome['body'], 'content="Infants corrent entre vinyes"'));
+check('I la verificació de Google', str_contains($seoHome['body'], 'name="google-site-verification" content="abc123verificacio"'));
+
+// Amb imatge destacada, la targeta ha de dir quina és i què hi cap.
+$ogFile = sys_get_temp_dir() . '/cros-og-1200x630.jpg';
+$ogImage = imagecreatetruecolor(1200, 630);
+imagefill($ogImage, 0, 0, imagecolorallocate($ogImage, 47, 107, 60));
+imagejpeg($ogImage, $ogFile, 85);
+imagedestroy($ogImage);
+saveSettingsWithFile($base, 'seo', ['og_image_alt' => 'Infants corrent entre vinyes'], 'og_image', $ogFile);
+$ambImatge = req('GET', $base . '/', [], ['anon' => true]);
+check('La imatge destacada surt a Open Graph', str_contains($ambImatge['body'], 'property="og:image" content="'));
+check('Amb la mida, que és el que demanen les xarxes',
+    str_contains($ambImatge['body'], 'property="og:image:width" content="1200"')
+    && str_contains($ambImatge['body'], 'property="og:image:height" content="630"'));
+check('I amb la descripció de la imatge',
+    str_contains($ambImatge['body'], 'property="og:image:alt" content="Infants corrent entre vinyes"'));
+check('La targeta d\'X passa a ser la gran',
+    str_contains($ambImatge['body'], 'name="twitter:card" content="summary_large_image"'));
+check('Les dades estructurades també la porten',
+    str_contains($ambImatge['body'], '"image"'));
+@unlink($ogFile);
+
+check('La portada porta dades estructurades', str_contains($seoHome['body'], 'application/ld+json'));
+preg_match('#<script type="application/ld\+json">(.*?)</script>#s', $seoHome['body'], $ld);
+$dades = json_decode(str_replace('\u003C', '<', $ld[1] ?? '{}'), true) ?: [];
+check('Diuen que això és una cursa', ($dades['@type'] ?? '') === 'SportsEvent', (string) ($dades['@type'] ?? 'res'));
+check('Amb el dia i l\'hora', str_starts_with((string) ($dades['startDate'] ?? ''), '2026-10-04T09:30'), (string) ($dades['startDate'] ?? 'res'));
+check('El lloc de sortida', ($dades['location']['name'] ?? '') !== '');
+check('Amb les coordenades', abs((float) ($dades['location']['geo']['latitude'] ?? 0) - 41.376699) < 0.001);
+check('I qui l\'organitza', str_contains((string) ($dades['organizer']['name'] ?? ''), 'AFA'));
+
+$seoCourse = req('GET', $base . '/recorreguts', [], ['anon' => true]);
+preg_match('#<script type="application/ld\+json">(.*?)</script>#s', $seoCourse['body'], $ldCourse);
+$molles = json_decode(str_replace('\u003C', '<', $ldCourse[1] ?? '{}'), true) ?: [];
+check('Les pàgines internes porten el camí de molles de pa',
+    ($molles['@type'] ?? '') === 'BreadcrumbList', (string) ($molles['@type'] ?? 'res'));
+check('Que comença a la portada', ($molles['itemListElement'][0]['name'] ?? '') === 'Inici');
+check('La canònica de la pàgina interna és la seva',
+    str_contains($seoCourse['body'], '<link rel="canonical" href="' . $canon . '/recorreguts"'));
+
+$barra = req('GET', $base . '/recorreguts/', [], ['anon' => true]);
+check('Una adreça amb barra al final mena a la bona',
+    $barra['status'] === 301 && str_contains($barra['headers'], '/recorreguts'), 'estat ' . $barra['status']);
+$viaIndex = req('GET', $base . '/index.php/recorreguts', [], ['anon' => true]);
+check('I la d\'index.php també', $viaIndex['status'] === 301, 'estat ' . $viaIndex['status']);
+
+$mapa = req('GET', $base . '/sitemap.xml', [], ['anon' => true]);
+check('Hi ha el mapa del web', $mapa['status'] === 200 && str_contains($mapa['body'], '<urlset'));
+check('Amb la portada', str_contains($mapa['body'], '<loc>' . $canon . '/</loc>'));
+check('Els recorreguts de debò', str_contains($mapa['body'], '/recorreguts/'));
+check('I diu quan es va canviar', str_contains($mapa['body'], '<lastmod>'));
+check('No hi ha res privat', !str_contains($mapa['body'], 'les-meves-inscripcions'));
+
+$robots = req('GET', $base . '/robots.txt', [], ['anon' => true]);
+check('El robots.txt tanca el panell', str_contains($robots['body'], 'Disallow: /admin'));
+check('I les pàgines de cadascú', str_contains($robots['body'], 'Disallow: /les-meves-inscripcions'));
+check('Deixa veure els fulls d\'estil', str_contains($robots['body'], 'Allow: /assets/'));
+check('I diu on és el mapa', str_contains($robots['body'], 'Sitemap: ' . $canon . '/sitemap.xml'));
+
+saveSettings($base, 'seo', ['seo_noindex' => '1']);
+$amagat = req('GET', $base . '/', [], ['anon' => true]);
+check('Es pot demanar que no s\'indexi', str_contains($amagat['body'], 'name="robots" content="noindex, nofollow"'));
+check('I aleshores no hi ha dades estructurades', !str_contains($amagat['body'], 'application/ld+json'));
+check('El robots.txt ho tanca tot',
+    str_contains(req('GET', $base . '/robots.txt', [], ['anon' => true])['body'], "Disallow: /\n"));
+check('I el mapa del web desapareix', req('GET', $base . '/sitemap.xml', [], ['anon' => true])['status'] === 404);
+saveSettings($base, 'seo', ['seo_noindex' => '0']);
+check('En tornar-ho a obrir, el mapa hi és de nou',
+    req('GET', $base . '/sitemap.xml', [], ['anon' => true])['status'] === 200);
+// Es deixa tot com estava perquè la resta de proves (i la següent execució
+// sobre la mateixa base de dades) no es trobin el títol canviat.
+saveSettings($base, 'seo', ['meta_title' => '', 'meta_keywords' => '', 'twitter_site' => '', 'google_verification' => '', 'og_image' => '', 'og_image_alt' => '']);
+check('El títol de la portada torna a ser el de sempre',
+    str_contains(req('GET', $base . '/', [], ['anon' => true])['body'], '<title>Cros Escolar La Granada — '));
 
 echo "\n== Web en preparació ==\n";
 $soonForm = req('GET', $base . '/admin/configuracio/coming_soon');

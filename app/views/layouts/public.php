@@ -3,18 +3,37 @@
 $siteName = (string) setting('site_name', 'Cros Escolar La Granada');
 $pageTitle = isset($title) && $title !== '' ? $title : $siteName;
 $fullTitle = $pageTitle === $siteName ? $siteName . ' — ' . setting('site_tagline', '') : $pageTitle . ' · ' . $siteName;
+// A la portada, qui gestiona el web pot escriure el títol que vol que surti a
+// Google en comptes del nom més el lema.
+if (($currentPath ?? '/') === '/' && trim((string) setting('meta_title', '')) !== '') {
+    $fullTitle = trim((string) setting('meta_title', ''));
+}
 $metaDescription = $description ?? setting('meta_description', '');
 $logo = (string) setting('logo', '');
 $favicon = (string) setting('favicon', '');
-$ogImage = (string) (setting('og_image', '') ?: setting('hero_image', ''));
 $eventDate = (string) setting('event_date', '');
 $path = $currentPath ?? '/';
+// Metadades per als cercadors i per a qui comparteix la pàgina: la classe Seo
+// les treu de la configuració del web (apartat «SEO i cercadors»).
+$seoImage = \Cros\Core\Seo::image();
+$canonical = \Cros\Core\Seo::canonical($path);
+$seoKeywords = \Cros\Core\Seo::keywords();
+$twitterSite = \Cros\Core\Seo::twitterSite();
+// Camí de molles de pa per a les dades estructurades. Si la pàgina no en diu
+// res, n'hi ha prou amb «Inici → aquesta pàgina».
+$breadcrumbs = $breadcrumbs ?? ($path === '/' ? [] : [[$pageTitle, $path]]);
+// Idioma del web: el que es va triar en donar-lo d'alta. Va a l'etiqueta <html>
+// perquè els cercadors i els lectors de pantalla sàpiguen en quina llengua
+// estan escrits els textos del web.
+$siteLang = in_array((string) setting('site_language', 'ca'), ['ca', 'es'], true)
+    ? (string) setting('site_language', 'ca')
+    : 'ca';
 // Quins apartats surten al menú i en quin ordre es configura al panell,
 // a Continguts → Menú del web.
 $navItems = \Cros\Models\Menu::visible();
 ?>
 <!doctype html>
-<html lang="ca">
+<html lang="<?= e($siteLang) ?>">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -22,16 +41,40 @@ $navItems = \Cros\Models\Menu::visible();
 <?php if ($metaDescription !== ''): ?>
 <meta name="description" content="<?= e($metaDescription) ?>">
 <?php endif; ?>
-<?php if (!empty($noindex)): ?>
-<meta name="robots" content="noindex, nofollow">
+<?php if ($seoKeywords !== []): ?>
+<meta name="keywords" content="<?= e(implode(', ', $seoKeywords)) ?>">
 <?php endif; ?>
-<meta property="og:type" content="website">
+<meta name="robots" content="<?= e(\Cros\Core\Seo::robots(!empty($noindex))) ?>">
+<link rel="canonical" href="<?= e($canonical) ?>">
+<meta property="og:type" content="<?= $path === '/' ? 'website' : 'article' ?>">
 <meta property="og:title" content="<?= e($pageTitle) ?>">
 <meta property="og:site_name" content="<?= e($siteName) ?>">
-<meta property="og:locale" content="ca_ES">
+<meta property="og:locale" content="<?= e($siteLang) ?>_ES">
+<meta property="og:url" content="<?= e($canonical) ?>">
 <?php if ($metaDescription !== ''): ?><meta property="og:description" content="<?= e($metaDescription) ?>"><?php endif; ?>
-<?php if ($ogImage !== ''): ?><meta property="og:image" content="<?= e(upload_url($ogImage)) ?>"><?php endif; ?>
+<?php if ($seoImage['url'] !== ''): ?>
+<meta property="og:image" content="<?= e($seoImage['url']) ?>">
+<?php if (str_starts_with($seoImage['url'], 'https://')): ?><meta property="og:image:secure_url" content="<?= e($seoImage['url']) ?>"><?php endif; ?>
+<?php if ($seoImage['width'] > 0): ?>
+<meta property="og:image:width" content="<?= (int) $seoImage['width'] ?>">
+<meta property="og:image:height" content="<?= (int) $seoImage['height'] ?>">
+<?php endif; ?>
+<?php if ($seoImage['alt'] !== ''): ?><meta property="og:image:alt" content="<?= e($seoImage['alt']) ?>"><?php endif; ?>
+<?php endif; ?>
+<meta name="twitter:card" content="<?= $seoImage['url'] !== '' ? 'summary_large_image' : 'summary' ?>">
+<meta name="twitter:title" content="<?= e($pageTitle) ?>">
+<?php if ($metaDescription !== ''): ?><meta name="twitter:description" content="<?= e($metaDescription) ?>"><?php endif; ?>
+<?php if ($seoImage['url'] !== ''): ?><meta name="twitter:image" content="<?= e($seoImage['url']) ?>"><?php endif; ?>
+<?php if ($seoImage['alt'] !== ''): ?><meta name="twitter:image:alt" content="<?= e($seoImage['alt']) ?>"><?php endif; ?>
+<?php if ($twitterSite !== ''): ?><meta name="twitter:site" content="<?= e($twitterSite) ?>"><?php endif; ?>
+<?php if (trim((string) setting('google_verification', '')) !== ''): ?>
+<meta name="google-site-verification" content="<?= e(trim((string) setting('google_verification', ''))) ?>">
+<?php endif; ?>
+<?php if (trim((string) setting('bing_verification', '')) !== ''): ?>
+<meta name="msvalidate.01" content="<?= e(trim((string) setting('bing_verification', ''))) ?>">
+<?php endif; ?>
 <meta name="theme-color" content="<?= e(setting('color_primary', '#2f6b3c')) ?>">
+<?= \Cros\Core\Seo::tags($path, $breadcrumbs ?? []) ?>
 <?php if ($favicon !== ''): ?>
 <link rel="icon" href="<?= e(upload_url($favicon)) ?>">
 <?php else: ?>
