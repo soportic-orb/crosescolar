@@ -138,8 +138,15 @@ if ($busy !== false) {
     echo "  El port $port ja està ocupat: atureu el que hi hagi o definiu CROS_TEST_PORT_CONSOLE.\n";
     exit(1);
 }
+// Amb encaminador: sense ell, el servidor integrat de PHP 8.2 respon 404 a
+// «/sitemap.xml» i «/robots.txt» sense passar per l'aplicació.
 $webServer = proc_open(
-    sprintf('exec php -S 127.0.0.1:%d -t %s', $port, escapeshellarg($site)),
+    sprintf(
+        'exec php -S 127.0.0.1:%d -t %s %s',
+        $port,
+        escapeshellarg($site),
+        escapeshellarg($root . '/tests/server-copia.php')
+    ),
     [1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']],
     $pipes
 );
