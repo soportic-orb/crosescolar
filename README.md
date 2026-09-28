@@ -71,6 +71,8 @@ Instruccions detallades (nginx, permisos, Stripe, correu): [`docs/instalacio.md`
 | [`docs/stripe.md`](docs/stripe.md) | Configuració de Stripe i del webhook |
 | [`docs/actualitzacions.md`](docs/actualitzacions.md) | Sistema OTA, paquets i còpies de seguretat |
 | [`docs/manual.md`](docs/manual.md) | Manual d'ús del panell per a l'AFA |
+| [`docs/vps.md`](docs/vps.md) | Muntar la plataforma en un VPS, de zero |
+| [`docs/acme-dns.md`](docs/acme-dns.md) | Certificat comodí que es renova sol, amb acme-dns |
 | [`docs/nginx.conf`](docs/nginx.conf) | Blocs de configuració per a nginx |
 
 ---

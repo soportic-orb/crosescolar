@@ -396,7 +396,9 @@ dies. Hi ha dues maneres de deixar-ho automàtic:
 - **Delegació amb acme-dns**, si el proveïdor no té API (és el cas de
   Nominalia). Es crea **un sol CNAME** `_acme-challenge.eldomini` que apunta a
   un compte d'acme-dns, i els registres TXT els posa i els treu el certbot sol a
-  cada renovació. Es configura una vegada i no s'hi torna.
+  cada renovació. Es configura una vegada i no s'hi torna: els passos, amb
+  l'acme-dns muntat al vostre propi servidor, són a
+  [docs/acme-dns.md](acme-dns.md).
 
 Si cap de les dues us convenç, l'alternativa és deixar el comodí i fer
 certificats **per nom** amb `certbot --nginx`, que es renoven sols des del
