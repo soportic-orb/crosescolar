@@ -11,9 +11,12 @@ sap fer una cosa: guardar registres TXT de `_acme-challenge`. Es delega una
 vegada, i a partir d'aquí el certbot hi escriu ell mateix a cada renovació,
 sense tocar mai més el DNS del proveïdor.
 
-Això és el que cal quan el vostre proveïdor de DNS **no té API** (Nominalia,
-per exemple). Si en té (Cloudflare, OVH, DigitalOcean, Gandi, Hetzner…), no
-llegiu aquest document: instal·leu `python3-certbot-dns-<proveïdor>` i ja està.
+Això és el que cal quan el vostre proveïdor de DNS **no té API** i no el voleu
+moure. Si en té (Cloudflare, OVH, DigitalOcean, Gandi, Hetzner…), no llegiu
+aquest document: instal·leu `python3-certbot-dns-<proveïdor>` i ja està. I si el
+vostre no en té però esteu disposats a moure la zona, surt més a compte
+[passar-la a Cloudflare](cloudflare-dns.md) que muntar-vos un servei: no us
+queda cap daemon per mantenir.
 
 > Compte amb una confusió fàcil: **que l'empresa on teniu el VPS tingui API no
 > vol dir que pugueu gestionar-hi el DNS**. L'API de Clouding, per exemple,

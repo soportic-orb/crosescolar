@@ -15,9 +15,10 @@ i el versionatge semàntic.
   es renova, els avisos es tornen a armar sols.
 - `php tools/platform.php certificat` diu quan caduca, qui l'emet, quins noms
   cobreix i què cal executar per renovar-lo o ampliar-lo.
-- **Guia per tenir el comodí renovant-se sol** amb acme-dns muntat al vostre
-  propi servidor ([`docs/acme-dns.md`](docs/acme-dns.md)), per als dominis el
-  proveïdor dels quals no té API (Nominalia, per exemple).
+- **Guies per tenir el comodí renovant-se sol**: passant el DNS a Cloudflare
+  ([`docs/cloudflare-dns.md`](docs/cloudflare-dns.md), la via recomanada) o amb
+  acme-dns muntat al vostre propi servidor
+  ([`docs/acme-dns.md`](docs/acme-dns.md)), per si no voleu moure la zona.
 - **`tools/renovar-certificat.sh`**, per al cron de root: fa `certbot renew`,
   recarrega l'nginx si cal i deixa escrit com ha anat perquè el panell ho pugui
   ensenyar. Detecta els certificats de validació manual, que no es poden

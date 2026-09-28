@@ -392,7 +392,9 @@ dies. Hi ha dues maneres de deixar-ho automàtic:
   DigitalOcean, Gandi, Hetzner…): s'instal·la `python3-certbot-dns-<proveïdor>`,
   es desa el testimoni de l'API a un fitxer només llegible per root i es demana
   el certificat amb `--dns-<proveïdor>`. A partir d'aquí `certbot renew` el
-  renova sol.
+  renova sol. Amb Cloudflare, que és gratuït i va bé per a això, els passos
+  sencers —inclòs com moure-hi la zona sense aturar els webs— són a
+  [docs/cloudflare-dns.md](cloudflare-dns.md).
 - **Delegació amb acme-dns**, si el proveïdor no té API (és el cas de
   Nominalia). Es crea **un sol CNAME** `_acme-challenge.eldomini` que apunta a
   un compte d'acme-dns, i els registres TXT els posa i els treu el certbot sol a
