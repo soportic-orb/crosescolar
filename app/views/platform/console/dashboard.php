@@ -73,6 +73,34 @@ $certAvis = ($certificate['checked_at'] ?? '') !== ''
   </div>
 <?php endif; ?>
 
+<?php if (($dns['checked_at'] ?? '') !== '' && !($dns['wildcard'] ?? true)): ?>
+  <div class="alert alert--warning mt-2">
+    <strong>El DNS no té comodí.</strong>
+    Els cros que ja hi són funcionen perquè tenen el seu registre, però
+    <strong>cada cros nou necessitarà que li creeu el subdomini a mà</strong> i,
+    fins que no ho feu, el seu web no existirà per a ningú.
+    <div class="mt-1">Al DNS del domini, afegiu-hi:
+      <code class="mono"><?= e((string) ($dnsRecord ?? '')) ?></code>
+    </div>
+  </div>
+<?php endif; ?>
+
+<?php if (!empty($dns['missing']) || !empty($dns['elsewhere']) || ($dns['error'] ?? '') !== ''): ?>
+  <div class="alert alert--error mt-2">
+    <?php if (($dns['error'] ?? '') !== ''): ?>
+      <strong>El DNS no respon com hauria:</strong> <?= e((string) $dns['error']) ?>
+    <?php endif; ?>
+    <?php if (!empty($dns['missing'])): ?>
+      <div><strong>Adreces que no existeixen al DNS:</strong> <?= e(implode(', ', $dns['missing'])) ?>.
+        Qui hi vagi es trobarà que el web no existeix.</div>
+    <?php endif; ?>
+    <?php if (!empty($dns['elsewhere'])): ?>
+      <div><strong>Adreces que apunten a un altre servidor:</strong> <?= e(implode(', ', $dns['elsewhere'])) ?>.
+        Sol ser un registre que s'ha quedat d'abans.</div>
+    <?php endif; ?>
+  </div>
+<?php endif; ?>
+
 <?php if (($certificateRenewal['resultat'] ?? '') === 'error'): ?>
   <div class="alert alert--error mt-2">
     <strong>L'última renovació automàtica del certificat va fallar</strong>

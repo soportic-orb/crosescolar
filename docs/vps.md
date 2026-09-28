@@ -383,6 +383,30 @@ els noms que cobreix. Amb això:
   diu quan caduca, qui l'emet, quins noms cobreix i què cal executar per
   renovar-lo o ampliar-lo.
 
+## El DNS, vist des del panell
+
+La mateixa vigilància repassa el DNS, i el que més importa és el **comodí**.
+Sense ell, els cros que ja hi són funcionen —tenen el seu registre— però cada
+cros nou necessitarà que li creeu el subdomini a mà, i fins que no ho feu el seu
+web no existirà per a ningú. És una avaria que no es veu fins que es dona d'alta
+el client següent.
+
+Al tauler hi surt un avís quan:
+
+- **no hi ha comodí**, amb el registre que cal afegir a punt de copiar;
+- alguna adreça de la plataforma **no existeix al DNS**;
+- alguna **apunta a un altre servidor**, que sol ser un registre que s'ha quedat
+  d'abans.
+
+Les preguntes es fan al DNS de debò i no al sistema a propòsit: l'`/etc/hosts`
+del servidor sol tenir el seu propi nom apuntat a `127.0.1.1` i això despista.
+
+```bash
+sudo -u www-data php tools/platform.php dns
+```
+
+diu a quina IP resol el domini, si hi ha comodí i on va a parar cada adreça.
+
 ### Fer que un comodí es renovi sol
 
 Un certificat de comodí demanat amb `--manual` s'ha de renovar a mà cada 60-90

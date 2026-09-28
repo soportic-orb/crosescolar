@@ -44,6 +44,7 @@ use Cros\Core\Settings;
 use Cros\Platform\Backup;
 use Cros\Platform\Certificate;
 use Cros\Platform\Console;
+use Cros\Platform\Dns;
 use Cros\Platform\Health;
 use Cros\Platform\Importer;
 use Cros\Platform\Instance;
@@ -579,6 +580,59 @@ try {
     check('El tauler ho ensenya',
         str_contains($web('GET', '/')['body'], 'renovació automàtica del certificat va fallar'));
     @unlink($site . '/storage/certificat.json');
+
+    echo "\n== El DNS de la plataforma ==\n";
+    // Amb un resolutor de mentida: les proves no han de sortir a internet ni
+    // dependre de com estigui el DNS de ningú.
+    $zona = [
+        'crosescolar.test' => ['10.0.0.1'],
+        'admin.crosescolar.test' => ['10.0.0.1'],
+        'santjordi.crosescolar.test' => ['10.0.0.1'],
+        'crosescolar.example' => ['10.0.0.1'],
+        'admin.crosescolar.example' => ['10.0.0.1'],
+    ];
+    // Amb comodí: qualsevol nom del domini respon.
+    Dns::using(static function (string $host) use ($zona): array {
+        if (isset($zona[$host])) {
+            return $zona[$host];
+        }
+        return str_ends_with($host, '.crosescolar.test') ? ['10.0.0.1'] : [];
+    });
+    $dns = Dns::status($site, true);
+    check('Amb comodí, el DNS no dona cap avís',
+        $dns['wildcard'] && $dns['missing'] === [] && $dns['error'] === '',
+        implode(', ', $dns['missing']));
+    check('I sap a quina IP resol el domini', $dns['ips'] === ['10.0.0.1'], implode(', ', $dns['ips']));
+
+    // Sense comodí: els que hi són van bé, però un cros nou no existiria.
+    Dns::using(static fn (string $host): array => $zona[$host] ?? []);
+    $dns = Dns::status($site, true);
+    check('Sense comodí, es nota', !$dns['wildcard']);
+    check('Però els cros que ja hi són continuen bé', $dns['missing'] === [], implode(', ', $dns['missing']));
+    check('I es diu quin registre falta',
+        str_contains(Dns::record($site), '*') && str_contains(Dns::record($site), '10.0.0.1'),
+        Dns::record($site));
+    check('El tauler ho avisa', str_contains($web('GET', '/')['body'], 'El DNS no té comodí'));
+
+    // Un web que ha desaparegut del DNS, i un que apunta a un altre servidor.
+    $trencada = $zona;
+    unset($trencada['santjordi.crosescolar.test']);
+    $trencada['admin.crosescolar.test'] = ['10.9.9.9'];
+    Dns::using(static fn (string $host): array => $trencada[$host] ?? []);
+    $dns = Dns::status($site, true);
+    check('Un nom que no existeix, es diu',
+        in_array('santjordi.crosescolar.test', $dns['missing'], true), implode(', ', $dns['missing']));
+    check('I un que apunta a un altre servidor, també',
+        in_array('admin.crosescolar.test', $dns['elsewhere'], true), implode(', ', $dns['elsewhere']));
+    check('El tauler també ho ensenya',
+        str_contains($web('GET', '/')['body'], 'no existeixen al DNS')
+        || str_contains($web('GET', '/')['body'], 'Adreces que no existeixen'));
+
+    // I si el domini no resol enlloc, no s'inventa res.
+    Dns::using(static fn (string $host): array => []);
+    $dns = Dns::status($site, true);
+    check('Si el domini no resol, es diu clar', $dns['error'] !== '', $dns['error']);
+    Dns::using(null);
 
     echo "\n== Còpies de seguretat ==\n";
     $report = Backup::run($site);

@@ -9,6 +9,7 @@ use Cros\Core\View;
 use Cros\Platform\Certificate;
 use Cros\Platform\Client;
 use Cros\Platform\Console;
+use Cros\Platform\Dns;
 use Cros\Platform\Instance;
 use Cros\Platform\Request;
 
@@ -79,6 +80,8 @@ class ConsoleController extends Controller
             'certificate' => Certificate::status(),
             'certificateCommand' => Certificate::command(),
             'certificateRenewal' => Certificate::renewal(),
+            'dns' => Dns::status(),
+            'dnsRecord' => Dns::record(),
             'requests' => array_slice(Request::all('pending'), 0, 5),
             'instances' => array_slice(Instance::all(), 0, 6),
             'upcoming' => $upcoming,

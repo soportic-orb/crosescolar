@@ -9,6 +9,7 @@
  *   php tools/platform.php actualitzar                aplica els canvis pendents a totes
  *   php tools/platform.php vigilar [--sense-web]      mira que totes responguin i avisa dels canvis
  *   php tools/platform.php certificat                 diu com està el certificat i què cal per renovar-lo
+ *   php tools/platform.php dns                        mira que els noms resolguin i que hi hagi el comodí
  *   php tools/platform.php copies                     fa la còpia de seguretat de totes
  *   php tools/platform.php paquet <fitxer.zip>        diu què porta un paquet de migració
  *   php tools/platform.php purgar [--de-veritat]      esborra les baixes que ja han passat els 90 dies
@@ -27,6 +28,7 @@ use Cros\Core\Db;
 use Cros\Platform\Backup;
 use Cros\Platform\Certificate;
 use Cros\Platform\Console;
+use Cros\Platform\Dns;
 use Cros\Platform\Importer;
 use Cros\Platform\Health;
 use Cros\Platform\Instance;
@@ -153,6 +155,39 @@ switch ($command) {
         $avis = Certificate::warn($root, $cert);
         if ($avis !== '') {
             echo "  S'ha enviat un avís: " . $avis . "\n";
+        }
+        // I el DNS: sobretot que hi hagi el comodí, que és el que fa que un
+        // cros nou funcioni sense tocar res.
+        $dns = Dns::status($root, true);
+        if ($dns['error'] !== '') {
+            echo "  DNS: " . $dns['error'] . "\n";
+        } else {
+            echo "  DNS: " . ($dns['wildcard'] ? 'amb comodí' : 'SENSE COMODÍ') . "\n";
+            if ($dns['missing']) {
+                echo "  No existeixen al DNS: " . implode(', ', $dns['missing']) . "\n";
+            }
+            if ($dns['elsewhere']) {
+                echo "  Apunten a un altre servidor: " . implode(', ', $dns['elsewhere']) . "\n";
+            }
+        }
+        break;
+
+    case 'dns':
+        $dns = Dns::status($root, true);
+        echo "DNS de la plataforma\n";
+        if ($dns['error'] !== '') {
+            echo '  ' . $dns['error'] . "\n";
+            break;
+        }
+        echo "  El domini resol a: " . implode(', ', $dns['ips']) . "\n";
+        echo "  Comodí: " . ($dns['wildcard'] ? 'sí' : 'NO') . "\n";
+        if (!$dns['wildcard']) {
+            echo "    Cada cros nou necessitarà el seu registre a mà. Afegiu al DNS:\n";
+            echo '      ' . Dns::record($root) . "\n";
+        }
+        foreach (Dns::hosts($root) as $host) {
+            $ips = Dns::ips($host);
+            echo '  ' . str_pad($host, 34) . ($ips === [] ? 'NO EXISTEIX' : implode(', ', $ips)) . "\n";
         }
         break;
 

@@ -3,6 +3,23 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.30.0] — 2026-09-28
+
+### Afegit
+- **El panell repassa el DNS.** El que més importa és el **comodí**: sense ell
+  els cros que ja hi són funcionen, però cada cros nou necessitaria que li
+  creessin el subdomini a mà i, fins llavors, el seu web no existiria per a
+  ningú —una avaria que no es veu fins que es dona d'alta el client següent.
+  Al tauler hi surt un avís quan no hi ha comodí (amb el registre a punt de
+  copiar), quan alguna adreça no existeix al DNS i quan alguna apunta a un
+  altre servidor.
+- `php tools/platform.php dns` diu a quina IP resol el domini, si hi ha comodí
+  i on va a parar cada adreça de la plataforma.
+
+> Les preguntes es fan al DNS de debò i no al sistema: l'`/etc/hosts` del
+> servidor sol tenir el seu propi nom apuntat a `127.0.1.1`, i això ha fet
+> perdre més d'una tarda.
+
 ## [1.29.0] — 2026-09-28
 
 ### Afegit
