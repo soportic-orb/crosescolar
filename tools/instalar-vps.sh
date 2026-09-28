@@ -355,7 +355,16 @@ if [ "$ASSAIG" = "0" ]; then
 EOF
     crontab -u "$USUARI_WEB" "$CRON"
     rm -f "$CRON"
+    # La renovació del certificat va al cron de root, no al del servidor web:
+    # renovar demana permisos que el web no ha de tenir mai.
+    CRON_ROOT="$(mktemp)"
+    crontab -l 2>/dev/null | grep -v 'renovar-certificat.sh' > "$CRON_ROOT" || true
+    echo "17 4 * * *   $ARREL/tools/renovar-certificat.sh $ARREL >/dev/null 2>&1" >> "$CRON_ROOT"
+    crontab "$CRON_ROOT"
+    rm -f "$CRON_ROOT"
+    chmod +x "$ARREL/tools/renovar-certificat.sh" 2>/dev/null || true
     verd "   Vigilància cada quart, còpies a les 3, repàs a les 4:30 i purga els dilluns."
+    verd "   I la renovació del certificat, cada nit, al cron de root."
 
     TESTIMONI="$(clau 24)"
     cat > "$ARREL/tenants/instalacio.json" <<EOF

@@ -42,6 +42,7 @@ require $root . '/app/bootstrap.php';
 use Cros\Core\Db;
 use Cros\Core\Settings;
 use Cros\Platform\Backup;
+use Cros\Platform\Certificate;
 use Cros\Platform\Console;
 use Cros\Platform\Health;
 use Cros\Platform\Importer;
@@ -461,6 +462,123 @@ try {
 
     $dashboard = $web('GET', '/');
     check('El tauler no dona l\'alarma si tot va bé', !str_contains($dashboard['body'], 'no responen'));
+
+    echo "\n== El certificat del servidor ==\n";
+    // El panell no renova res (per això cal ser root), però ha de saber com
+    // està el certificat i quins amfitrions ha de cobrir.
+    $amfitrions = Certificate::hosts($site);
+    check('Sap quins noms ha de cobrir el certificat',
+        in_array('crosescolar.test', $amfitrions, true)
+        && in_array('admin.crosescolar.test', $amfitrions, true),
+        implode(', ', $amfitrions));
+    check('Amb el web de cada cros en marxa',
+        in_array('santjordi.crosescolar.test', $amfitrions, true), implode(', ', $amfitrions));
+    check('I el domini secundari', in_array('crosescolar.example', $amfitrions, true));
+
+    check('Un comodí cobreix un subdomini',
+        Certificate::covers(['*.crosescolar.test'], 'santjordi.crosescolar.test'));
+    check('Però no el domini pelat',
+        !Certificate::covers(['*.crosescolar.test'], 'crosescolar.test'));
+    check('Ni un subdomini de dos pisos',
+        !Certificate::covers(['*.crosescolar.test'], 'a.b.crosescolar.test'));
+    check('Un nom exacte sí', Certificate::covers(['crosescolar.test'], 'crosescolar.test'));
+    check('I el de l\'altre domini no', !Certificate::covers(['*.crosescolar.test'], 'x.crosescolar.example'));
+    check('Es reconeix un certificat de comodí', Certificate::looksWildcard(['*.crosescolar.test']));
+
+    $ordre = Certificate::command($site);
+    check('L\'ordre per renovar-lo porta tots els noms',
+        str_contains($ordre, '-d admin.crosescolar.test') && str_contains($ordre, '-d santjordi.crosescolar.test'),
+        $ordre);
+    check('I la del comodí és la de sempre',
+        str_contains(Certificate::command($site, true), "-d '*.crosescolar.test'"),
+        Certificate::command($site, true));
+
+    // Un servidor TLS de mentida per llegir-ne el certificat de debò.
+    $certDir = $site . '/storage/tmp';
+    @mkdir($certDir, 0775, true);
+    $certPort = (int) (getenv('CROS_TEST_PORT_TLS') ?: 8443);
+    exec(sprintf(
+        'openssl req -x509 -newkey rsa:2048 -nodes -days 30 -subj /CN=prova.crosescolar.test '
+        . '-addext %s -keyout %s -out %s 2>/dev/null',
+        escapeshellarg('subjectAltName=DNS:prova.crosescolar.test,DNS:*.crosescolar.test'),
+        escapeshellarg($certDir . '/prova.key'),
+        escapeshellarg($certDir . '/prova.crt')
+    ), $sortida, $estat);
+    if ($estat === 0) {
+        $tls = proc_open(
+            sprintf('exec openssl s_server -quiet -accept %d -cert %s -key %s -www',
+                $certPort, escapeshellarg($certDir . '/prova.crt'), escapeshellarg($certDir . '/prova.key')),
+            [1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']],
+            $tubs
+        );
+        for ($i = 0; $i < 40; $i++) {
+            $prova = @fsockopen('127.0.0.1', $certPort, $e, $missatge, 1);
+            if ($prova !== false) { fclose($prova); break; }
+            usleep(150000);
+        }
+        $llegit = Certificate::read('127.0.0.1', $certPort);
+        check('Es llegeix el certificat que serveix el servidor',
+            $llegit['error'] === '' && $llegit['ok'], $llegit['error']);
+        check('Amb els dies que li queden',
+            $llegit['days'] >= 28 && $llegit['days'] <= 30, (string) $llegit['days']);
+        check('I els noms que cobreix',
+            in_array('*.crosescolar.test', $llegit['names'], true), implode(', ', $llegit['names']));
+        if (is_resource($tls)) {
+            proc_terminate($tls);
+            proc_close($tls);
+        }
+    } else {
+        echo "  (sense openssl per fer el certificat de prova, es passa)\n";
+    }
+    $mort = Certificate::read('127.0.0.1', $certPort);
+    check('Si no hi ha ningú escoltant, es diu clar', !$mort['ok'] && $mort['error'] !== '');
+
+    // El tauler no ha d'obrir cap connexió: ensenya l'últim repàs de la
+    // vigilància, i mentre no n'hi hagi cap no en diu res.
+    Settings::set('platform_cert_status', '');
+    Settings::forget();
+    Platform::boot($site);
+    $abansDeMirar = Certificate::status($site);
+    check('Sense cap repàs fet, el tauler no diu res del certificat',
+        ($abansDeMirar['checked_at'] ?? 'x') === '');
+    $inici = microtime(true);
+    Certificate::status($site);
+    check('I no s\'espera per cap connexió', microtime(true) - $inici < 0.5,
+        round((microtime(true) - $inici) * 1000) . ' ms');
+    $tauler = $web('GET', '/');
+    check('El tauler continua carregant', $tauler['status'] === 200);
+
+    // Els avisos: un per llindar, i quan es renova es tornen a armar.
+    $avisos = static fn (): int => (int) Db::val(
+        "SELECT COUNT(*) FROM platform_activity WHERE action = 'cert_warning'", [], 0);
+    $fals = static fn (int $dies): array => [
+        'host' => 'crosescolar.test', 'ok' => $dies > 0, 'error' => '',
+        'expires_at' => date('Y-m-d H:i:s', time() + $dies * 86400), 'days' => $dies,
+        'issuer' => 'Prova', 'names' => ['*.crosescolar.test'], 'uncovered' => [],
+        'checked_at' => date('Y-m-d H:i:s'),
+    ];
+    Settings::set('platform_cert_warned', '0');
+    check('Amb molts dies per davant no s\'avisa ningú',
+        Certificate::warn($site, $fals(45)) === '' && $avisos() === 0);
+    check('A tres setmanes vista, sí', Certificate::warn($site, $fals(20)) !== '' && $avisos() === 1);
+    check('I no es repeteix l\'endemà', Certificate::warn($site, $fals(19)) === '' && $avisos() === 1);
+    check('Però quan queda una setmana torna a avisar',
+        Certificate::warn($site, $fals(6)) !== '' && $avisos() === 2);
+    check('I si ja ha caducat, també', Certificate::warn($site, $fals(-1)) !== '' && $avisos() === 3);
+    check('En renovar-lo, els avisos es tornen a armar',
+        Certificate::warn($site, $fals(89)) === '' && (int) Settings::get('platform_cert_warned') === 0);
+
+    // El que deixa escrit el guió de renovació del cron de root.
+    check('Sense cap renovació feta, no se\'n diu res', Certificate::renewal($site)['resultat'] === '');
+    file_put_contents($site . '/storage/certificat.json', json_encode([
+        'quan' => date('Y-m-d H:i:s'), 'resultat' => 'error', 'detall' => 'certbot no ha pogut connectar',
+    ]));
+    $renovacio = Certificate::renewal($site);
+    check('I si ha fallat, el panell ho sap',
+        $renovacio['resultat'] === 'error' && str_contains($renovacio['detall'], 'certbot'));
+    check('El tauler ho ensenya',
+        str_contains($web('GET', '/')['body'], 'renovació automàtica del certificat va fallar'));
+    @unlink($site . '/storage/certificat.json');
 
     echo "\n== Còpies de seguretat ==\n";
     $report = Backup::run($site);

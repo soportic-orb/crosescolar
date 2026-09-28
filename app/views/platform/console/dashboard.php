@@ -43,6 +43,57 @@ use Cros\Platform\Instance;
   </div>
 <?php endif; ?>
 
+<?php
+// El certificat del servidor. El panell no el pot renovar —per això cal ser
+// root— però sí dir com està i deixar l'ordre a punt de copiar.
+$certDies = (int) ($certificate['days'] ?? 0);
+// Mentre la vigilància no l'hagi mirat mai, no se'n diu res.
+$certAvis = ($certificate['checked_at'] ?? '') !== ''
+    && ($certificate['error'] !== '' || $certDies <= 21);
+?>
+<?php if ($certAvis): ?>
+  <div class="alert alert--<?= $certificate['error'] !== '' || $certDies <= 7 ? 'error' : 'warning' ?> mt-2">
+    <?php if ($certificate['error'] !== ''): ?>
+      <strong>No s'ha pogut llegir el certificat de <?= e((string) $certificate['host']) ?>:</strong>
+      <?= e((string) $certificate['error']) ?>.
+      Si el web va per HTTP, val la pena posar-hi un certificat: les contrasenyes i les
+      dades de les inscripcions viatgen sense xifrar.
+    <?php elseif ($certDies <= 0): ?>
+      <strong>El certificat ha caducat.</strong>
+      Qui entri als webs es trobarà l'avís de seguretat del navegador.
+    <?php else: ?>
+      <strong>El certificat caduca d'aquí a <?= $certDies ?> <?= $certDies === 1 ? 'dia' : 'dies' ?></strong>
+      (<?= e(date('d/m/Y', strtotime((string) $certificate['expires_at']))) ?>).
+    <?php endif; ?>
+    <?php if (!empty($certificateCommand)): ?>
+      <div class="mt-1">Al servidor, com a root:
+        <code class="mono"><?= e((string) $certificateCommand) ?></code>
+      </div>
+    <?php endif; ?>
+  </div>
+<?php endif; ?>
+
+<?php if (($certificateRenewal['resultat'] ?? '') === 'error'): ?>
+  <div class="alert alert--error mt-2">
+    <strong>L'última renovació automàtica del certificat va fallar</strong>
+    (<?= e(substr((string) $certificateRenewal['quan'], 0, 16)) ?>).
+    <?php if (($certificateRenewal['detall'] ?? '') !== ''): ?>
+      <div class="mt-1 text-soft" style="font-size:.9rem"><?= e($certificateRenewal['detall']) ?></div>
+    <?php endif; ?>
+  </div>
+<?php endif; ?>
+
+<?php if (!empty($certificate['uncovered'])): ?>
+  <div class="alert alert--warning mt-2">
+    <strong><?= count($certificate['uncovered']) === 1 ? 'Un web no és al certificat' : 'Hi ha webs que no són al certificat' ?>:</strong>
+    <?= e(implode(', ', $certificate['uncovered'])) ?>.
+    Fins que no hi siguin, qui hi entri veurà un avís de seguretat.
+    <div class="mt-1">Al servidor, com a root:
+      <code class="mono"><?= e((string) ($certificateCommand ?? '')) ?></code>
+    </div>
+  </div>
+<?php endif; ?>
+
 <?php if ($unsaved && (int) $stats['instances'] > 0): ?>
   <div class="alert alert--warning mt-2">
     <strong><?= count($unsaved) === 1 ? 'Una instància fa dies que no es copia' : count($unsaved) . ' instàncies fa dies que no es copien' ?>:</strong>

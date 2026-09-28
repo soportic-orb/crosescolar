@@ -6,6 +6,7 @@ namespace Cros\Platform\Controllers;
 use Cros\Core\Controller;
 use Cros\Core\Db;
 use Cros\Core\View;
+use Cros\Platform\Certificate;
 use Cros\Platform\Client;
 use Cros\Platform\Console;
 use Cros\Platform\Instance;
@@ -73,6 +74,11 @@ class ConsoleController extends Controller
         View::render('platform/console/dashboard', [
             'title' => 'Tauler',
             'stats' => $stats,
+            // El certificat es mira un cop al dia (la classe se'n recorda):
+            // aquí només se'n llegeix el resultat.
+            'certificate' => Certificate::status(),
+            'certificateCommand' => Certificate::command(),
+            'certificateRenewal' => Certificate::renewal(),
             'requests' => array_slice(Request::all('pending'), 0, 5),
             'instances' => array_slice(Instance::all(), 0, 6),
             'upcoming' => $upcoming,

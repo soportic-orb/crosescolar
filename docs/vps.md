@@ -345,11 +345,63 @@ crontab -u www-data -e
 15 5 * * 1   cd /var/www/crosescolar && php tools/platform.php purgar --de-veritat
 ```
 
-I la renovació del certificat, si heu fet servir un connector de DNS:
+I la renovació del certificat, **al cron de root** (no al de `www-data`:
+renovar demana permisos que el servidor web no ha de tenir mai):
+
+```bash
+crontab -e      # com a root
+```
 
 ```
-20 3 * * *   certbot renew --quiet --deploy-hook "systemctl reload nginx"
+17 4 * * *   /var/www/crosescolar/tools/renovar-certificat.sh /var/www/crosescolar
 ```
+
+L'instal·lador ja hi posa aquesta línia. El guió fa `certbot renew`, recarrega
+l'nginx si s'ha renovat res i deixa a `storage/certificat.json` com ha anat,
+que és el que llegeix el panell per avisar-vos si un dia falla. Si el
+certificat es va demanar amb **validació manual**, el guió ho detecta i no s'hi
+entreté: aquell no es pot renovar sense una persona al davant.
+
+## El certificat, vist des del panell
+
+El panell **no renova** el certificat —per renovar-lo cal ser root— però sí que
+el vigila. La feina de vigilància (`vigilar`, cada quart d'hora) obre una
+connexió TLS als dominis de la plataforma i en llegeix la data de caducitat i
+els noms que cobreix. Amb això:
+
+- Al **tauler** hi surt un avís quan queden 21 dies o menys, i un altre si hi ha
+  webs de clients que el certificat no cobreix (el cas típic: heu donat d'alta
+  un cros nou i el certificat és per noms, no de comodí).
+- La superadministració rep un **correu** als 21, 7, 3 i 1 dies, amb l'ordre
+  exacta per renovar-lo. Quan es renova, els avisos es tornen a armar sols.
+- Des de la consola del servidor:
+
+  ```bash
+  sudo -u www-data php tools/platform.php certificat
+  ```
+
+  diu quan caduca, qui l'emet, quins noms cobreix i què cal executar per
+  renovar-lo o ampliar-lo.
+
+### Fer que un comodí es renovi sol
+
+Un certificat de comodí demanat amb `--manual` s'ha de renovar a mà cada 60-90
+dies. Hi ha dues maneres de deixar-ho automàtic:
+
+- **Connector de DNS**, si el vostre proveïdor té API (Cloudflare, OVH,
+  DigitalOcean, Gandi, Hetzner…): s'instal·la `python3-certbot-dns-<proveïdor>`,
+  es desa el testimoni de l'API a un fitxer només llegible per root i es demana
+  el certificat amb `--dns-<proveïdor>`. A partir d'aquí `certbot renew` el
+  renova sol.
+- **Delegació amb acme-dns**, si el proveïdor no té API (és el cas de
+  Nominalia). Es crea **un sol CNAME** `_acme-challenge.eldomini` que apunta a
+  un compte d'acme-dns, i els registres TXT els posa i els treu el certbot sol a
+  cada renovació. Es configura una vegada i no s'hi torna.
+
+Si cap de les dues us convenç, l'alternativa és deixar el comodí i fer
+certificats **per nom** amb `certbot --nginx`, que es renoven sols des del
+primer dia; l'única feina és tornar a executar l'ordre quan doneu d'alta un cros
+nou, i el panell us avisa quan toca amb l'ordre a punt de copiar.
 
 ## 9. Portar-hi el cros de La Granada
 

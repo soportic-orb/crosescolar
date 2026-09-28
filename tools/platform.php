@@ -8,6 +8,7 @@
  *   php tools/platform.php repassar                   actualitza les dades de totes
  *   php tools/platform.php actualitzar                aplica els canvis pendents a totes
  *   php tools/platform.php vigilar [--sense-web]      mira que totes responguin i avisa dels canvis
+ *   php tools/platform.php certificat                 diu com està el certificat i què cal per renovar-lo
  *   php tools/platform.php copies                     fa la còpia de seguretat de totes
  *   php tools/platform.php paquet <fitxer.zip>        diu què porta un paquet de migració
  *   php tools/platform.php purgar [--de-veritat]      esborra les baixes que ja han passat els 90 dies
@@ -24,6 +25,7 @@ require $root . '/app/bootstrap.php';
 
 use Cros\Core\Db;
 use Cros\Platform\Backup;
+use Cros\Platform\Certificate;
 use Cros\Platform\Console;
 use Cros\Platform\Importer;
 use Cros\Platform\Health;
@@ -136,6 +138,39 @@ switch ($command) {
         } else {
             echo "  Totes responen.\n";
         }
+        // De passada, com està el certificat: és una connexió més i estalvia
+        // el disgust de descobrir-ho el dia que caduca.
+        $cert = Certificate::status($root, true);
+        if ($cert['error'] !== '') {
+            echo "  Certificat: no s'ha pogut mirar (" . $cert['error'] . ").\n";
+        } else {
+            echo "  Certificat: " . ($cert['days'] >= 0 ? $cert['days'] . ' dies' : 'caducat')
+                . ' (' . $cert['expires_at'] . ").\n";
+            if ($cert['uncovered']) {
+                echo "  No cobreix: " . implode(', ', $cert['uncovered']) . "\n";
+            }
+        }
+        $avis = Certificate::warn($root, $cert);
+        if ($avis !== '') {
+            echo "  S'ha enviat un avís: " . $avis . "\n";
+        }
+        break;
+
+    case 'certificat':
+        $cert = Certificate::status($root, true);
+        if ($cert['error'] !== '') {
+            echo "No s'ha pogut llegir el certificat de " . $cert['host'] . ': ' . $cert['error'] . "\n";
+            break;
+        }
+        echo "Certificat de " . $cert['host'] . "\n";
+        echo "  Caduca:  " . $cert['expires_at'] . ' (' . $cert['days'] . " dies)\n";
+        echo "  L'emet:  " . $cert['issuer'] . "\n";
+        echo "  Cobreix: " . implode(', ', $cert['names']) . "\n";
+        if ($cert['uncovered']) {
+            echo "  ATENCIÓ, no cobreix: " . implode(', ', $cert['uncovered']) . "\n";
+        }
+        echo "\nPer renovar-lo, com a root:\n  "
+            . Certificate::command($root, Certificate::looksWildcard($cert['names'])) . "\n";
         break;
 
     case 'copies':

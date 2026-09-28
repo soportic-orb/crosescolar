@@ -3,6 +3,28 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.29.0] — 2026-09-28
+
+### Afegit
+- **El panell vigila el certificat del servidor.** La feina de vigilància obre
+  una connexió TLS als dominis de la plataforma i en llegeix la caducitat i els
+  noms que cobreix. Al tauler hi surt un avís a partir dels 21 dies, i un altre
+  quan hi ha webs de clients que el certificat no cobreix —el cas típic d'haver
+  donat d'alta un cros nou amb un certificat per noms. La superadministració
+  rep un correu als 21, 7, 3 i 1 dies, amb l'ordre exacta per renovar-lo; quan
+  es renova, els avisos es tornen a armar sols.
+- `php tools/platform.php certificat` diu quan caduca, qui l'emet, quins noms
+  cobreix i què cal executar per renovar-lo o ampliar-lo.
+- **`tools/renovar-certificat.sh`**, per al cron de root: fa `certbot renew`,
+  recarrega l'nginx si cal i deixa escrit com ha anat perquè el panell ho pugui
+  ensenyar. Detecta els certificats de validació manual, que no es poden
+  renovar sense una persona al davant, i no s'hi entreté. L'instal·lador ja
+  deixa la línia posada al cron de root.
+
+> El panell no renova cap certificat ni ho farà: per renovar-ne un cal ser
+> root, i el servidor web no ho és ni ho ha de ser. El que fa el panell és
+> vigilar i avisar; qui renova és el cron de root.
+
 ## [1.28.3] — 2026-09-28
 
 ### Corregit
