@@ -10,12 +10,20 @@ use Cros\Platform\Platform;
 $domain = Platform::domain();
 $domains = Platform::domains();
 $old = static fn (string $key, string $default = ''): string => (string) old($key, $default);
+// La imatge del banner i el vel que hi va a sobre perquè el text es llegeixi.
+$heroImage = (string) setting('platform_hero_image', '');
+$heroOverlay = max(0, min(95, (int) setting('platform_hero_overlay', '72'))) / 100;
 ?>
-<section class="platform-hero">
+<section class="platform-hero<?= $heroImage !== '' ? ' platform-hero--image' : '' ?>"
+  <?php if ($heroImage !== ''): ?>style="--hero-image:url('<?= e(upload_url($heroImage)) ?>');--hero-overlay:<?= $heroOverlay ?>"<?php endif; ?>>
   <div class="container">
-    <span class="eyebrow">Per a escoles, AFA i clubs</span>
+    <?php if ($eyebrow = trim((string) setting('platform_hero_eyebrow', 'Per a escoles, AFA i clubs'))): ?>
+      <span class="eyebrow"><?= e($eyebrow) ?></span>
+    <?php endif; ?>
     <h1><?= e(setting('platform_tagline', 'El web del vostre cros, a punt en una setmana')) ?></h1>
-    <p class="lead">Inscripcions en línia, dorsals en PDF, resultats per categories i correus a les famílies. Tot amb la vostra imatge i a la vostra adreça.</p>
+    <?php if ($lead = trim((string) setting('platform_hero_lead', 'Inscripcions en línia, dorsals en PDF, resultats per categories i correus a les famílies. Tot amb la vostra imatge i a la vostra adreça.'))): ?>
+      <p class="lead"><?= e($lead) ?></p>
+    <?php endif; ?>
     <?php if ($intro = (string) setting('platform_intro', '')): ?>
       <div class="lead" style="color:rgba(255,255,255,.85)"><?= \Cros\Core\Html::clean($intro) ?></div>
     <?php endif; ?>
@@ -79,18 +87,75 @@ $old = static fn (string $key, string $default = ''): string => (string) old($ke
 </section>
 <?php endif; ?>
 
+<?php if (\Cros\Core\Settings::bool('platform_steps_show', true)): ?>
 <section class="section section--tint" id="com-va">
   <div class="container">
     <div class="section__head section__head--center">
-      <h2>Com funciona</h2>
+      <h2><?= e(setting('platform_steps_title', 'Com funciona')) ?></h2>
     </div>
     <div class="grid grid--3">
-      <div class="card"><div class="card__step">1</div><h3>Empleneu la sol·licitud</h3><p>Dades de l'entitat i de la persona que ho gestionarà.</p></div>
-      <div class="card"><div class="card__step">2</div><h3>La revisem</h3><p>Us escrivim si ens falta alguna cosa. Us responem en 48 hores feineres.</p></div>
-      <div class="card"><div class="card__step">3</div><h3>Rebeu les claus</h3><p>L'adreça del vostre web i l'accés per començar a preparar-lo.</p></div>
+      <?php foreach ([1, 2, 3] as $pas): ?>
+        <?php $titol = trim((string) setting('platform_step' . $pas . '_title', '')); ?>
+        <?php if ($titol !== ''): ?>
+          <div class="card">
+            <div class="card__step"><?= $pas ?></div>
+            <h3><?= e($titol) ?></h3>
+            <p><?= nl2br(e((string) setting('platform_step' . $pas . '_text', ''))) ?></p>
+          </div>
+        <?php endif; ?>
+      <?php endforeach; ?>
     </div>
   </div>
 </section>
+<?php endif; ?>
+
+<?php
+// Les preguntes freqüents: es desen com una llista al panell i surten aquí
+// desplegables, sense necessitat de cap script.
+$faqs = json_decode((string) setting('platform_faqs', ''), true);
+$faqs = \Cros\Core\Settings::bool('platform_faqs_show', true) && is_array($faqs) ? $faqs : [];
+?>
+<?php if ($faqs !== []): ?>
+<section class="section" id="preguntes">
+  <div class="container-narrow">
+    <div class="section__head">
+      <h2><?= e(setting('platform_faqs_title', 'Preguntes freqüents')) ?></h2>
+    </div>
+    <div class="faq-list">
+      <?php foreach ($faqs as $faq): ?>
+        <?php
+        $pregunta = trim((string) ($faq['q'] ?? ''));
+        $resposta = trim((string) ($faq['a'] ?? ''));
+        if ($pregunta === '' || $resposta === '') { continue; }
+        ?>
+        <details class="faq-item">
+          <summary><?= e($pregunta) ?></summary>
+          <div class="faq-item__body"><?= nl2br(e($resposta)) ?></div>
+        </details>
+      <?php endforeach; ?>
+    </div>
+  </div>
+</section>
+<?php
+// I les mateixes preguntes en el format que entén Google, que les pot
+// ensenyar desplegades al resultat de cerca.
+$ld = [];
+foreach ($faqs as $faq) {
+    $pregunta = trim((string) ($faq['q'] ?? ''));
+    $resposta = trim((string) ($faq['a'] ?? ''));
+    if ($pregunta !== '' && $resposta !== '') {
+        $ld[] = ['@type' => 'Question', 'name' => $pregunta,
+            'acceptedAnswer' => ['@type' => 'Answer', 'text' => $resposta]];
+    }
+}
+?>
+<?php if ($ld !== []): ?>
+  <script type="application/ld+json"><?= str_replace('<', '\u003C', (string) json_encode(
+      ['@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => $ld],
+      JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+  )) ?></script>
+<?php endif; ?>
+<?php endif; ?>
 
 <section class="section" id="formulari">
   <div class="container-narrow">

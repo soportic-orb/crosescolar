@@ -164,6 +164,29 @@ $required = str_contains((string) ($field['rules'] ?? ''), 'required');
 
       <?php case 'bool': break; ?>
 
+      <?php case 'faqs': ?>
+        <?php
+        // Una llista de preguntes i respostes. Es desa com un sol valor (JSON)
+        // perquè no calgui cap taula per a una llista que sempre és curta.
+        $rows = json_decode((string) $value, true);
+        $rows = is_array($rows) ? array_values($rows) : [];
+        $rows[] = ['q' => '', 'a' => '']; // sempre una de buida per afegir-ne
+        ?>
+        <div class="faq-rows" data-faq-rows>
+          <?php foreach ($rows as $i => $row): ?>
+            <div class="faq-row">
+              <input type="text" name="<?= e($name) ?>_q[]" value="<?= e((string) ($row['q'] ?? '')) ?>"
+                     placeholder="La pregunta">
+              <textarea name="<?= e($name) ?>_a[]" rows="3" placeholder="La resposta"><?= e((string) ($row['a'] ?? '')) ?></textarea>
+            </div>
+          <?php endforeach; ?>
+        </div>
+        <span class="hint">
+          Les que deixeu en blanc no es desen. Per treure'n una, buideu-li la pregunta i deseu.
+          <?= $hint !== '' ? e($hint) : '' ?>
+        </span>
+      <?php break; ?>
+
       <?php default: ?>
         <input type="<?= e(in_array($type, ['email', 'url', 'tel', 'number', 'date', 'time'], true) ? $type : 'text') ?>"
                id="<?= e($id) ?>" name="<?= e($name) ?>" value="<?= e((string) $value) ?>"
@@ -173,6 +196,6 @@ $required = str_contains((string) ($field['rules'] ?? ''), 'required');
                <?= isset($field['max']) ? 'max="' . e((string) $field['max']) . '"' : '' ?>>
   <?php endswitch; ?>
 
-  <?php if ($hint !== '' && !in_array($type, ['html', 'money', 'course_laps'], true)): ?><span class="hint"><?= e($hint) ?></span><?php endif; ?>
+  <?php if ($hint !== '' && !in_array($type, ['html', 'money', 'course_laps', 'faqs'], true)): ?><span class="hint"><?= e($hint) ?></span><?php endif; ?>
   <?php if ($error !== ''): ?><span class="error"><?= e($error) ?></span><?php endif; ?>
 </div>

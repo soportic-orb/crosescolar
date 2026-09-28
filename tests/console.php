@@ -183,6 +183,51 @@ $web = static function (string $method, string $path, array $fields = [], string
 };
 $token = static fn (string $html): string => preg_match('/name="_token" value="([^"]+)"/', $html, $m) ? $m[1] : '';
 
+/* Les mateixes ajudes que a les proves funcionals: el text d'una pàgina amb
+   les entitats HTML desfetes, i els camps d'un formulari per poder-ne canviar
+   només un sense esborrar la resta. */
+function text(string $html): string
+{
+    return html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+}
+
+function formData(string $html): array
+{
+    $data = [];
+    preg_match_all('/<input[^>]*>/i', $html, $inputs);
+    foreach ($inputs[0] as $tag) {
+        if (!preg_match('/name="([^"]+)"/', $tag, $name)) {
+            continue;
+        }
+        if (str_ends_with($name[1], '[]')) {
+            continue; // llistes (recorreguts i voltes): les posa qui crida la funció
+        }
+        if (preg_match('/type="(checkbox|file|radio)"/i', $tag, $type)) {
+            if (strtolower($type[1]) === 'checkbox' && str_contains($tag, 'checked')) {
+                $data[$name[1]] = '1';
+            }
+            continue;
+        }
+        preg_match('/value="([^"]*)"/', $tag, $value);
+        $data[$name[1]] = html_entity_decode($value[1] ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    }
+    preg_match_all('#<textarea[^>]*name="([^"]+)"[^>]*>(.*?)</textarea>#s', $html, $areas, PREG_SET_ORDER);
+    foreach ($areas as $area) {
+        $data[$area[1]] = html_entity_decode($area[2], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    }
+    preg_match_all('#<select[^>]*name="([^"]+)"[^>]*>(.*?)</select>#s', $html, $selects, PREG_SET_ORDER);
+    foreach ($selects as $select) {
+        if (str_ends_with($select[1], '[]')) {
+            continue;
+        }
+        if (preg_match('/<option value="([^"]*)"[^>]*selected/', $select[2], $option)) {
+            $data[$select[1]] = html_entity_decode($option[1], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        }
+    }
+    return $data;
+}
+
+
 for ($i = 0; $i < 40 && ($web('GET', '/acces')['status'] ?? 0) === 0; $i++) {
     usleep(200000);
 }
@@ -936,6 +981,100 @@ try {
         str_contains($web('GET', '/')['body'], '--a-green: #8a2f2f'));
     check('I el de la pàgina pública',
         str_contains($web('GET', '/', [], 'crosescolar.test')['body'], '--platform-dark: #3a1414'));
+
+    echo "\n== La portada, personalitzada ==\n";
+    $portada = $web('GET', '/configuracio/home');
+    check('Hi ha la pantalla de la portada',
+        $portada['status'] === 200 && str_contains(text($portada['body']), 'Imatge de fons del banner'),
+        'estat ' . $portada['status']);
+    check('Amb els passos de «Com funciona»', str_contains(text($portada['body']), 'Pas 1: títol'));
+    check('I la llista de preguntes', str_contains($portada['body'], 'platform_faqs_q[]'));
+
+    $web('POST', '/configuracio/home', [
+        '_token' => $token($portada['body']),
+        'platform_hero_overlay' => '60',
+        'platform_hero_eyebrow' => 'Per a qui organitza curses',
+        'platform_hero_lead' => 'Tot el que cal per a un cros escolar.',
+        'platform_steps_show' => '1',
+        'platform_steps_title' => 'En tres passos',
+        'platform_step1_title' => 'Ho demaneu',
+        'platform_step1_text' => 'Amb el formulari de sota.',
+        'platform_step2_title' => 'Ho mirem',
+        'platform_step2_text' => 'I us responem.',
+        'platform_step3_title' => '',
+        'platform_step3_text' => '',
+        'platform_faqs_show' => '1',
+        'platform_faqs_title' => 'Dubtes de sempre',
+        'platform_faqs_q' => ['Quant costa?', 'Quan trigueu?', ''],
+        'platform_faqs_a' => ['Res de res.', 'Un parell de dies.', 'sense pregunta'],
+    ]);
+    $publica = $web('GET', '/', [], 'crosescolar.test');
+    $textPublica = text($publica['body']);
+    check('La frase de sobre el títol es canvia', str_contains($textPublica, 'Per a qui organitza curses'));
+    check('I la de sota', str_contains($textPublica, 'Tot el que cal per a un cros escolar.'));
+    check('Els passos porten el que s\'hi ha escrit',
+        str_contains($textPublica, 'En tres passos') && str_contains($textPublica, 'Ho demaneu'));
+    check('Un pas sense títol no surt', !str_contains($textPublica, 'Rebeu les claus'));
+    check('Les preguntes surten a la portada',
+        str_contains($textPublica, 'Dubtes de sempre') && str_contains($textPublica, 'Quant costa?'));
+    check('Desplegables, sense cap script', str_contains($publica['body'], '<details class="faq-item"'));
+    check('La fila buida no es desa', !str_contains($textPublica, 'sense pregunta'));
+    check('I van als cercadors com a FAQPage', str_contains($publica['body'], '"@type": "FAQPage"')
+        || str_contains($publica['body'], '"@type":"FAQPage"'));
+
+    $web('POST', '/configuracio/home', array_merge(formData($portada['body']), [
+        '_token' => $token($web('GET', '/configuracio/home')['body']),
+        'platform_faqs_show' => '0',
+    ]));
+    check('Es poden amagar les preguntes',
+        !str_contains(text($web('GET', '/', [], 'crosescolar.test')['body']), 'Quant costa?'));
+
+    echo "\n== Legal i galetes ==\n";
+    $legal = $web('GET', '/configuracio/legal');
+    check('Hi ha la pantalla legal',
+        $legal['status'] === 200 && str_contains(text($legal['body']), 'Condicions del servei'),
+        'estat ' . $legal['status']);
+    $web('POST', '/configuracio/legal', array_merge(formData($legal['body']), [
+        '_token' => $token($legal['body']),
+        'platform_legal_entity' => 'Associació Cros Escolar',
+        'platform_legal_nif' => 'G12345678',
+        'platform_legal_address' => 'Carrer Major 1, La Granada',
+    ]));
+
+    $condicions = $web('GET', '/condicions', [], 'crosescolar.test');
+    check('Les condicions es publiquen',
+        $condicions['status'] === 200 && str_contains(text($condicions['body']), 'Condicions del servei'),
+        'estat ' . $condicions['status']);
+    check('Amb el nom de l\'entitat posat',
+        str_contains(text($condicions['body']), 'Associació Cros Escolar'));
+    check('I el NIF', str_contains(text($condicions['body']), 'G12345678'));
+    check('Sense cap marcador per substituir', !str_contains($condicions['body'], '{{'));
+
+    $privadesa = $web('GET', '/privadesa', [], 'crosescolar.test');
+    check('La privadesa també',
+        $privadesa['status'] === 200 && str_contains(text($privadesa['body']), 'responsable'));
+    check('I diu qui respon de les dades de cada cursa',
+        str_contains(text($privadesa['body']), 'encarregats del tractament'));
+
+    $galetes = $web('GET', '/galetes', [], 'crosescolar.test');
+    check('I la política de galetes',
+        $galetes['status'] === 200 && str_contains($galetes['body'], 'cros_session'));
+    check('Una pàgina legal que no existeix dona 404',
+        $web('GET', '/aixo-no-hi-es', [], 'crosescolar.test')['status'] === 404);
+    check('El peu hi enllaça',
+        str_contains($publica['body'], '/condicions') && str_contains($publica['body'], '/privadesa')
+        && str_contains($publica['body'], '/galetes'));
+    check('I surten al mapa del web',
+        str_contains($web('GET', '/sitemap.xml', [], 'crosescolar.test')['body'], '/privadesa'));
+
+    check('L\'avís de galetes hi és', str_contains($publica['body'], 'id="cookie-notice"'));
+    check('I diu on llegir-ne més', str_contains($publica['body'], 'cookie-notice__box'));
+    $web('POST', '/configuracio/legal', array_merge(formData($web('GET', '/configuracio/legal')['body']), [
+        '_token' => $token($web('GET', '/configuracio/legal')['body']),
+        'platform_cookie_banner' => '0',
+    ]));
+    check('Es pot treure',
+        !str_contains($web('GET', '/', [], 'crosescolar.test')['body'], 'id="cookie-notice"'));
 
     // Tancar les altes.
     // Es guarda un testimoni del formulari obert per poder provar què passa si

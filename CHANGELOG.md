@@ -3,6 +3,30 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.31.0] — 2026-09-28
+
+### Afegit
+- **La portada de la plataforma es personalitza des del panell**
+  (Configuració → La portada): imatge de fons del banner amb l'opacitat del vel,
+  la frase de sobre i la de sota el títol, i els tres passos de «Com funciona»,
+  que també es poden amagar.
+- **Mòdul de preguntes freqüents**: una llista de parelles pregunta i resposta
+  que surten a la portada desplegables, sense cap script, i que s'envien als
+  cercadors com a `FAQPage` perquè Google les pugui ensenyar obertes al
+  resultat.
+- **Pàgines legals de la plataforma**: condicions del servei (`/condicions`),
+  política de privadesa (`/privadesa`) i política de galetes (`/galetes`), amb
+  un esborrany de partida escrit a partir del que fa de debò la plataforma,
+  enllaçades al peu i al mapa del web. Admeten els marcadors `{{entitat}}`,
+  `{{nif}}`, `{{adreca}}`, `{{correu}}` i `{{web}}`.
+- **Avís de galetes**, configurable i sense llibreries de tercers, que es
+  recorda al navegador mateix.
+
+> L'avís informa i no bloqueja res perquè el web només fa servir la galeta
+> tècnica de sessió, i per a les necessàries la normativa europea demana
+> informar, no demanar permís. El dia que s'hi posi analítica, l'avís i la
+> política s'han de refer: aleshores caldrà consentiment de debò.
+
 ## [1.30.0] — 2026-09-28
 
 ### Afegit

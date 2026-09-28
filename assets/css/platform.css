@@ -74,3 +74,63 @@
   border-left: 0; border-top-right-radius: 10px; border-bottom-right-radius: 10px;
   color: var(--ink-soft, #5a6b60); font-size: .95rem;
 }
+
+/* El banner amb imatge de fons ------------------------------------------- */
+/* La imatge i el vel venen de la configuració, per això van a variables. */
+.platform-hero--image { background: var(--platform-dark, #10261a); }
+.platform-hero--image::before {
+  content: ""; position: absolute; inset: 0; z-index: 0;
+  background-image: var(--hero-image); background-size: cover; background-position: center;
+}
+.platform-hero--image::after {
+  content: ""; position: absolute; inset: 0; z-index: 0;
+  background: linear-gradient(160deg,
+    color-mix(in srgb, var(--platform-dark, #10261a) calc(var(--hero-overlay, .72) * 100%), transparent) 0%,
+    color-mix(in srgb, var(--platform-main, #2f6b3c) calc(var(--hero-overlay, .72) * 92%), transparent) 100%);
+}
+.platform-hero--image > .container { position: relative; z-index: 1; }
+
+/* Preguntes freqüents ----------------------------------------------------- */
+.faq-list { display: grid; gap: .7rem; }
+.faq-item {
+  border: 1px solid var(--line, #d4ded2); border-radius: 14px;
+  background: #fff; overflow: hidden;
+}
+.faq-item summary {
+  cursor: pointer; padding: 1rem 1.2rem; font-weight: 600;
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  list-style: none;
+}
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary::after {
+  content: "+"; font-size: 1.4rem; line-height: 1; color: var(--platform-accent, #2f7d84);
+  flex: none;
+}
+.faq-item[open] summary::after { content: "−"; }
+.faq-item summary:hover { background: #f7faf6; }
+.faq-item__body { padding: 0 1.2rem 1.1rem; color: var(--ink-soft, #5a6b60); }
+
+/* Pàgines de text (condicions, privadesa, galetes) ------------------------ */
+.platform-page { padding: clamp(2.5rem, 6vw, 4rem) 0; }
+.platform-page h1 { margin: 0 0 1.5rem; }
+.platform-page .prose h2 { margin: 2rem 0 .6rem; font-size: 1.25rem; }
+.platform-page .prose p, .platform-page .prose li { line-height: 1.65; }
+.platform-page .prose table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: .95rem; }
+.platform-page .prose th, .platform-page .prose td {
+  border: 1px solid var(--line, #d4ded2); padding: .5rem .7rem; text-align: left;
+}
+.platform-page .prose th { background: #f2f6f1; }
+
+/* Avís de galetes --------------------------------------------------------- */
+.cookie-notice { position: fixed; inset: auto 0 0 0; z-index: 60; padding: 1rem; }
+.cookie-notice[hidden] { display: none; }
+.cookie-notice__box {
+  max-width: 62rem; margin: 0 auto; background: #fff;
+  border: 1px solid var(--line, #d4ded2); border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(16, 38, 26, .18);
+  padding: 1rem 1.2rem; display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap;
+}
+.cookie-notice__box p { margin: 0; flex: 1 1 22rem; font-size: .95rem; color: var(--ink-soft, #5a6b60); }
+@media (max-width: 480px) {
+  .cookie-notice__box { flex-direction: column; align-items: stretch; text-align: left; }
+}

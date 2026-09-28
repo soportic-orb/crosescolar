@@ -114,6 +114,14 @@ $platformLogo = (string) setting('platform_logo', '');
           <li><a href="mailto:<?= e(Platform::notifyEmail()) ?>"><?= e(Platform::notifyEmail()) ?></a></li>
         </ul>
       </div>
+      <div>
+        <h4>Legal</h4>
+        <ul class="footer-links">
+          <li><a href="<?= e(url('/condicions')) ?>">Condicions del servei</a></li>
+          <li><a href="<?= e(url('/privadesa')) ?>">Política de privadesa</a></li>
+          <li><a href="<?= e(url('/galetes')) ?>">Política de galetes</a></li>
+        </ul>
+      </div>
     </div>
     <div class="footer-bottom">
       <span>© <?= date('Y') ?> <?= e($name) ?></span>
@@ -121,6 +129,8 @@ $platformLogo = (string) setting('platform_logo', '');
     </div>
   </div>
 </footer>
+
+<?= \Cros\Core\View::partial('platform/partials/cookie-notice') ?>
 
 <script src="<?= e(asset('js/site.js')) ?>" defer></script>
 </body>

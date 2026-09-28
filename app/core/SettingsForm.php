@@ -37,6 +37,11 @@ class SettingsForm
                 continue;
             }
 
+            if ($type === 'faqs') {
+                Settings::set($name, self::faqs($name));
+                continue;
+            }
+
             $raw = $overrides[$name] ?? ($_POST[$name] ?? null);
             if ($raw === null) {
                 continue;
@@ -72,6 +77,30 @@ class SettingsForm
         }
 
         return $errors;
+    }
+
+    /**
+     * Una llista de preguntes i respostes, tal com arriba del formulari.
+     *
+     * Es desa com un sol valor en JSON: per a una llista que sempre és curta
+     * no val la pena una taula, i així s'edita tot en una pantalla. Les files
+     * sense pregunta es descarten, que és la manera de treure'n una.
+     */
+    private static function faqs(string $name): string
+    {
+        $questions = (array) ($_POST[$name . '_q'] ?? []);
+        $answers = (array) ($_POST[$name . '_a'] ?? []);
+        $rows = [];
+        foreach ($questions as $i => $question) {
+            $question = trim((string) $question);
+            $answer = trim((string) ($answers[$i] ?? ''));
+            if ($question === '' || $answer === '') {
+                continue;
+            }
+            $rows[] = ['q' => mb_substr($question, 0, 300), 'a' => mb_substr($answer, 0, 2000)];
+        }
+
+        return $rows === [] ? '' : (string) json_encode($rows, JSON_UNESCAPED_UNICODE);
     }
 
     /** Una imatge o un document: es puja, o es treu si ho han demanat. */

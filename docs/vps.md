@@ -383,6 +383,40 @@ els noms que cobreix. Amb això:
   diu quan caduca, qui l'emet, quins noms cobreix i què cal executar per
   renovar-lo o ampliar-lo.
 
+## La portada i els textos legals
+
+Tot el que es veu a `crosescolar.cat` s'edita des del panell de
+superadministració, a **Configuració**:
+
+| Apartat | Què s'hi toca |
+|---|---|
+| **La portada** | Imatge de fons del banner i l'opacitat del vel, la frase de sobre i la de sota el títol, els tres passos de «Com funciona» i les **preguntes freqüents** |
+| **Imatge** | Logotip, icona i colors |
+| **Legal i galetes** | Condicions del servei, privadesa, política de galetes i l'avís que surt en entrar |
+| **SEO i cercadors** | Descripció per a Google i verificació de Search Console |
+
+Les **preguntes freqüents** s'escriuen en una llista de parelles pregunta i
+resposta. Surten a la portada desplegables i, alhora, s'envien als cercadors en
+el format que entenen (`FAQPage`), de manera que Google les pot ensenyar obertes
+al resultat. Per treure'n una, se li buida la pregunta i es desa.
+
+Els **textos legals** es publiquen a `/condicions`, `/privadesa` i `/galetes`, i
+van enllaçats al peu. Porten un esborrany de partida escrit a partir del que fa
+de debò aquesta plataforma; admeten els marcadors `{{entitat}}`, `{{nif}}`,
+`{{adreca}}`, `{{correu}}` i `{{web}}`, que se substitueixen sols pel que hàgiu
+posat al mateix apartat.
+
+> L'esborrany no és un dictamen jurídic: descriu el que el programa fa, i prou.
+> Abans de publicar-lo, llegiu-lo i adapteu-lo a com treballeu de debò, i si hi
+> ha contracte pel mig, que ho miri qui us porti aquests temes.
+
+L'**avís de galetes** informa que el web només fa servir la galeta tècnica de
+sessió. Per a les galetes necessàries, la normativa europea demana informar,
+no demanar permís: per això l'avís es tanca i no bloqueja res. **Si algun dia hi
+poseu analítica o qualsevol galeta que no sigui necessària, això s'ha de refer**:
+caldrà consentiment de debò, amb opcions separades i sense carregar res abans de
+tenir-lo.
+
 ## El DNS, vist des del panell
 
 La mateixa vigilància repassa el DNS, i el que més importa és el **comodí**.

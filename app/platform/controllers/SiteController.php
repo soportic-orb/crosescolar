@@ -124,6 +124,54 @@ class SiteController extends Controller
     }
 
     /**
+     * Les pàgines legals: condicions, privadesa i galetes.
+     *
+     * El text s'escriu al panell i aquí només se n'hi posen les dades de
+     * l'entitat, que així no s'han de repetir a tres llocs.
+     */
+    public function legal(array $params): void
+    {
+        $pages = [
+            'condicions' => ['platform_terms', 'Condicions del servei'],
+            'privadesa' => ['platform_privacy', 'Política de privadesa'],
+            'galetes' => ['platform_cookies', 'Política de galetes'],
+        ];
+        $which = (string) ($params['page'] ?? '');
+        if (!isset($pages[$which])) {
+            abort(404, 'Aquesta pàgina no existeix.');
+        }
+        [$key, $title] = $pages[$which];
+        $body = trim(strip_tags((string) setting($key, ''))) === ''
+            ? ''
+            : self::markers((string) setting_html($key));
+
+        $this->page('platform/text-page', [
+            'title' => $title,
+            'description' => $title . ' de ' . Platform::domain() . '.',
+            'body' => $body,
+            'updated' => \Cros\Core\Settings::changedAt([$key]),
+        ]);
+    }
+
+    /**
+     * Posa les dades de l'entitat als marcadors dels textos legals.
+     * Són els mateixos que al panell d'un cros, perquè qui n'ha escrit un ja
+     * sap escriure l'altre.
+     */
+    private static function markers(string $html): string
+    {
+        $email = trim((string) setting('platform_contact_email', '')) ?: Platform::notifyEmail();
+
+        return strtr($html, [
+            '{{entitat}}' => e((string) setting('platform_legal_entity', '') ?: (string) setting('site_name', '')),
+            '{{nif}}' => e((string) setting('platform_legal_nif', '')),
+            '{{adreca}}' => e((string) setting('platform_legal_address', '')),
+            '{{web}}' => e(Platform::domain()),
+            '{{correu}}' => $email === '' ? '' : '<a href="mailto:' . e($email) . '">' . e($email) . '</a>',
+        ]);
+    }
+
+    /**
      * Mapa del web de la plataforma.
      *
      * Hi surt la portada i, sobretot, el web de cada cros que està publicat i
@@ -142,6 +190,9 @@ class SiteController extends Controller
         echo '  <url><loc>' . e('https://' . Platform::domain() . '/') . '</loc></url>' . "\n";
         foreach (Instance::directory() as $instance) {
             echo '  <url><loc>' . e(Instance::url($instance) . '/') . '</loc></url>' . "\n";
+        }
+        foreach (['condicions', 'privadesa', 'galetes'] as $page) {
+            echo '  <url><loc>' . e('https://' . Platform::domain() . '/' . $page) . '</loc></url>' . "\n";
         }
         echo '</urlset>';
         exit;

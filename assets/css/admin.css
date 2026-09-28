@@ -251,3 +251,11 @@ input[type="color"] { width: 64px; height: 40px; padding: 2px; }
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
+
+/* Llista de preguntes i respostes a la configuració ----------------------- */
+.faq-rows { display: grid; gap: .8rem; }
+.faq-row {
+  display: grid; gap: .5rem; padding: .8rem;
+  border: 1px solid var(--line, #d9e2d6); border-radius: 12px; background: #fbfdfa;
+}
+.faq-row input { font-weight: 600; }
