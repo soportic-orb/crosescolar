@@ -156,13 +156,20 @@ Settings::setMany(['bib_template' => '', 'bib_page_size' => 'a5', 'bib_orientati
 $withNotice = req('GET', $base . '/les-meves-inscripcions');
 check('L\'enllaç del dorsal demana l\'avís', str_contains($withNotice['body'], 'data-bib-notice'));
 check('Hi ha el quadre de l\'avís', str_contains($withNotice['body'], 'id="bib-notice"'));
-check('Diu que s\'imprimeix en A4', str_contains(text($withNotice['body']), 'DIN A4'));
+check('Diu que s\'imprimeix en A4 vertical', str_contains(text($withNotice['body']), 'DIN A4 vertical'));
 check('I que cal retallar per la línia de punts',
     str_contains(text($withNotice['body']), 'línia de punts'));
 check('El botó del quadre porta al PDF', str_contains($withNotice['body'], 'data-bib-notice-go'));
 
-// Amb un dorsal que no es parteix, l'avís diu el que toca: dues còpies, un full cadascuna.
+// Amb un dorsal vertical els dos van de costat, i l'avís ho ha de dir així.
 Settings::setMany(['bib_orientation' => 'portrait']);
+$sideBySide = text(req('GET', $base . '/les-meves-inscripcions')['body']);
+check('Amb el dorsal vertical, el full va apaïsat', str_contains($sideBySide, 'DIN A4 apaïsat'));
+check('I els dos dorsals, un a cada banda', str_contains($sideBySide, 'un a cada banda'));
+
+// Amb un dorsal que no es parteix de cap manera (un A4 sencer), l'avís diu el
+// que toca: dues còpies, un full cadascuna.
+Settings::setMany(['bib_page_size' => 'a4', 'bib_orientation' => 'portrait']);
 $single = req('GET', $base . '/les-meves-inscripcions');
 check('Amb un dorsal per full, l\'avís no parla de retallar',
     !str_contains(text($single['body']), 'línia de punts'));

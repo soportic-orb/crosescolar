@@ -14,11 +14,12 @@ $two = $sheet['per_sheet'] > 1;
     <h2 class="modal__title" id="bib-notice-title">Abans d'imprimir el dorsal</h2>
     <?php if ($two): ?>
       <p>
-        El document s'ha d'imprimir en un full <strong>DIN A4</strong> vertical, a mida real
+        El document s'ha d'imprimir en un full
+        <strong>DIN A4 <?= $sheet['upright'] ? 'vertical' : 'apaïsat' ?></strong>, a mida real
         (sense «ajustar a la pàgina»).
       </p>
       <p>
-        Cada full porta <strong>dos dorsals iguals</strong>, un a dalt i un a baix.
+        Cada full porta <strong>dos dorsals iguals</strong>, <?= $sheet['axis'] === 'y' ? 'un a dalt i un a baix' : 'un a cada banda' ?>.
         <strong>Retalleu el full per la línia de punts</strong>, que va marcada amb unes tisores,
         i poseu-vos-en un al pit: l'altre és de recanvi.
       </p>

@@ -212,7 +212,7 @@ echo "\n== Dos dorsals per full ==\n";
 // Es desen els valors d'ara sense posar-hi cap valor per defecte: si es
 // restaurés una cadena buida, l'opció es quedaria en blanc al panell.
 $before = [];
-foreach (['bib_template', 'bib_orientation', 'bib_page_size',
+foreach (['bib_template', 'bib_orientation', 'bib_page_size', 'bib_template_rotate',
           'bib_number_y', 'bib_name_y', 'bib_category_y'] as $key) {
     $before[$key] = (string) Settings::get($key);
 }
@@ -239,7 +239,16 @@ check('I el full passa a ser A4 vertical',
     implode('×', $sheet['sheet']));
 check('El segon dorsal va a la meitat de baix', abs($sheet['offset'] - 148.5) < 0.5, (string) $sheet['offset']);
 check('Un dorsal A4 sencer no es parteix', Bib::sheet([210.0, 297.0])['per_sheet'] === 1);
-check('Ni un A5 vertical, que no hi cabria', Bib::sheet([148.0, 210.0])['per_sheet'] === 1);
+// Un dorsal vertical també hi cap, però posant el full de l'altra manera.
+$peu = Bib::sheet([148.0, 210.0]);
+check('Un A5 vertical en deixa posar dos de costat',
+    $peu['per_sheet'] === 2 && $peu['axis'] === 'x', $peu['axis'] . ', ' . $peu['per_sheet']);
+check('Amb el full A4 apaïsat',
+    abs($peu['sheet'][0] - 297.0) < 0.5 && abs($peu['sheet'][1] - 210.0) < 0.5,
+    implode('×', $peu['sheet']));
+check('I el segon a la meitat de la dreta', abs($peu['offset'] - 148.5) < 0.5, (string) $peu['offset']);
+check('Un dorsal massa ample per partir-lo de cap manera',
+    Bib::sheet([200.0, 200.0])['per_sheet'] === 1);
 
 $document = Bib::pdf($three);
 check('Tres dorsals ocupen dos fulls', substr_count($document, '/Type /Page') === 3,
@@ -272,6 +281,34 @@ if ($text !== null) {
     check('Amb els dos participants al mateix full',
         str_contains($text, 'Laia Duran') && str_contains($text, 'Pau Duran'));
 }
+
+// Un disseny nou apaïsat amb el gir que hi havia del disseny vell: encara que
+// el gir el torni vertical, els dos dorsals han de continuar cabent al full.
+$apaisada = CROS_ROOT . '/uploads/documents/maqueta-apaisada.pdf';
+$maqueta = new Pdf(['title' => 'maqueta apaïsada']);
+$maqueta->addPage([210.0, 148.0]);
+$maqueta->setColorHex('#eef3ec');
+$maqueta->rect(0.0, 0.0, 210.0, 148.0, 'F');
+file_put_contents($apaisada, $maqueta->output());
+Settings::setMany(['bib_template' => 'documents/maqueta-apaisada.pdf',
+    'bib_template_rotate' => '0', 'bib_orientation' => 'auto']);
+$sheet = Bib::familySheet();
+check('Amb el disseny apaïsat, dos dorsals un sobre l\'altre',
+    $sheet['per_sheet'] === 2 && $sheet['axis'] === 'y', $sheet['axis'] . ', ' . $sheet['per_sheet']);
+Settings::set('bib_template_rotate', '90');
+$sheet = Bib::familySheet();
+check('I amb un gir que ve del disseny anterior, dos de costat',
+    $sheet['per_sheet'] === 2 && $sheet['axis'] === 'x', $sheet['axis'] . ', ' . $sheet['per_sheet']);
+$girat = Bib::familyPdf([$three[0]]);
+check('En un sol full', substr_count($girat, '/Type /Page') === 2, (string) substr_count($girat, '/Type /Page'));
+$text = pdf_text($girat);
+if ($text !== null) {
+    check('Amb les dues còpies i la línia de retallar',
+        substr_count($text, 'Laia Duran') === 2 && str_contains($text, 'Retalleu'),
+        trim(str_replace("\n", ' ', $text)));
+}
+Settings::set('bib_template_rotate', '0');
+@unlink($apaisada);
 
 @unlink($sample);
 Settings::set('bib_two_per_sheet', '0');
@@ -350,12 +387,25 @@ if ($text !== null) {
         substr_count($text, '007') === 2 && !str_contains($text, 'Retalleu'));
 }
 
-// Amb un dorsal A5 vertical tampoc n'hi caben dos: l'avís ho ha de dir així.
+// Amb un dorsal A5 vertical n'hi caben dos igualment, l'un al costat de
+// l'altre, i l'avís ho ha de dir així.
 Settings::setMany(['bib_page_size' => 'a5', 'bib_orientation' => 'portrait']);
 $sheet = Bib::familySheet();
-check('Amb un dorsal que no es parteix, un per full', $sheet['per_sheet'] === 1,
-    (string) $sheet['per_sheet']);
-check('I l\'avís en diu la mida', $sheet['name'] === 'A5', $sheet['name']);
+check('Amb un dorsal vertical, dos per full de costat',
+    $sheet['per_sheet'] === 2 && $sheet['axis'] === 'x', $sheet['axis'] . ', ' . $sheet['per_sheet']);
+check('I l\'avís sap que el full va apaïsat', $sheet['name'] === 'A4' && !$sheet['upright'],
+    $sheet['name'] . ($sheet['upright'] ? ' vertical' : ' apaïsat'));
+$vertical = Bib::familyPdf([$one]);
+check('El full surt A4 apaïsat',
+    preg_match('#/MediaBox \[0 0 841\.\d+ 595\.\d+\]#', $vertical) === 1);
+check('Amb un sol full per als dos dorsals',
+    substr_count($vertical, '/Type /Page') === 2, (string) substr_count($vertical, '/Type /Page'));
+$text = pdf_text($vertical);
+if ($text !== null) {
+    check('Les dues còpies i la línia de retallar hi són',
+        substr_count($text, '007') === 2 && str_contains($text, 'Retalleu'),
+        trim(str_replace("\n", ' ', $text)));
+}
 check('Una mida que no és cap format estàndard es diu en mil·límetres',
     Bib::sizeName([120.0, 180.0]) === '120 × 180 mm', Bib::sizeName([120.0, 180.0]));
 check('Un A5 apaïsat continua sent un A5', Bib::sizeName([210.0, 148.0]) === 'A5');

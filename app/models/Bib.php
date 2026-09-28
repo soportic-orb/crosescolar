@@ -107,9 +107,12 @@ class Bib
         // Cada dorsal se centra dins del seu espai del full: el que sobra queda
         // com a marge, de manera que la línia de retallar passi per un tros en
         // blanc i els dos dorsals es vegin separats de debò.
-        $slotHeight = $sheet['per_sheet'] > 1 ? $sheet['offset'] : $sheet['sheet'][1];
-        $inset = max(0.0, ($slotHeight - $size[1]) / 2);
-        $left = max(0.0, ($sheet['sheet'][0] - $size[0]) / 2);
+        $stacked = $sheet['axis'] === 'y';
+        $twoUp = $sheet['per_sheet'] > 1;
+        $slotWidth = $twoUp && !$stacked ? $sheet['offset'] : $sheet['sheet'][0];
+        $slotHeight = $twoUp && $stacked ? $sheet['offset'] : $sheet['sheet'][1];
+        $insetX = max(0.0, ($slotWidth - $size[0]) / 2);
+        $insetY = max(0.0, ($slotHeight - $size[1]) / 2);
 
         $first = $template !== null;
         $slot = 0;
@@ -119,7 +122,9 @@ class Bib
             } elseif ($slot === 0) {
                 $pdf->addPage($sheet['sheet']);
             }
-            $top = $slot * $sheet['offset'] + $inset;
+            $step = $slot * $sheet['offset'];
+            $top = ($stacked ? $step : 0.0) + $insetY;
+            $left = ($stacked ? 0.0 : $step) + $insetX;
             if ($template !== null && $placement !== null) {
                 $pdf->useTemplate($template, $placement[0] + $left, $placement[1] + $top, $placement[2], $placement[3], $rotate);
             }
@@ -127,8 +132,8 @@ class Bib
             $slot = ($slot + 1) % $sheet['per_sheet'];
             // La marca de retallar es dibuixa quan el full ja té els dos dorsals:
             // així no hi ha cap maqueta que li passi per sobre i l'amagui.
-            if ($duplicate && $sheet['per_sheet'] > 1 && $slot === 0) {
-                self::cutMark($pdf, $sheet['offset'], $sheet['sheet'][0]);
+            if ($duplicate && $twoUp && $slot === 0) {
+                self::cutMark($pdf, $sheet);
             }
         }
         if (!$registrations) {
@@ -138,29 +143,41 @@ class Bib
     }
 
     /**
-     * Quants dorsals hi caben a cada full i quina mida té el full.
+     * Quants dorsals hi caben a cada full, quina mida té el full i per on es
+     * parteix.
      *
-     * Amb l'opció activada i un dorsal que ocupi com a molt mig A4 (un A5
-     * apaïsat, 210×148 mm), se n'imprimeixen dos per full A4 vertical, un a
-     * dalt i un a baix. Si el dorsal és més gran, se'n continua fent un per full.
+     * En un A4 hi caben dos dorsals de mitja pàgina, i hi caben de dues
+     * maneres segons com sigui el disseny:
+     *
+     *   - un dorsal apaïsat (un A5 de 210×148 mm) → full A4 vertical, un a
+     *     dalt i un a baix, i es retalla per una línia horitzontal;
+     *   - un dorsal vertical (un A5 de 148×210 mm) → full A4 apaïsat, un a
+     *     cada banda, i es retalla per una línia vertical.
+     *
+     * Si el disseny és més gran que mig A4 de qualsevol de les dues maneres,
+     * se'n continua fent un per full.
      *
      * @param array{0:float,1:float} $size mida del dorsal en mm
-     * @return array{sheet:array{0:float,1:float},per_sheet:int,offset:float}
+     * @return array{sheet:array{0:float,1:float},per_sheet:int,offset:float,axis:string}
      */
     public static function sheet(array $size, bool $force = false): array
     {
-        $one = ['sheet' => $size, 'per_sheet' => 1, 'offset' => 0.0];
+        $one = ['sheet' => $size, 'per_sheet' => 1, 'offset' => 0.0, 'axis' => 'y'];
         if (!$force && setting('bib_two_per_sheet', '0') !== '1') {
             return $one;
         }
         [$a4Width, $a4Height] = Pdf::SIZES['a4'];
         $half = $a4Height / 2;
         // Mig mil·límetre de marge per als dissenys fets clavats a la mida.
-        if ($size[0] > $a4Width + 0.5 || $size[1] > $half + 0.5) {
-            return $one;
+        $slack = 0.5;
+        if ($size[0] <= $a4Width + $slack && $size[1] <= $half + $slack) {
+            return ['sheet' => [$a4Width, $a4Height], 'per_sheet' => 2, 'offset' => $half, 'axis' => 'y'];
+        }
+        if ($size[0] <= $half + $slack && $size[1] <= $a4Width + $slack) {
+            return ['sheet' => [$a4Height, $a4Width], 'per_sheet' => 2, 'offset' => $half, 'axis' => 'x'];
         }
 
-        return ['sheet' => [$a4Width, $a4Height], 'per_sheet' => 2, 'offset' => $half];
+        return $one;
     }
 
     /**
@@ -170,7 +187,7 @@ class Bib
      * Serveix per explicar-ho al web abans de descarregar-lo, de manera que
      * l'avís digui sempre el que el document porta de debò.
      *
-     * @return array{per_sheet:int,sheet:array,name:string}
+     * @return array{per_sheet:int,sheet:array,name:string,axis:string,upright:bool}
      */
     public static function familySheet(): array
     {
@@ -193,6 +210,11 @@ class Bib
             'per_sheet' => $sheet['per_sheet'],
             'sheet' => $sheet['sheet'],
             'name' => self::sizeName($sheet['sheet']),
+            // Com queden els dos dorsals al full: un sobre l'altre («y») o un
+            // al costat de l'altre («x»). Els avisos ho expliquen amb aquestes
+            // paraules, i el full va vertical o apaïsat segons això.
+            'axis' => $sheet['axis'],
+            'upright' => $sheet['sheet'][1] >= $sheet['sheet'][0],
         ];
     }
 
@@ -215,29 +237,55 @@ class Bib
     /**
      * Marca per on s'ha de retallar el full: una línia de punts d'una banda a
      * l'altra amb unes tisores al començament.
+     *
+     * Va horitzontal quan els dos dorsals estan un sobre l'altre i vertical
+     * quan estan de costat.
+     *
+     * @param array{sheet:array{0:float,1:float},offset:float,axis:string} $sheet
      */
-    private static function cutMark(Pdf $pdf, float $y, float $width): void
+    private static function cutMark(Pdf $pdf, array $sheet): void
     {
+        $at = $sheet['offset'];
+        [$width, $height] = $sheet['sheet'];
         // Una franja en blanc a banda i banda de la línia: encara que els dos
         // dorsals s'acabin tocant, queden clarament separats i la línia no passa
         // per sobre de cap disseny.
         $band = 3.2;
         $pdf->setColorHex('#ffffff');
-        $pdf->rect(0, $y - $band, $width, $band * 2, 'F');
-
-        $pdf->setStrokeColor(120, 130, 122);
-        self::scissors($pdf, 13.0, $y, 2.0);
-        $pdf->dashedLine(19.0, $y, $width - 30.0, $y);
         $pdf->setFont('helvetica', 7);
-        $pdf->setColorHex('#78827a');
-        $pdf->text($width - 8.0, $y + 1.2, 'Retalleu per aquí', ['align' => 'right']);
+        if ($sheet['axis'] === 'y') {
+            $pdf->rect(0, $at - $band, $width, $band * 2, 'F');
+            $pdf->setStrokeColor(120, 130, 122);
+            self::scissors($pdf, 13.0, $at, 2.0);
+            $pdf->dashedLine(19.0, $at, $width - 30.0, $at);
+            $pdf->setColorHex('#78827a');
+            $pdf->text($width - 8.0, $at + 1.2, 'Retalleu per aquí', ['align' => 'right']);
+        } else {
+            $pdf->rect($at - $band, 0, $band * 2, $height, 'F');
+            $pdf->setStrokeColor(120, 130, 122);
+            self::scissors($pdf, $at, 13.0, 2.0, true);
+            $pdf->dashedLine($at, 19.0, $at, $height - 30.0);
+            $pdf->setColorHex('#78827a');
+            // Girat 90°, que és l'única manera que càpiga al costat de la línia.
+            $pdf->text($at - 1.2, $height - 8.0, 'Retalleu per aquí', ['angle' => 90]);
+        }
         $pdf->setStrokeColor(0, 0, 0);
     }
 
-    /** Unes tisores petites: dues fulles creuades i dues anelles. */
-    private static function scissors(Pdf $pdf, float $x, float $y, float $size): void
+    /**
+     * Unes tisores petites: dues fulles creuades i dues anelles.
+     * Apunten cap on va la línia de retallar.
+     */
+    private static function scissors(Pdf $pdf, float $x, float $y, float $size, bool $vertical = false): void
     {
         $blade = $size * 1.9;
+        if ($vertical) {
+            $pdf->line($x, $y - $size * 0.2, $x - $size * 1.1, $y + $blade, 0.28);
+            $pdf->line($x, $y - $size * 0.2, $x + $size * 1.1, $y + $blade, 0.28);
+            $pdf->circle($x - $size * 0.62, $y - $size * 0.75, $size * 0.6, 'D', 0.28);
+            $pdf->circle($x + $size * 0.62, $y - $size * 0.75, $size * 0.6, 'D', 0.28);
+            return;
+        }
         $pdf->line($x - $size * 0.2, $y, $x + $blade, $y - $size * 1.1, 0.28);
         $pdf->line($x - $size * 0.2, $y, $x + $blade, $y + $size * 1.1, 0.28);
         $pdf->circle($x - $size * 0.75, $y - $size * 0.62, $size * 0.6, 'D', 0.28);

@@ -178,11 +178,31 @@ class Pdf
         }
 
         $this->useFont();
+        // Amb «angle» el text es gira sobre el punt on comença: serveix per a
+        // les etiquetes que van al costat d'una línia vertical.
+        $angle = (float) ($options['angle'] ?? 0);
+        if (abs($angle) < 0.01) {
+            $this->write(sprintf(
+                "BT /F%s %.2F Tf %s rg %.2F %.2F Td (%s) Tj ET\n",
+                self::fontKey($this->font),
+                $size,
+                $this->colorString($this->fill),
+                $x * self::MM,
+                ($this->pageHeight() - $y) * self::MM,
+                $this->escape($text)
+            ));
+            return;
+        }
+        $radians = deg2rad($angle);
         $this->write(sprintf(
-            "BT /F%s %.2F Tf %s rg %.2F %.2F Td (%s) Tj ET\n",
+            "BT /F%s %.2F Tf %s rg %.4F %.4F %.4F %.4F %.2F %.2F Tm (%s) Tj ET\n",
             self::fontKey($this->font),
             $size,
             $this->colorString($this->fill),
+            cos($radians),
+            sin($radians),
+            -sin($radians),
+            cos($radians),
             $x * self::MM,
             ($this->pageHeight() - $y) * self::MM,
             $this->escape($text)

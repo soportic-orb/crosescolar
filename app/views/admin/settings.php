@@ -38,6 +38,12 @@ use Cros\Core\Settings;
           $bib = \Cros\Models\Bib::describe();
           $shape = fn (array $size) => sprintf('%.0f×%.0f mm (%s)', $size[0], $size[1],
               $size[0] > $size[1] ? 'horitzontal' : 'vertical');
+          $bibSheet = \Cros\Models\Bib::familySheet();
+          // El disseny és apaïsat però el dorsal surt vertical (o al revés):
+          // vol dir que el gir o l'orientació el capgiren, i sol ser un
+          // encàrrec vell que s'ha quedat d'un disseny anterior.
+          $bibFlipped = $bib['template'] !== null
+              && ($bib['template'][0] > $bib['template'][1]) !== ($bib['page'][0] > $bib['page'][1]);
         ?>
         <div class="alert alert--info">
           Les posicions es compten en mil·límetres des de la cantonada <strong>superior esquerra</strong> del dorsal,
@@ -48,6 +54,25 @@ use Cros\Core\Settings;
             La maqueta que hi ha pujada és de <strong><?= e($shape($bib['template'])) ?></strong>
             i el dorsal sortirà de <strong><?= e($shape($bib['page'])) ?></strong><?php
               ?><?= $bib['rotate'] ? ', amb la maqueta girada ' . (int) $bib['rotate'] . '°' : '' ?>.
+            <br>
+            El PDF que es descarrega la família portarà
+            <?php if ($bibSheet['per_sheet'] > 1): ?>
+              <strong>dos dorsals per full A4 <?= $bibSheet['upright'] ? 'vertical' : 'apaïsat' ?></strong>,
+              <?= $bibSheet['axis'] === 'y' ? 'un a dalt i un a baix' : 'un a cada banda' ?>,
+              amb la línia per retallar.
+            <?php else: ?>
+              <strong>un dorsal per full</strong>: amb aquesta mida no n'hi caben dos en un A4,
+              que admet fins a 210×148 mm si el dorsal és apaïsat o 148×210 mm si és vertical.
+            <?php endif; ?>
+            <?php if ($bibFlipped): ?>
+              <br>
+              <strong>Compte:</strong> la maqueta és
+              <?= $bib['template'][0] > $bib['template'][1] ? 'apaïsada' : 'vertical' ?>
+              però el dorsal surt <?= $bib['page'][0] > $bib['page'][1] ? 'apaïsat' : 'vertical' ?>.
+              Ho fan «Orientació del dorsal» i «Gir de la maqueta»: si heu canviat el disseny i
+              abans en teníeu un de l'altra manera, deixeu-les totes dues com estaven
+              («la mateixa que la maqueta» i «cap gir»).
+            <?php endif; ?>
           <?php elseif ($bib['error'] !== ''): ?>
             No s'ha pogut llegir la maqueta: <?= e($bib['error']) ?>
           <?php else: ?>

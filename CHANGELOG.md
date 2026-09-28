@@ -3,6 +3,27 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.28.1] — 2026-09-28
+
+### Corregit
+- **Dos dorsals per full amb qualsevol disseny.** Fins ara els dos dorsals només
+  cabien en un full si el dorsal era apaïsat (un A5 horitzontal): amb un dorsal
+  vertical se'n feia un per full, sense línia de retallar. Ara, si el dorsal és
+  vertical, el full A4 es posa apaïsat i els dos dorsals van l'un al costat de
+  l'altre, amb la línia de punts i les tisores verticals. Això és el que passava
+  en canviar un disseny per un altre de forma diferent sense tocar «Gir de la
+  maqueta»: el dorsal quedava vertical i el full de dos desapareixia.
+- L'avís abans de descarregar el dorsal i el correu de confirmació diuen ara si
+  el full va vertical o apaïsat i si els dorsals van un sobre l'altre o un a
+  cada banda.
+- **El panell explica què sortirà**: a Configuració → Dorsals hi diu quants
+  dorsals portarà cada full i de quina mida serà, i avisa quan l'orientació o el
+  gir deixen el dorsal de la forma contrària a la maqueta.
+
+### Afegit
+- El motor de PDF sap escriure text girat, que és el que fa falta per a
+  l'etiqueta «Retalleu per aquí» de la línia de retallar vertical.
+
 ## [1.28.0] — 2026-09-27
 
 ### Afegit

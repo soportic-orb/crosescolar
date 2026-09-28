@@ -234,18 +234,31 @@ els podeu imprimir igualment.
    els anys de naixement: *Infantil masculí (2013–2014)*, *Prebenjamí femení (2020)*.
 4. Premeu **«Veure un dorsal de prova»** per comprovar com queda abans d'imprimir.
 
-Amb **«Dos dorsals per full A4»** cada full vertical en porta dos, un a dalt i un a baix,
-i es gasta la meitat de paper. Només s'aplica si el dorsal hi cap — un A5 apaïsat
-(210×148 mm) o més petit; si és més gran, se'n continua fent un per full. Comproveu amb el
-dorsal de prova que el número, el nom i la categoria quedin dins del dorsal: si alguna
-posició se'n surt, al full de dos es ficaria dins de l'altre dorsal.
+Amb **«Dos dorsals per full A4»** cada full en porta dos i es gasta la meitat de paper. El
+full es posa de la manera que calgui segons com sigui el dorsal:
+
+| Com és el dorsal | Com surt el full |
+|---|---|
+| Apaïsat, fins a 210×148 mm (un A5 horitzontal) | A4 **vertical**, un dorsal a dalt i un a baix, línia de retallar horitzontal |
+| Vertical, fins a 148×210 mm (un A5 vertical) | A4 **apaïsat**, un dorsal a cada banda, línia de retallar vertical |
+| Més gran que mig A4 de qualsevol de les dues maneres | Un dorsal per full |
+
+Comproveu amb el dorsal de prova que el número, el nom i la categoria quedin dins del
+dorsal: si alguna posició se'n surt, al full de dos es ficaria dins de l'altre dorsal.
 
 **El dorsal que es descarrega la família** és diferent del que imprimiu vosaltres: porta
-**dues còpies del mateix dorsal** en un full A4 vertical, una a dalt i una a baix, amb una
-línia de punts i unes tisores al mig. Així, amb un sol full, en tenen un per al pit i un
-de recanvi (o un per davant i un per darrere). Si tenen més d'un fill inscrit, cada
-participant té el seu full. Quan el dorsal és massa gran per partir el full (un A4
+**dues còpies del mateix dorsal** en un sol full A4, amb una línia de punts i unes tisores
+al mig, seguint la mateixa taula d'aquí sobre. Així, amb un sol full, en tenen un per al
+pit i un de recanvi (o un per davant i un per darrere). Si tenen més d'un fill inscrit,
+cada participant té el seu full. Quan el dorsal és massa gran per partir el full (un A4
 sencer), se'n fan dues còpies en dos fulls, sense línia de retallar.
+
+> **Si canvieu el disseny i deixeu de veure els dos dorsals per full**, mireu
+> «Orientació del dorsal» i «Gir de la maqueta»: un gir que havíeu posat per a un disseny
+> vertical deixa de tenir sentit amb un de nou que ja és apaïsat, i el dorsal acaba
+> sortint de costat. A dalt del formulari hi diu de quina mida és la maqueta, de quina
+> mida sortirà el dorsal i quants n'anirà a cada full, i avisa quan la maqueta i el
+> dorsal no tenen la mateixa forma.
 
 En prémer **«Descarregar el dorsal»**, abans de baixar-se'l, la família veu un avís que
 explica com s'ha d'imprimir: la mida del full, que hi ha dos dorsals iguals i que cal
