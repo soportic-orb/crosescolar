@@ -138,8 +138,31 @@ for s in /run/php/php*-fpm.sock; do
     if [ -S "$s" ]; then SOCOL="$s"; break; fi
 done
 echo "   PHP $PHP_VERSIO · sòcol $SOCOL"
+
+# Els límits que porta PHP de sèrie (2 MB per fitxer, 8 MB de petició) es
+# queden curts per a una foto de mòbil, i quan es passen de 8 MB PHP descarta
+# la petició sencera sense dir res: el formulari sembla que no desi. Es pugen
+# a uns números raonables, per sota del que accepta l'nginx (64 MB).
+if [ "$ASSAIG" = "0" ]; then
+    for TIPUS in fpm cli; do
+        CONF_DIR="/etc/php/$PHP_VERSIO/$TIPUS/conf.d"
+        [ -d "$CONF_DIR" ] || continue
+        cat > "$CONF_DIR/99-cros.ini" <<EOF
+; Generat per tools/instalar-vps.sh
+upload_max_filesize = 32M
+post_max_size = 40M
+memory_limit = 256M
+max_execution_time = 120
+EOF
+    done
+    verd "   Pujades fins a 32 MB."
+else
+    echo "   (assaig) apujaria els límits de pujada de PHP"
+fi
+
 fes "systemctl enable --now nginx mariadb cron >/dev/null 2>&1 || true"
 fes "systemctl enable --now php${PHP_VERSIO}-fpm >/dev/null 2>&1 || true"
+fes "systemctl reload php${PHP_VERSIO}-fpm >/dev/null 2>&1 || true"
 
 # ------------------------------------------------------------------ el codi
 
@@ -198,6 +221,16 @@ map \$host \$cros_slug {
     default "";
     "~^(?<sub>[a-z0-9][a-z0-9-]*)\.($PATRO)\$" \$sub;
 }
+
+# On són els fitxers pujats de cada amfitrió. La plataforma (el domini pelat,
+# «www» i el panell) té els seus, que no pengen de cap client; la resta de
+# subdominis són cros i cadascun té la seva carpeta.
+map \$host \$cros_uploads {
+    default "$ARREL/uploads";
+    "~^www\.($PATRO)\$" "$ARREL/uploads";
+    "~^admin\.($PATRO)\$" "$ARREL/uploads";
+    "~^(?<pujades>[a-z0-9][a-z0-9-]*)\.($PATRO)\$" "$ARREL/tenants/\$pujades/uploads";
+}
 EOF
     cat > "$VHOST" <<EOF
 # Generat per tools/instalar-vps.sh.
@@ -214,7 +247,7 @@ server {
     location / { try_files \$uri \$uri/ /index.php?\$query_string; }
 
     location ^~ /uploads/ {
-        alias $ARREL/tenants/\$cros_slug/uploads/;
+        alias \$cros_uploads/;
         location ~ \.(php|phtml|phar)\$ { deny all; return 404; }
         add_header X-Content-Type-Options "nosniff" always;
         expires 30d;

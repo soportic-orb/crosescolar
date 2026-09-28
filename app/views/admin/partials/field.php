@@ -89,9 +89,12 @@ $required = str_contains((string) ($field['rules'] ?? ''), 'required');
             <?php endif; ?>
           </div>
           <div class="image-field__controls">
+            <?php $maxima = \Cros\Core\Uploader::serverLimit(); ?>
             <input type="file" id="<?= e($id) ?>" name="<?= e($name) ?>"
                    accept="<?= e($field['accept'] ?? ($type === 'image' ? 'image/*' : '.pdf')) ?>"
+                   data-max-bytes="<?= (int) $maxima ?>"
                    data-preview="#<?= e($id) ?>_preview">
+            <small class="text-soft">Fins a <?= e(\Cros\Core\Uploader::serverLimitLabel()) ?> per fitxer.</small>
             <?php if ($value): ?>
               <label class="switch"><input type="checkbox" name="<?= e($name) ?>_remove" value="1"> <span>Esborrar el fitxer actual</span></label>
             <?php endif; ?>

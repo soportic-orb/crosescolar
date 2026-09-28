@@ -21,6 +21,15 @@ abstract class Controller
     /** Comprova el token CSRF dels formularis. */
     protected function checkCsrf(): void
     {
+        // Si el servidor ha descartat la petició per massa gran, el testimoni
+        // també s'hi ha perdut: abans de dir que la sessió ha caducat, cal
+        // explicar el que ha passat de debò.
+        if (Uploader::postTooBig()) {
+            flash('error', 'El fitxer que heu pujat és massa gran per a aquest servidor (hi caben '
+                . Uploader::serverLimitLabel() . '). No s\'ha desat res del formulari: '
+                . 'feu la imatge més petita i torneu-ho a provar.');
+            $this->back();
+        }
         Csrf::verify();
     }
 

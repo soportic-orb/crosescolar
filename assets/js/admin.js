@@ -30,6 +30,16 @@
     input.addEventListener('change', function () {
       var target = document.querySelector(input.getAttribute('data-preview'));
       if (!target || !input.files || !input.files[0]) { return; }
+      // Si el fitxer passa del que accepta el servidor, val més dir-ho aquí:
+      // si s'envia, PHP descarta la petició sencera i el formulari sembla
+      // que no desi res.
+      var maxim = parseInt(input.getAttribute('data-max-bytes') || '0', 10);
+      if (maxim > 0 && input.files[0].size > maxim) {
+        alert('El fitxer ocupa ' + Math.round(input.files[0].size / 1048576) + ' MB i el servidor n\'accepta '
+          + Math.floor(maxim / 1048576) + ' MB com a màxim. Feu-lo més petit abans de desar.');
+        input.value = '';
+        return;
+      }
       var reader = new FileReader();
       reader.onload = function (event) { target.innerHTML = '<img src="' + event.target.result + '" alt="">'; };
       reader.readAsDataURL(input.files[0]);

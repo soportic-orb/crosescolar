@@ -128,6 +128,24 @@ Anoteu com es diu el sòcol del PHP, que farà falta a l'nginx:
 ls /run/php/          # p. ex. php8.3-fpm.sock
 ```
 
+**Els límits de pujada.** PHP ve de sèrie amb 2 MB per fitxer i 8 MB per
+petició, que és menys que una foto feta amb el mòbil. I el que passa quan es
+passen no és un error clar: PHP llença el cos de la petició sencer, el
+formulari arriba buit i el navegador ensenya un «la sessió ha caducat» que no
+hi té res a veure. Val més apujar-los d'entrada (canvieu `8.3` per la vostra
+versió):
+
+```bash
+printf 'upload_max_filesize = 32M\npost_max_size = 40M\nmemory_limit = 256M\nmax_execution_time = 120\n' \
+  > /etc/php/8.3/fpm/conf.d/99-cros.ini
+cp /etc/php/8.3/fpm/conf.d/99-cros.ini /etc/php/8.3/cli/conf.d/99-cros.ini
+systemctl reload php8.3-fpm
+php -r 'echo ini_get("upload_max_filesize"), " / ", ini_get("post_max_size"), PHP_EOL;'
+```
+
+L'instal·lador guiat ja ho deixa fet; això és per als servidors muntats a mà o
+anteriors a la versió 1.31.1.
+
 Un tallafoc mínim:
 
 ```bash
@@ -276,10 +294,32 @@ map $host $cros_slug {
     default                                                   "";
     "~^(?<sub>[a-z0-9][a-z0-9-]*)\.crosescolar\.(cat|com)$"   $sub;
 }
+
+# On són els fitxers pujats de cada amfitrió. La plataforma (el domini pelat,
+# «www» i el panell) té els seus, que no pengen de cap client.
+map $host $cros_uploads {
+    default                                                   "/var/www/crosescolar/uploads";
+    "~^www\.crosescolar\.(cat|com)$"                          "/var/www/crosescolar/uploads";
+    "~^admin\.crosescolar\.(cat|com)$"                        "/var/www/crosescolar/uploads";
+    "~^(?<pujades>[a-z0-9][a-z0-9-]*)\.crosescolar\.(cat|com)$" "/var/www/crosescolar/tenants/$pujades/uploads";
+}
 EOF
 ```
 
-(traieu el mateix `map` del fitxer del lloc, que hi és només com a recordatori)
+(traieu els mateixos `map` del fitxer del lloc, que hi són només com a
+recordatori)
+
+Al `server{}`, el bloc de les pujades ha de fer servir aquesta variable:
+
+```nginx
+location ^~ /uploads/ {
+    alias $cros_uploads/;
+    ...
+}
+```
+
+Sense això, el logotip i la imatge de la portada **de la plataforma** donen 404:
+l'nginx els aniria a buscar a la carpeta d'un client que no existeix.
 
 Per poder demanar el certificat, arrenqueu primer **sense** les línies `ssl_` i
 amb `listen 80;`:
@@ -520,5 +560,7 @@ sudo -u www-data php tools/platform.php instancies
 | El panell diu que no pot obrir la plataforma | Credencials de `db` incorrectes, o falta `php tools/platform.php migrar` |
 | «No s'ha pogut crear la instància: Access denied» | L'usuari de `provision` no pot crear bases de dades |
 | Els fitxers pujats d'un client no es veuen | Falta el bloc `map $host $cros_slug` al context `http{}` |
+| La imatge de la portada de la plataforma no es veu | Falta el `map $host $cros_uploads` i l'`alias $cros_uploads/;` (pas 5) |
+| Una imatge gran «no es desa» i surt «la sessió ha caducat» | Els límits de PHP són els de sèrie: mireu el `99-cros.ini` del pas 1 |
 | El paquet de migració no puja pel navegador | Deixeu-lo a `storage/imports/` i importeu-lo pel nom |
 | Un subdomini nou dona error de certificat | El certificat no cobreix el comodí d'aquell domini |

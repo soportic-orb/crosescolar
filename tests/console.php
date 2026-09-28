@@ -1029,6 +1029,30 @@ try {
     check('Es poden amagar les preguntes',
         !str_contains(text($web('GET', '/', [], 'crosescolar.test')['body']), 'Quant costa?'));
 
+    // La imatge del banner: es puja de debò i ha de quedar desada i servida.
+    $fitxer = sys_get_temp_dir() . '/cros-banner-' . bin2hex(random_bytes(3)) . '.jpg';
+    $imatge = imagecreatetruecolor(1400, 700);
+    imagefill($imatge, 0, 0, imagecolorallocate($imatge, 60, 110, 70));
+    imagejpeg($imatge, $fitxer, 80);
+    imagedestroy($imatge);
+    $pujada = $web('POST', '/configuracio/home', array_merge(formData($web('GET', '/configuracio/home')['body']), [
+        '_token' => $token($web('GET', '/configuracio/home')['body']),
+        'platform_hero_image' => new CURLFile($fitxer, 'image/jpeg', basename($fitxer)),
+    ]));
+    check('La imatge del banner es puja', $pujada['status'] === 302, 'estat ' . $pujada['status']);
+    $desada = (string) Db::val("SELECT v FROM settings WHERE k = 'platform_hero_image'", [], '');
+    check('I queda desada a la configuració', $desada !== '', $desada);
+    check('El fitxer és al disc', $desada !== '' && is_file($site . '/uploads/' . $desada),
+        $site . '/uploads/' . $desada);
+    $ambBanner = $web('GET', '/', [], 'crosescolar.test');
+    check('La portada la porta de fons',
+        str_contains($ambBanner['body'], 'platform-hero--image') && str_contains($ambBanner['body'], $desada),
+        substr($desada, 0, 40));
+    check('I el web la serveix',
+        $desada !== '' && $web('GET', '/uploads/' . $desada, [], 'crosescolar.test')['status'] === 200,
+        'estat ' . ($desada !== '' ? $web('GET', '/uploads/' . $desada, [], 'crosescolar.test')['status'] : '?'));
+    @unlink($fitxer);
+
     echo "\n== Legal i galetes ==\n";
     $legal = $web('GET', '/configuracio/legal');
     check('Hi ha la pantalla legal',

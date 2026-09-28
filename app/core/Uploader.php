@@ -81,6 +81,59 @@ class Uploader
         }
     }
 
+    /**
+     * El servidor ha llençat la petició sencera per massa gran?
+     *
+     * Quan una pujada passa de «post_max_size», PHP no es queixa: descarta el
+     * cos de la petició i deixa $_POST i $_FILES buits. Pel camí es perd el
+     * testimoni del formulari, de manera que qui l'enviava es troba un «la
+     * sessió ha caducat» que no hi té res a veure, i el que havia escrit no
+     * s'ha desat. Val més dir-li la veritat.
+     */
+    public static function postTooBig(): bool
+    {
+        return strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) === 'POST'
+            && $_POST === []
+            && $_FILES === []
+            && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0;
+    }
+
+    /** El fitxer més gran que accepta aquest servidor, en bytes. */
+    public static function serverLimit(): int
+    {
+        $limits = [self::MAX_BYTES];
+        foreach (['upload_max_filesize', 'post_max_size'] as $key) {
+            $bytes = self::toBytes((string) ini_get($key));
+            if ($bytes > 0) {
+                $limits[] = $bytes;
+            }
+        }
+
+        return min($limits);
+    }
+
+    /** El mateix, dit en MB i arrodonit cap avall. */
+    public static function serverLimitLabel(): string
+    {
+        return max(1, (int) floor(self::serverLimit() / 1048576)) . ' MB';
+    }
+
+    /** «8M», «512K», «1G»… en bytes. */
+    private static function toBytes(string $value): int
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return 0;
+        }
+        $number = (int) $value;
+        return match (strtolower(substr($value, -1))) {
+            'g' => $number * 1024 * 1024 * 1024,
+            'm' => $number * 1024 * 1024,
+            'k' => $number * 1024,
+            default => $number,
+        };
+    }
+
     /** Hi ha un fitxer pujat en aquest camp? */
     public static function has(string $field): bool
     {
@@ -94,7 +147,8 @@ class Uploader
         $error = (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE);
         if ($error !== UPLOAD_ERR_OK) {
             throw new \RuntimeException(match ($error) {
-                UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => 'El fitxer és massa gran.',
+                UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => 'El fitxer és massa gran per a aquest servidor (hi caben '
+                    . self::serverLimitLabel() . '). Feu-lo més petit i torneu-ho a provar.',
                 UPLOAD_ERR_PARTIAL => 'La pujada s\'ha interromput.',
                 UPLOAD_ERR_NO_FILE => 'No s\'ha seleccionat cap fitxer.',
                 default => 'Error en pujar el fitxer (codi ' . $error . ').',

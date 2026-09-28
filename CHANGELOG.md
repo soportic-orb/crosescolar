@@ -3,6 +3,27 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.31.1] — 2026-09-28
+
+### Corregit
+- **La imatge de la portada de la plataforma no es desava.** Hi havia dues
+  coses, totes dues del servidor i no del programa:
+  - PHP ve de sèrie amb 8 MB per petició i qualsevol foto de mòbil els passa.
+    Quan això passa, PHP no es queixa: llença el cos de la petició sencer. Com
+    que el testimoni del formulari hi anava a dins, el que sortia era «la
+    sessió ha caducat», que despistava del tot. Ara es diu el que passa de
+    debò, amb el límit real del servidor, i el camp d'imatge ja avisa abans
+    d'enviar res.
+  - L'nginx buscava **totes** les pujades dins la carpeta d'un client, i les de
+    la plataforma no en pengen de cap: el logotip i la imatge del banner
+    donaven 404 encara que fossin al disc. Ara hi ha un `map $host
+    $cros_uploads` que distingeix la plataforma dels cros.
+
+### Canviat
+- L'instal·lador deixa els límits de PHP a 32 MB per fitxer i 40 MB per
+  petició, i escriu el `map` nou de les pujades. Als servidors ja muntats,
+  `docs/vps.md` porta les dues ordres per posar-ho al dia.
+
 ## [1.31.0] — 2026-09-28
 
 ### Afegit
