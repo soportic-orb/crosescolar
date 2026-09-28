@@ -797,6 +797,19 @@ check('Es pot amagar el requadre sencer', !str_contains($asidePage, 'Abans de co
 check('I el del termini continua sortint-hi', str_contains($asidePage, 'Termini'));
 $regOpen();
 
+echo "\n== Peticions HEAD ==\n";
+// Els monitors de disponibilitat i les eines de diagnòstic (curl -I) demanen
+// el document amb HEAD: se'ls ha de respondre igual que a un GET, però sense
+// cos. Abans se'ls contestava que el mètode no valia.
+$capsalera = req('HEAD', $base . '/', [], ['anon' => true]);
+check('La portada respon a un HEAD', $capsalera['status'] === 200, 'estat ' . $capsalera['status']);
+check('I no n\'envia el cos', trim($capsalera['body']) === '', substr($capsalera['body'], 0, 60));
+check('Amb el tipus de contingut de sempre',
+    str_contains($capsalera['headers'], 'text/html'));
+check('Una pàgina interna també', req('HEAD', $base . '/recorreguts', [], ['anon' => true])['status'] === 200);
+check('I una adreça que no existeix continua sent un 404',
+    req('HEAD', $base . '/aixo-no-hi-es', [], ['anon' => true])['status'] === 404);
+
 echo "\n== SEO i cercadors ==\n";
 $seoForm = req('GET', $base . '/admin/configuracio/seo');
 check('Hi ha l\'apartat de SEO', $seoForm['status'] === 200, 'estat ' . $seoForm['status']);

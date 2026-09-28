@@ -3,6 +3,21 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.28.3] — 2026-09-28
+
+### Corregit
+- **Les peticions HEAD es responen com un GET**, sense cos, en comptes de
+  contestar que el mètode no val. És el que fan els monitors de disponibilitat
+  i eines com `curl -I`, i abans rebien un 400 encara que el web anés bé.
+
+### Canviat
+- **L'instal·lador del servidor deixa triar com vol el certificat**: un per a
+  cada nom amb `certbot --nginx` (es valida sol, es renova sol i configura
+  l'nginx ell mateix) o un de comodí per DNS (cobreix tots els cros, però la
+  renovació és manual). Si no se'n posa cap, ara ho diu ben clar —el web
+  quedaria sense xifrar— i dona l'ordre exacta per posar-hi el certificat més
+  tard, sense haver de tornar a executar l'instal·lador.
+
 ## [1.28.2] — 2026-09-28
 
 ### Corregit

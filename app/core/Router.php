@@ -52,10 +52,22 @@ class Router
         return $uri === '' ? '/' : $uri;
     }
 
-    /** Resol i executa la ruta corresponent. */
+    /**
+     * Resol i executa la ruta corresponent.
+     *
+     * Un HEAD és un GET sense cos: es respon exactament igual i el cos es
+     * llença en acabat. Ho fan servir els monitors de disponibilitat i les
+     * eines de diagnòstic, i abans se'ls responia que el mètode no val.
+     */
     public function dispatch(string $method, string $path): void
     {
         $method = strtoupper($method);
+        if ($method === 'HEAD') {
+            $method = 'GET';
+            // El filtre torna sempre una cadena buida: així no se n'envia res
+            // ni quan el controlador acaba amb «exit».
+            ob_start(static fn (string $buffer): string => '');
+        }
         $allowed = [];
         foreach ($this->routes as $route) {
             $regex = $this->toRegex($route['pattern']);

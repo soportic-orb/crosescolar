@@ -66,6 +66,18 @@ bash "$SCRIPT" --assaig --sense-paquets --dominis 'aixo no val' >/dev/null 2>&1
 [ "$?" != "0" ]
 check "Un domini que no ho és atura l'script" "$?"
 
+# El pas del certificat ha d'oferir les dues vies i, si no se'n posa cap, ha
+# d'avisar ben clar que el web quedarà sense xifrar: és el que separa un web
+# publicat a mitges d'un web publicat malament.
+grep -q 'certbot --nginx' "$SCRIPT"
+check "Ofereix el certificat automàtic" "$?"
+
+grep -q "certonly --manual --preferred-challenges dns" "$SCRIPT"
+check "I el de comodí per DNS" "$?"
+
+grep -q 'sense xifrar' "$SCRIPT"
+check "Sense certificat, avisa que el web va sense xifrar" "$?"
+
 rm -rf "$TEMP"
 
 echo

@@ -264,13 +264,36 @@ if [ "$CERTIFICAT" = "0" ] || [ "$ASSAIG" = "1" ]; then
 elif [ -f "/etc/letsencrypt/live/$PRINCIPAL/fullchain.pem" ]; then
     verd "   Ja n'hi ha un per a $PRINCIPAL."
 else
-    echo "   Cal un certificat amb comodí (*.$PRINCIPAL), i això només es pot validar pel DNS:"
-    echo "   certbot us demanarà crear un registre TXT «_acme-challenge» a cada domini."
-    read -rp "   El demanem ara? [S/n]: " RESPOSTA
-    if [ "${RESPOSTA:-S}" != "n" ] && [ "${RESPOSTA:-S}" != "N" ]; then
-        certbot certonly --manual --preferred-challenges dns --agree-tos \
-            ${CORREU:+-m "$CORREU"} "${CERT_ARGS[@]}" || groc "   certbot no ha acabat; podeu tornar-hi més tard."
-    fi
+    echo "   Hi ha dues maneres de tenir-lo, i totes dues són gratuïtes:"
+    printf '\n'
+    echo "   1) Un certificat per a cada nom (recomanat). Es valida sol, sense tocar"
+    echo "      el DNS, i es renova sol cada dos mesos. Cada cop que doneu d'alta un"
+    echo "      cros nou, cal tornar a executar l'ordre afegint-hi el seu subdomini."
+    echo "   2) Un certificat amb comodí (*.$PRINCIPAL). Cobreix tots els cros,"
+    echo "      presents i futurs, però només es pot validar pel DNS: certbot us"
+    echo "      demanarà posar dos registres TXT «_acme-challenge», i ho haureu de"
+    echo "      tornar a fer a cada renovació (cada 60-90 dies)."
+    echo "   3) Ara no."
+    printf '\n'
+    read -rp "   Què fem? [1/2/3]: " RESPOSTA
+    case "${RESPOSTA:-1}" in
+        1)
+            fes "apt-get install -y -qq python3-certbot-nginx >/dev/null 2>&1 || true"
+            # Amb --nginx el mateix certbot posa el 443 al vhost i hi deixa la
+            # redirecció, de manera que després no cal reescriure res.
+            certbot --nginx --agree-tos --redirect --non-interactive \
+                ${CORREU:+-m "$CORREU"} $(for d in $DOMINIS_NETS; do printf ' -d %s' "$d"; done) \
+                $(for d in $DOMINIS_NETS; do printf ' -d admin.%s' "$d"; done) \
+                || groc "   certbot no ha acabat; més avall us dic com tornar-hi."
+            ;;
+        2)
+            certbot certonly --manual --preferred-challenges dns --agree-tos \
+                ${CORREU:+-m "$CORREU"} "${CERT_ARGS[@]}" || groc "   certbot no ha acabat; més avall us dic com tornar-hi."
+            ;;
+        *)
+            echo "   D'acord, es deixa per a més endavant."
+            ;;
+    esac
 fi
 
 if [ -f "/etc/letsencrypt/live/$PRINCIPAL/fullchain.pem" ] && [ "$ASSAIG" = "0" ]; then
@@ -298,6 +321,24 @@ PY
         nginx -t >/dev/null && systemctl reload nginx && verd "   El web ja va per HTTPS."
     fi
     fes "systemctl enable --now certbot.timer >/dev/null 2>&1 || true"
+elif [ "$ASSAIG" = "0" ]; then
+    # Sense certificat el web funciona, però tot el que s'hi escriu (les
+    # contrasenyes del panell i les dades de les inscripcions) viatja sense
+    # xifrar. Val més dir-ho clar que deixar-ho passar.
+    printf '\n'
+    roig "   ATENCIÓ: el web es publicarà per HTTP, sense xifrar."
+    groc "   Les contrasenyes i les dades de les inscripcions viatjarien a la vista."
+    groc "   Quan el DNS apunti aquí, poseu-hi el certificat amb una d'aquestes dues:"
+    printf '\n'
+    echo "     apt install -y python3-certbot-nginx"
+    echo "     certbot --nginx --redirect${CORREU:+ -m $CORREU} --agree-tos \\"
+    echo "       $(for d in $DOMINIS_NETS; do printf -- '-d %s -d admin.%s ' "$d" "$d"; done)"
+    printf '\n'
+    echo "   o, si en voleu un de comodí per a tots els cros (renovació manual):"
+    echo "     certbot certonly --manual --preferred-challenges dns --agree-tos \\"
+    echo "       ${CERT_ARGS[*]}"
+    printf '\n'
+    echo "   No cal tornar a executar aquest instal·lador: amb això n'hi ha prou."
 fi
 
 # ------------------------------------------------------- feines i assistent
@@ -342,6 +383,10 @@ EOF
     printf '\n'
     verd "Tot a punt. Obriu aquesta adreça i acabeu la instal·lació:"
     printf '\n    \033[1m%s://%s/install-plataforma.php?clau=%s\033[0m\n\n' "$ESQUEMA" "$PRINCIPAL" "$TESTIMONI"
+    if [ "$ESQUEMA" = "http" ]; then
+        groc "Recordeu: això va sense xifrar. Poseu-hi el certificat abans d'obrir el web"
+        groc "al públic, amb l'ordre de certbot que us hem dit al pas 7."
+    fi
     echo "Si el DNS encara no apunta aquí, useu http://${IP}/install-plataforma.php?clau=$TESTIMONI"
     echo "L'assistent us demanarà el correu, el superadministrador i ho engegarà tot."
 else

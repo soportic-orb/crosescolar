@@ -32,7 +32,26 @@ L'script pregunta els dominis i el correu, i després ho fa tot sol: instal·la
 nginx, MariaDB i PHP, crea les bases de dades i els seus usuaris amb
 contrasenyes generades, copia el codi a `/var/www/crosescolar` amb els permisos
 que toquen, escriu la configuració de l'nginx amb els vostres dominis, mira que
-el DNS apunti aquí, demana el certificat comodí i deixa el cron parat.
+el DNS apunti aquí i deixa el cron parat.
+
+Al pas del certificat us deixa triar:
+
+| Opció | Què fa | Renovació |
+|---|---|---|
+| **Per a cada nom** (recomanada) | `certbot --nginx` amb el domini i `admin.`: es valida sol, sense tocar el DNS, i configura l'nginx ell mateix | Automàtica |
+| **Comodí** (`*.domini`) | Cobreix tots els cros, presents i futurs, però s'ha de validar posant dos registres TXT al DNS | **Manual**, cada 60-90 dies |
+| **Ara no** | Deixa el web per HTTP | — |
+
+Amb la primera, cada cop que doneu d'alta un cros nou heu de tornar a executar
+l'ordre afegint-hi el seu subdomini. Amb la segona no cal tocar res mai més,
+però us tocarà repetir els registres TXT a cada renovació (si el vostre
+proveïdor de DNS té connector per a certbot, aleshores el comodí també es
+renova sol: val molt la pena mirar-ho).
+
+> Si trieu «ara no», el web quedarà **sense xifrar**: les contrasenyes del
+> panell i les dades de les inscripcions viatjarien a la vista. L'script us ho
+> recorda al final i us dona l'ordre exacta per posar-hi el certificat quan
+> vulgueu, sense haver de tornar a executar l'instal·lador.
 
 En acabar us dona una adreça com aquesta:
 
