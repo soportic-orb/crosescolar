@@ -243,8 +243,14 @@ full es posa de la manera que calgui segons com sigui el dorsal:
 | Vertical, fins a 148×210 mm (un A5 vertical) | A4 **apaïsat**, un dorsal a cada banda, línia de retallar vertical |
 | Més gran que mig A4 de qualsevol de les dues maneres | Un dorsal per full |
 
-Comproveu amb el dorsal de prova que el número, el nom i la categoria quedin dins del
-dorsal: si alguna posició se'n surt, al full de dos es ficaria dins de l'altre dorsal.
+Cada full que porta dos dorsals duu la **línia de punts amb les tisores** per on s'ha de
+partir, també quan són de dues persones diferents i també a l'últim full si ha quedat a
+mitges.
+
+El botó **«Veure un dorsal de prova»** ensenya el full sencer tal com sortirà de la
+impressora: si al full hi van dos dorsals, la prova en porta dos amb la línia de retallar.
+Comproveu-hi que el número, el nom i la categoria quedin dins del dorsal: si alguna
+posició se'n surt, al full de dos es ficaria dins de l'altre dorsal.
 
 **El dorsal que es descarrega la família** és diferent del que imprimiu vosaltres: porta
 **dues còpies del mateix dorsal** en un sol full A4, amb una línia de punts i unes tisores

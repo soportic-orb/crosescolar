@@ -253,6 +253,23 @@ check('Un dorsal massa ample per partir-lo de cap manera',
 $document = Bib::pdf($three);
 check('Tres dorsals ocupen dos fulls', substr_count($document, '/Type /Page') === 3,
     (string) substr_count($document, '/Type /Page'));
+$textTallat = pdf_text($document);
+if ($textTallat !== null) {
+    // Dos dorsals de dues persones diferents en un full també s'han de retallar.
+    check('Tots dos fulls diuen per on es retallen',
+        substr_count($textTallat, 'Retalleu per aquí') === 2,
+        (string) substr_count($textTallat, 'Retalleu per aquí'));
+}
+// I el dorsal de prova ensenya el full sencer, no mig full buit.
+$prova = Bib::sample();
+check('La prova ensenya el full tal com sortirà',
+    substr_count($prova, '/Type /Page') === 2, (string) substr_count($prova, '/Type /Page'));
+$textProva = pdf_text($prova);
+if ($textProva !== null) {
+    check('Amb els dos dorsals', substr_count($textProva, 'Laia Ferrer') === 2,
+        (string) substr_count($textProva, 'Laia Ferrer'));
+    check('I la línia de retallar', str_contains($textProva, 'Retalleu per aquí'));
+}
 $text = pdf_text($document);
 if ($text !== null) {
     $pages = explode("\f", $text);

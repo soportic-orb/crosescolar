@@ -3,6 +3,18 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.28.2] — 2026-09-28
+
+### Corregit
+- **La línia per retallar surt a tots els fulls de dos dorsals**, no només al
+  PDF que es descarrega la família: també quan s'imprimeixen els dorsals des del
+  panell, encara que els dos dorsals siguin de persones diferents, i també a
+  l'últim full si ha quedat a mitges.
+- **El dorsal de prova ensenya el full sencer.** Amb «dos dorsals per full»
+  activat, la prova mostrava un sol dorsal i mig full en blanc, que semblava que
+  el full de dos no funcionés. Ara en porta dos, amb la línia de retallar, tal
+  com sortirà de la impressora.
+
 ## [1.28.1] — 2026-09-28
 
 ### Corregit

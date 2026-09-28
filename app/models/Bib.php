@@ -116,6 +116,7 @@ class Bib
 
         $first = $template !== null;
         $slot = 0;
+        $pending = false;
         foreach ($registrations as $registration) {
             if ($first) {
                 $first = false;
@@ -130,11 +131,18 @@ class Bib
             }
             self::drawFields($pdf, $registration, $size[0], $top, $left);
             $slot = ($slot + 1) % $sheet['per_sheet'];
-            // La marca de retallar es dibuixa quan el full ja té els dos dorsals:
-            // així no hi ha cap maqueta que li passi per sobre i l'amagui.
-            if ($duplicate && $twoUp && $slot === 0) {
+            $pending = true;
+            // La marca de retallar es dibuixa quan el full ja és ple: així no
+            // hi ha cap maqueta que li passi per sobre i l'amagui.
+            if ($twoUp && $slot === 0) {
                 self::cutMark($pdf, $sheet);
+                $pending = false;
             }
+        }
+        // L'últim full pot haver quedat a mitges (un nombre senar de dorsals):
+        // també ha de dir per on es retalla.
+        if ($twoUp && $pending) {
+            self::cutMark($pdf, $sheet);
         }
         if (!$registrations) {
             $pdf->addPage($sheet['sheet']);
@@ -292,10 +300,16 @@ class Bib
         $pdf->circle($x - $size * 0.75, $y + $size * 0.62, $size * 0.6, 'D', 0.28);
     }
 
-    /** Dorsal d'exemple per previsualitzar el disseny. */
+    /**
+     * Dorsal d'exemple per previsualitzar el disseny.
+     *
+     * Ensenya el full tal com sortirà de la impressora: si al full hi van dos
+     * dorsals, la prova en porta dos i la línia de retallar, que és el que
+     * es vol comprovar abans de gastar paper.
+     */
     public static function sample(): string
     {
-        return self::pdf([[
+        $sample = [
             'first_name' => 'Laia',
             'last_name' => 'Ferrer Miró',
             'bib_number' => 1,
@@ -304,7 +318,9 @@ class Bib
             'category_year_from' => 2016,
             'category_year_to' => 2017,
             'school' => 'Escola La Granada',
-        ]]);
+        ];
+
+        return self::pdf(array_fill(0, max(1, self::sheet(self::describe()['page'])['per_sheet']), $sample));
     }
 
     /**
