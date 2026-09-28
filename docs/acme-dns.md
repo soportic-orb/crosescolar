@@ -15,6 +15,14 @@ Això és el que cal quan el vostre proveïdor de DNS **no té API** (Nominalia,
 per exemple). Si en té (Cloudflare, OVH, DigitalOcean, Gandi, Hetzner…), no
 llegiu aquest document: instal·leu `python3-certbot-dns-<proveïdor>` i ja està.
 
+> Compte amb una confusió fàcil: **que l'empresa on teniu el VPS tingui API no
+> vol dir que pugueu gestionar-hi el DNS**. L'API de Clouding, per exemple,
+> governa servidors, VPC, tallafocs, còpies i instantànies, però no té cap
+> punt d'entrada per a zones ni registres DNS: el seu `dnsNameservers` diu
+> quins resolutors fan servir les màquines d'una VPC, i el seu `dnsAddress` és
+> el nom automàtic `<uuid>.clouding.host` de cada servidor. Mirar la llista de
+> camins de l'API del proveïdor abans de moure-hi res estalvia una tarda.
+
 > **Alternativa sense muntar res:** hi ha un acme-dns públic
 > (`auth.acme-dns.io`) que fa la mateixa feina sense instal·lar cap servei. A
 > canvi, qui el controli podria demanar certificats del vostre domini. Si teniu
