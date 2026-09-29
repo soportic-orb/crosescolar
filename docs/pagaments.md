@@ -118,6 +118,38 @@ impost = total − base
 
 Tot es desa en **cèntims**, sempre. No hi ha cap decimal enlloc que es pugui arrodonir sol.
 
+### El pagament d'activació va al revés
+
+El preu del plà **no** porta l'impost inclòs: és la **base imposable**, i els dos impostos
+es calculen a sobre, cadascun activable a part:
+
+```
+IVA   = base × tipus/100      s'hi suma
+IRPF  = base × tipus/100      s'hi resta
+total = base + IVA − IRPF
+```
+
+L'IVA se suma perquè és el que es repercuteix a qui paga. L'IRPF es resta perquè és una
+**retenció**: aquells diners el client no ens els paga a nosaltres sinó a Hisenda en nom
+nostre. Per això el que es cobra amb targeta és més petit del que diu la factura.
+
+### La retenció depèn de qui paga
+
+Qui reté és qui paga, i **només retenen les persones jurídiques** (entitats, clubs, AFA,
+empreses) i els professionals. A un **particular** no se li reté mai: encara que la
+retenció estigui activada al panell, la seva factura és base + IVA i el total que paga és
+més gran.
+
+Cadascú diu quina mena de client és **en donar-se d'alta**, i es desa a `clients.kind`
+(`company` o `person`). El superadministrador ho pot corregir a la fitxa del web. Els
+clients que ja hi eren abans d'això neixen com a entitat, que és el que se'ls estava
+aplicant.
+
+Qui decideix és `Client::withholds()`, i `Plan::amountsFor($client)` en treu els números.
+Al crear el cobrament, la decisió **es congela**: `platform_payments.payer_kind`,
+`irpf_rate` i `irpf_cents` guarden el que valia aquell dia, de manera que corregir la fitxa
+d'un client no toca cap factura ja emesa.
+
 ## La numeració
 
 Cada sèrie i any tenen el seu comptador en una taula (`billing_counters`,

@@ -58,6 +58,9 @@ final class Signup
         if ($problem !== '') {
             $errors['slug'] = $problem;
         }
+        if (!isset(Client::KINDS[(string) ($data['client_kind'] ?? '')])) {
+            $errors['client_kind'] = 'Digueu-nos si sou una entitat o un particular.';
+        }
         if (empty($data['consent'])) {
             $errors['consent'] = 'Cal acceptar les condicions per continuar.';
         }
@@ -104,6 +107,7 @@ final class Signup
             ? (int) $client['id']
             : Client::create([
                 'name' => (string) ($data['entity'] ?? $data['site_name']),
+                'kind' => (string) ($data['client_kind'] ?? 'company'),
                 'town' => (string) ($data['town'] ?? ''),
                 'contact_name' => (string) $data['admin_name'],
                 'contact_email' => $email,

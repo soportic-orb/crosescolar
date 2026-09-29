@@ -64,6 +64,9 @@ use Cros\Core\Settings;
           → <strong>el client paga <?= e(money($imports['total'])) ?></strong> amb targeta.
           <?php if ($imports['irpf_rate'] > 0): ?>
             <br>Els <?= e(money($imports['irpf'])) ?> de la retenció els ingressa ell a Hisenda en nom vostre.
+            <?php $sense = \Cros\Platform\Plan::amounts(null, false); ?>
+            <br>Això és el que paga <strong>una entitat</strong>. Un <strong>particular</strong> no reté:
+            ell en paga <strong><?= e(money($sense['total'])) ?></strong>.
           <?php endif; ?>
         </div>
       <?php endif; ?>

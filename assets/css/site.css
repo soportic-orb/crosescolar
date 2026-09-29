@@ -555,3 +555,12 @@ input:disabled, select:disabled, textarea:disabled { background: var(--green-50)
 table.data td.text-right, table.data th.text-right { text-align: right; }
 /* Una taula curta dins d'una targeta: no li cal amplada mínima. */
 table.data--tight { min-width: 0; }
+
+/* Una tria entre poques opcions, en línia. */
+.choice-row { display: flex; flex-wrap: wrap; gap: .5rem; }
+.choice { display: inline-flex; align-items: center; gap: .55rem; cursor: pointer;
+  padding: .6rem .9rem; border: 1px solid var(--line, #d4ded2); border-radius: 10px;
+  background: #fff; font-size: .95rem; }
+.choice:hover { border-color: var(--green-600, #2f6b3c); }
+.choice input { width: 1.05rem; height: 1.05rem; accent-color: var(--green-600, #2f6b3c); flex: none; }
+.choice:has(input:checked) { border-color: var(--green-600, #2f6b3c); background: var(--green-50, #eef4ea); }

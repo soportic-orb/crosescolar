@@ -43,6 +43,7 @@ use Cros\Core\Db;
 use Cros\Core\Settings;
 use Cros\Platform\Backup;
 use Cros\Platform\Certificate;
+use Cros\Platform\Client;
 use Cros\Platform\Console;
 use Cros\Platform\Dns;
 use Cros\Platform\Health;
@@ -1454,6 +1455,53 @@ try {
     check('Un domini que no és nostre no s\'edita',
         $inventat['status'] === 200 && str_contains($inventat['body'], 'value="Cros Escolar del Penedès"'));
 
+    echo "\n== La retenció, només a les entitats ==\n";
+    // Base 30,00 · IVA 21 % · IRPF 15 %, tal com s'ha configurat més amunt.
+    $entitat = Plan::amountsFor(['kind' => 'company']);
+    $particular = Plan::amountsFor(['kind' => 'person']);
+    check('A una entitat se li reté', $entitat['irpf'] === 450 && $entitat['total'] === 3180,
+        $entitat['irpf'] . ' / ' . $entitat['total']);
+    check('A un particular, no', $particular['irpf'] === 0 && $particular['irpf_rate'] === 0.0,
+        (string) $particular['irpf']);
+    check('I per tant en paga més', $particular['total'] === 3630, (string) $particular['total']);
+    check('L\'IVA el paguen tots dos igual', $particular['vat'] === 630 && $entitat['vat'] === 630);
+    check('Sense fitxa es reté, que és el que són gairebé tots',
+        Plan::amountsFor(null)['irpf'] === 450);
+
+    // I el cobrament que se li prepara ho ha de respectar.
+    $clientParticular = Client::create([
+        'name' => 'Marta Soler', 'kind' => 'person',
+        'contact_name' => 'Marta Soler', 'contact_email' => 'marta@example.cat',
+    ]);
+    $instanciaFalsa = Instance::find($instanceId);
+    $instanciaFalsa['client_id'] = $clientParticular;
+    $instanciaFalsa['id'] = 0; // perquè no reculli el cobrament que ja hi ha
+    $pdo->exec('DELETE FROM platform_payments WHERE instance_id = 0');
+    $cobramentParticular = Charge::forActivation($instanciaFalsa, ['name' => 'Marta Soler']);
+    check('El cobrament d\'un particular no porta retenció',
+        (int) $cobramentParticular['irpf_cents'] === 0 && (float) $cobramentParticular['irpf_rate'] === 0.0,
+        (string) $cobramentParticular['irpf_cents']);
+    check('I el total és base + IVA', (int) $cobramentParticular['total_cents'] === 3630,
+        (string) $cobramentParticular['total_cents']);
+    check('Queda apuntat quina mena de client era',
+        (string) $cobramentParticular['payer_kind'] === 'person', (string) $cobramentParticular['payer_kind']);
+
+    // La factura que se li emeti tampoc no ha de parlar de retenció.
+    Charge::markPaid($cobramentParticular, '', 'Prova');
+    $facturaParticular = Invoice::forPayment((int) $cobramentParticular['id']);
+    check('La seva factura s\'emet', $facturaParticular !== null);
+    $fitxerP = sys_get_temp_dir() . '/cros-factura-p-' . bin2hex(random_bytes(3)) . '.pdf';
+    file_put_contents($fitxerP, Invoice::pdf($facturaParticular));
+    $textP = trim((string) @shell_exec('pdftotext ' . escapeshellarg($fitxerP) . ' - 2>/dev/null'));
+    @unlink($fitxerP);
+    if ($textP === '') {
+        echo "  (sense pdftotext: no es pot llegir el text de la factura)\n";
+    } else {
+        check('I no hi surt cap retenció', !str_contains($textP, 'Retenció'), mb_substr($textP, 0, 120));
+        check('Però sí l\'IVA', str_contains($textP, 'IVA'));
+    }
+    $pdo->exec('DELETE FROM platform_payments WHERE instance_id = 0');
+
     echo "\n== Afegir un domini més endavant ==\n";
     // Un domini que s'afegeix quan la plataforma ja fa dies que roda no ha
     // d'heretar el text del web que hi havia, ni encara que passi a ser el
@@ -1492,13 +1540,26 @@ try {
         str_contains($portada['body'], 'value="esportweb.test"')
         && str_contains($portada['body'], 'value="crosescolar.test"'));
     check('I diu on serà el panell', str_contains(text($portada['body']), '/admin'));
+    check('I demana quina mena de client és',
+        str_contains($portada['body'], 'name="client_kind"')
+        && str_contains($portada['body'], 'value="person"')
+        && str_contains($portada['body'], 'value="company"'));
+
+    $sensemena = $web('POST', '/registre', [
+        '_token' => $token($portada['body']),
+        'site_name' => 'Cursa sense dir-ho', 'admin_name' => 'Ona Vidal',
+        'admin_email' => 'ona@example.cat', 'slug' => 'sensedirho',
+        'domain' => 'esportweb.test', 'consent' => '1',
+    ], 'esportweb.test');
+    check('Sense dir-ho no es continua',
+        $sensemena['status'] === 200 && str_contains(text($sensemena['body']), 'entitat o un particular'));
 
     // Un subdomini reservat no es dona, i no es crea res.
     $dolent = $web('POST', '/registre', [
         '_token' => $token($portada['body']),
         'site_name' => 'Cursa de prova', 'admin_name' => 'Ona Vidal',
         'admin_email' => 'ona@example.cat', 'slug' => 'admin',
-        'domain' => 'esportweb.test', 'consent' => '1',
+        'domain' => 'esportweb.test', 'client_kind' => 'company', 'consent' => '1',
     ], 'esportweb.test');
     check('Un subdomini reservat no es dona', $dolent['status'] === 200
         && str_contains(text($dolent['body']), 'reservat'));
@@ -1520,7 +1581,8 @@ try {
         'site_name' => 'Cursa de la Riera', 'town' => 'Arenys',
         'admin_name' => 'Ona Vidal', 'admin_email' => 'ona@example.cat',
         'slug' => 'lariera', 'domain' => 'esportweb.test',
-        'event_date' => date('Y-m-d', strtotime('+2 months')), 'consent' => '1',
+        'event_date' => date('Y-m-d', strtotime('+2 months')),
+        'client_kind' => 'company', 'consent' => '1',
     ], 'esportweb.test');
     check('L\'alta lliure passa', $alta['status'] === 302 && str_contains($alta['headers'], '/benvinguda'),
         'estat ' . $alta['status']);
@@ -1535,6 +1597,7 @@ try {
     $fitxa = Db::one("SELECT * FROM clients WHERE contact_email = 'ona@example.cat'");
     check('I es crea la fitxa del client', $fitxa !== null);
     check('Que és qui té el web', (int) ($riera['client_id'] ?? 0) === (int) ($fitxa['id'] ?? -1));
+    check('Amb la mena de client que ha dit', Client::kindOf($fitxa) === 'company');
     $correus = (string) @file_get_contents($site . '/storage/logs/app-' . date('Y-m') . '.log');
     check('Se li envia el correu de confirmació', str_contains($correus, 'ona@example.cat'));
 
@@ -1588,7 +1651,7 @@ try {
         '_token' => $token($portada['body']),
         'site_name' => 'Una altra', 'admin_name' => 'Ona Vidal',
         'admin_email' => 'ona@example.cat', 'slug' => 'unaaltra',
-        'domain' => 'esportweb.test', 'consent' => '1',
+        'domain' => 'esportweb.test', 'client_kind' => 'company', 'consent' => '1',
     ], 'esportweb.test');
     check('I tampoc no s\'hi pot entrar per la porta del darrere',
         $intent['status'] === 302 && Db::one("SELECT * FROM instances WHERE slug = 'unaaltra'") === null);
@@ -1609,7 +1672,7 @@ try {
         '_token' => $token($web('GET', '/', [], 'esportweb.test')['body']),
         'site_name' => 'Duatló de Tardor', 'admin_name' => 'Roc Vila',
         'admin_email' => 'roc@example.cat', 'slug' => 'duatlotardor',
-        'domain' => 'esportweb.test', 'consent' => '1',
+        'domain' => 'esportweb.test', 'client_kind' => 'company', 'consent' => '1',
     ], 'esportweb.test');
     check('Una alta just després d\'actualitzar posa la base de dades al dia',
         $tardana['status'] === 302 && str_contains($tardana['headers'], '/benvinguda'),

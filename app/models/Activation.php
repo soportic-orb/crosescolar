@@ -33,6 +33,7 @@ class Activation
     {
         $buit = ['applies' => false, 'paid' => false, 'due' => false, 'ready' => false,
             'price' => 0, 'amounts' => ['base' => 0, 'vat_rate' => 0.0, 'vat' => 0, 'irpf_rate' => 0.0, 'irpf' => 0, 'total' => 0],
+            'client_kind' => 'company',
             'name' => '', 'description' => '', 'instance' => null, 'pending' => null];
         $slug = Tenancy::slugOf();
         if ($slug === '' || !Bridge::available($root)) {
@@ -45,6 +46,11 @@ class Activation
                     return $buit;
                 }
                 $paid = !empty($instance['activated_at']);
+                // Els números són els d'aquest client: si és un particular, no
+                // se li reté l'IRPF i el total que veurà és un altre.
+                $record = !empty($instance['client_id'])
+                    ? \Cros\Platform\Client::find((int) $instance['client_id'])
+                    : null;
 
                 return [
                     'applies' => Plan::enabled(),
@@ -52,7 +58,8 @@ class Activation
                     'due' => Plan::due($instance),
                     'ready' => Plan::ready(),
                     'price' => Plan::price(),
-                    'amounts' => Plan::amounts(),
+                    'amounts' => Plan::amountsFor($record),
+                    'client_kind' => \Cros\Platform\Client::kindOf($record),
                     'name' => Plan::name(),
                     'description' => Plan::description(),
                     'instance' => $instance,

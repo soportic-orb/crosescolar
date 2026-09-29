@@ -34,6 +34,9 @@ $tones = ['paid' => 'green', 'pending' => 'amber', 'failed' => 'red', 'cancelled
           <?php if (!empty($charge['payer_nif'])): ?><br>NIF <?= e($charge['payer_nif']) ?><?php endif; ?>
           <?php if (!empty($charge['payer_address'])): ?><br><?= e($charge['payer_address']) ?><?php endif; ?>
           <?php if (!empty($charge['payer_town'])): ?><br><?= e(trim(($charge['payer_postcode'] ?? '') . ' ' . $charge['payer_town'])) ?><?php endif; ?>
+          <br><span class="text-soft">
+            <?= e(\Cros\Platform\Client::KINDS[(string) ($charge['payer_kind'] ?? 'company')] ?? 'Entitat o empresa (persona jurídica)') ?>
+          </span>
         </p>
       </div>
       <div>

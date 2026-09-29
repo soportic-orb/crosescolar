@@ -433,6 +433,13 @@ class InstanceController extends Controller
                     'admin_email' => mb_strtolower(trim((string) ($_POST['admin_email'] ?? ''))) ?: null,
                     'listed' => !empty($_POST['listed']) ? 1 : 0,
                 ]);
+                // La mena de client viu a la seva fitxa, no a la instància:
+                // és de la relació amb el client i val per a tots els seus webs.
+                if (!empty($instance['client_id']) && isset($_POST['client_kind'])) {
+                    $kind = Client::kindOf(['kind' => (string) $_POST['client_kind']]);
+                    Client::update((int) $instance['client_id'], ['kind' => $kind]);
+                    Console::log('client_kind', 'client', (int) $instance['client_id'], ['kind' => $kind]);
+                }
                 Console::log('instance_update', 'instance', $id, ['slug' => $instance['slug']]);
                 flash('success', 'Canvis desats.');
                 break;

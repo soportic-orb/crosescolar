@@ -51,6 +51,16 @@ $status = (string) $instance['status'];
           <?php endif; ?>
         </td></tr>
         <tr><th>Client</th><td><?= $client ? e($client['name']) . ' · ' . e($client['contact_email']) : '<span class="text-soft">Sense fitxa de client</span>' ?></td></tr>
+        <?php if ($client): ?>
+          <tr><th>Mena de client</th><td>
+            <?= e(\Cros\Platform\Client::kindLabel($client)) ?>
+            <?php if (\Cros\Platform\Client::withholds($client)): ?>
+              <span class="text-soft">· se li reté l'IRPF, si està activat</span>
+            <?php else: ?>
+              <span class="text-soft">· no se li reté l'IRPF</span>
+            <?php endif; ?>
+          </td></tr>
+        <?php endif; ?>
         <tr><th>Administrador</th><td>
           <?= e((string) ($instance['admin_email'] ?? '—')) ?>
           <?php if (!empty($instance['verified_at'])): ?>
@@ -129,6 +139,17 @@ $status = (string) $instance['status'];
         <label for="admin_email">Correu de contacte</label>
         <input type="email" id="admin_email" name="admin_email" value="<?= e((string) ($instance['admin_email'] ?? '')) ?>" maxlength="190">
       </div>
+      <?php if ($client): ?>
+        <div class="field">
+          <label for="client_kind">Mena de client</label>
+          <select id="client_kind" name="client_kind">
+            <?php foreach (\Cros\Platform\Client::KINDS as $clau => $nom): ?>
+              <option value="<?= e($clau) ?>"<?= \Cros\Platform\Client::kindOf($client) === $clau ? ' selected' : '' ?>><?= e($nom) ?></option>
+            <?php endforeach; ?>
+          </select>
+          <p class="hint">Decideix si se li reté l'IRPF. No toca cap factura ja emesa.</p>
+        </div>
+      <?php endif; ?>
       <div class="field">
         <span class="label">Llistat públic</span>
         <label class="switch"><input type="checkbox" name="listed" value="1"<?= $instance['listed'] ? ' checked' : '' ?>> Surt a crosescolar.com</label>

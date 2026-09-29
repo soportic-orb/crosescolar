@@ -3,6 +3,27 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.35.0] — 2026-09-29
+
+### Afegit
+- **La retenció d'IRPF només s'aplica a qui ha de retenir.** Qui reté és qui
+  paga, i només ho fan les persones jurídiques (entitats, clubs, AFA, empreses).
+  A un **particular** no se li reté mai: encara que la retenció estigui activada
+  al panell, la seva factura és base + IVA i el total que paga és més gran.
+- **Al registre es diu quina mena de client s'és**: entitat (persona jurídica) o
+  particular (persona física). Queda a la seva fitxa i és el que decideix la
+  retenció. El superadministrador ho pot corregir a la fitxa del web, i tant el
+  llistat de clients com la fitxa de cada cobrament ho diuen.
+- La decisió **es congela al cobrament**: `payer_kind`, `irpf_rate` i
+  `irpf_cents` guarden el que valia aquell dia, de manera que corregir la fitxa
+  d'un client no toca cap factura ja emesa.
+- La configuració del plà ensenya els **dos totals**, el d'una entitat i el d'un
+  particular, mentre s'escriu el preu.
+
+### Canviat
+- Els clients que ja hi eren neixen com a entitat, que és el que se'ls estava
+  aplicant fins ara.
+
 ## [1.34.3] — 2026-09-29
 
 ### Corregit

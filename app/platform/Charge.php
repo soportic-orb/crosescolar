@@ -81,7 +81,11 @@ class Charge
         if ($existing) {
             return $existing;
         }
-        $amounts = Plan::amounts();
+        // Qui paga decideix si hi ha retenció: només retenen les persones
+        // jurídiques. La fitxa del client és qui ho diu, i queda apuntat al
+        // cobrament perquè la factura emesa no canviï mai més.
+        $record = !empty($instance['client_id']) ? Client::find((int) $instance['client_id']) : null;
+        $amounts = Plan::amountsFor($record);
 
         $id = Db::insert('platform_payments', [
             'code' => self::code(),
@@ -97,6 +101,7 @@ class Charge
             'payer_address' => mb_substr(trim((string) ($client['address'] ?? '')), 0, 255) ?: null,
             'payer_postcode' => mb_substr(trim((string) ($client['postcode'] ?? '')), 0, 20) ?: null,
             'payer_town' => mb_substr(trim((string) ($client['town'] ?? '')), 0, 120) ?: null,
+            'payer_kind' => Client::kindOf($record),
             'subtotal_cents' => $amounts['base'],
             'tax_rate' => $amounts['vat_rate'],
             'tax_cents' => $amounts['vat'],

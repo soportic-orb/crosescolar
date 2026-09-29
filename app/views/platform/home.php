@@ -223,6 +223,24 @@ foreach ($faqs as $faq) {
         <?php if (isset($errors['slug'])): ?><span class="field__error"><?= e($errors['slug']) ?></span><?php endif; ?>
       </div>
 
+      <div class="field<?= isset($errors['client_kind']) ? ' field--error' : '' ?>">
+        <span class="label">Qui organitza la prova *</span>
+        <div class="choice-row">
+          <?php foreach (\Cros\Platform\Client::KINDS as $clau => $nom): ?>
+            <label class="choice">
+              <input type="radio" name="client_kind" value="<?= e($clau) ?>"
+                     <?= $old('client_kind', 'company') === $clau ? 'checked' : '' ?>>
+              <span><?= e($nom) ?></span>
+            </label>
+          <?php endforeach; ?>
+        </div>
+        <span class="field__hint">
+          Ens cal per saber com us hem de fer la factura el dia que publiqueu el web.
+          Ho podreu canviar més endavant.
+        </span>
+        <?php if (isset($errors['client_kind'])): ?><span class="field__error"><?= e($errors['client_kind']) ?></span><?php endif; ?>
+      </div>
+
       <div class="form-row">
         <div class="field<?= isset($errors['admin_name']) ? ' field--error' : '' ?>">
           <label for="admin_name">Nom i cognoms *</label>

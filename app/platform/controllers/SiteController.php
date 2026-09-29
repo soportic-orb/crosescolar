@@ -69,6 +69,7 @@ class SiteController extends Controller
             'town' => trim((string) input('town')),
             'admin_name' => trim((string) input('admin_name')),
             'admin_email' => mb_strtolower(trim((string) input('admin_email'))),
+            'client_kind' => (string) input('client_kind'),
             'slug' => mb_strtolower(trim((string) input('slug'))),
             'domain' => Platform::validDomain((string) input('domain')),
             'event_date' => trim((string) input('event_date')),

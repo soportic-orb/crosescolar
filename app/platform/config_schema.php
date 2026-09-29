@@ -207,7 +207,10 @@ return [
             'plan_irpf_enabled' => ['label' => 'Aplicar-hi retenció d\'IRPF', 'type' => 'bool', 'default' => '0',
                 'help' => 'Es resta de la base. És una retenció que el client ingressa a Hisenda en nom vostre, '
                     . 'de manera que el que cobreu amb targeta és més petit del que diu la factura. '
-                    . 'Només s\'aplica quan qui paga és una empresa o professional obligat a retenir.'],
+                    . 'Amb això activat, només se li aplica a qui és una entitat (persona jurídica): '
+                    . 'als particulars no se\'ls reté mai i la seva factura és base + IVA. '
+                    . 'Cadascú diu quina mena de client és en donar-se d\'alta, i es pot corregir '
+                    . 'a la fitxa del seu web.'],
             'plan_irpf_rate' => ['label' => 'Tipus d\'IRPF (%)', 'type' => 'text', 'default' => '15', 'show_if' => 'plan_irpf_enabled'],
             'plan_description' => ['label' => 'Què inclou', 'type' => 'html', 'rows' => 6,
                 'default' => '<p>Amb l\'activació, el vostre web queda publicat a la vostra adreça, amb certificat i còpies de seguretat, i el manteniment i les actualitzacions van a càrrec nostre.</p><p>És un pagament únic: no hi ha quota mensual, ni comissió per inscripció, ni límit d\'inscrits o de transaccions.</p>'],

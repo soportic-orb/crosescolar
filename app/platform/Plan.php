@@ -47,16 +47,18 @@ class Plan
      *     nosaltres sinó a Hisenda en nom nostre. Per això el total que es
      *     cobra amb targeta és més petit del que diu la factura de base + IVA.
      *
-     * Si el client és un particular o una entitat que no reté, l'IRPF es deixa
-     * desactivat i no surt enlloc.
+     * La retenció, a més, depèn de qui paga: només retenen les persones
+     * jurídiques i els professionals. A un particular no se li reté mai,
+     * encara que la retenció estigui activada, i per això s'hi passa
+     * `$withholding = false`.
      *
      * @return array{base:int,vat_rate:float,vat:int,irpf_rate:float,irpf:int,total:int}
      */
-    public static function amounts(?int $base = null): array
+    public static function amounts(?int $base = null, bool $withholding = true): array
     {
         $base = max(0, $base ?? self::price());
         $vatRate = self::vatRate();
-        $irpfRate = self::irpfRate();
+        $irpfRate = $withholding ? self::irpfRate() : 0.0;
         $vat = (int) round($base * $vatRate / 100);
         $irpf = (int) round($base * $irpfRate / 100);
 
@@ -71,9 +73,20 @@ class Plan
     }
 
     /** El que es cobra de debò amb la targeta. */
-    public static function total(): int
+    public static function total(bool $withholding = true): int
     {
-        return self::amounts()['total'];
+        return self::amounts(null, $withholding)['total'];
+    }
+
+    /**
+     * Els números tal com li surten a un client concret.
+     *
+     * @param array<string,mixed>|null $client la fitxa del client, si en té
+     * @return array{base:int,vat_rate:float,vat:int,irpf_rate:float,irpf:int,total:int}
+     */
+    public static function amountsFor(?array $client, ?int $base = null): array
+    {
+        return self::amounts($base, Client::withholds($client));
     }
 
     /** El tipus d'IVA que s'aplica, o 0 si està desactivat. */
