@@ -121,6 +121,7 @@ class Provisioner
                 'admin_email' => (string) $data['admin_email'],
                 'event_date' => (string) ($data['event_date'] ?? ''),
                 'listed' => $data['listed'] ?? true,
+                'source' => (string) ($data['source'] ?? 'console'),
             ]);
             $steps['record'] = 'Instància apuntada a la plataforma.';
 
@@ -314,13 +315,20 @@ class Provisioner
         if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return;
         }
-        Mailer::sendTemplate($email, 'Ja teniu el web del vostre cros', 'instance-welcome', [
-            'name' => (string) $data['admin_name'],
-            'site_name' => (string) $data['site_name'],
-            'url' => Platform::url($slug, $root, $domain),
-            'email' => $email,
-            'link' => $link,
-        ]);
+        $signup = (string) ($data['source'] ?? '') === 'signup';
+        Mailer::sendTemplate(
+            $email,
+            $signup ? 'Confirmeu el correu i entreu al vostre panell' : 'Ja teniu el web del vostre cros',
+            'instance-welcome',
+            [
+                'name' => (string) $data['admin_name'],
+                'site_name' => (string) $data['site_name'],
+                'url' => Platform::url($slug, $root, $domain),
+                'email' => $email,
+                'link' => $link,
+                'signup' => $signup,
+            ]
+        );
     }
 
     /** Desfà el que s'hagi fet si l'alta s'ha quedat a mitges. */

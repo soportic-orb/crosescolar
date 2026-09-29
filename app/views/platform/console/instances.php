@@ -36,12 +36,15 @@ $tabs = ['' => 'Totes'] + Instance::STATUSES;
       <p class="text-soft" style="margin:0">Cap instància en aquest estat.</p>
     <?php else: ?>
       <table class="admin-table">
-        <thead><tr><th>Cros</th><th>Adreça</th><th>Cursa</th><th>Inscrits</th><th>Estat</th><th>Versió</th><th></th></tr></thead>
+        <thead><tr><th>Web</th><th>Adreça</th><th>Cursa</th><th>Inscrits</th><th>Estat</th><th>Versió</th><th></th></tr></thead>
         <tbody>
         <?php foreach ($instances as $row): ?>
           <tr class="<?= $row['status'] === 'cancelled' ? 'is-cancelled' : '' ?>">
             <td>
               <strong><?= e($row['site_name']) ?></strong>
+              <?php if ((string) ($row['source'] ?? '') === 'signup' && empty($row['verified_at'])): ?>
+                <span class="badge badge--amber" title="S'ha donat d'alta des del web i encara no ha fet servir l'enllaç d'estrena">Correu per validar</span>
+              <?php endif; ?>
               <?php if ($row['town']): ?><br><small class="text-soft"><?= e($row['town']) ?></small><?php endif; ?>
             </td>
             <td>

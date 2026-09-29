@@ -1430,6 +1430,130 @@ try {
     check('Un domini que no és nostre no s\'edita',
         $inventat['status'] === 200 && str_contains($inventat['body'], 'value="Cros Escolar del Penedès"'));
 
+    echo "\n== Registre lliure ==\n";
+    $portada = $web('GET', '/', [], 'esportweb.test');
+    check('La portada porta el formulari de registre',
+        str_contains($portada['body'], 'action="' . $base . '/registre"')
+        || str_contains($portada['body'], '/registre"'));
+    check('Amb el nom, el correu i l\'adreça',
+        str_contains($portada['body'], 'name="site_name"')
+        && str_contains($portada['body'], 'name="admin_email"')
+        && str_contains($portada['body'], 'name="slug"'));
+    check('I deixa triar el domini',
+        str_contains($portada['body'], 'value="esportweb.test"')
+        && str_contains($portada['body'], 'value="crosescolar.test"'));
+    check('I diu on serà el panell', str_contains(text($portada['body']), '/admin'));
+
+    // Un subdomini reservat no es dona, i no es crea res.
+    $dolent = $web('POST', '/registre', [
+        '_token' => $token($portada['body']),
+        'site_name' => 'Cursa de prova', 'admin_name' => 'Ona Vidal',
+        'admin_email' => 'ona@example.cat', 'slug' => 'admin',
+        'domain' => 'esportweb.test', 'consent' => '1',
+    ], 'esportweb.test');
+    check('Un subdomini reservat no es dona', $dolent['status'] === 200
+        && str_contains(text($dolent['body']), 'reservat'));
+    check('I no es crea res', Db::one("SELECT * FROM instances WHERE slug = 'admin'") === null);
+
+    // Sense acceptar les condicions, tampoc.
+    $sensePermis = $web('POST', '/registre', [
+        '_token' => $token($portada['body']),
+        'site_name' => 'Cursa de prova', 'admin_name' => 'Ona Vidal',
+        'admin_email' => 'ona@example.cat', 'slug' => 'lacursadona',
+        'domain' => 'esportweb.test',
+    ], 'esportweb.test');
+    check('Sense acceptar les condicions no es continua',
+        $sensePermis['status'] === 200 && str_contains(text($sensePermis['body']), 'acceptar les condicions'));
+
+    // I ara, l'alta de debò.
+    $alta = $web('POST', '/registre', [
+        '_token' => $token($portada['body']),
+        'site_name' => 'Cursa de la Riera', 'town' => 'Arenys',
+        'admin_name' => 'Ona Vidal', 'admin_email' => 'ona@example.cat',
+        'slug' => 'lariera', 'domain' => 'esportweb.test',
+        'event_date' => date('Y-m-d', strtotime('+2 months')), 'consent' => '1',
+    ], 'esportweb.test');
+    check('L\'alta lliure passa', $alta['status'] === 302 && str_contains($alta['headers'], '/benvinguda'),
+        'estat ' . $alta['status']);
+    $riera = Db::one("SELECT * FROM instances WHERE slug = 'lariera'");
+    check('El web queda creat de seguida', $riera !== null);
+    check('Amb el domini que ha triat', (string) ($riera['domain'] ?? '') === 'esportweb.test');
+    check('I apuntat com a alta feta des del web', (string) ($riera['source'] ?? '') === 'signup');
+    check('Amb el correu encara per validar', ($riera['verified_at'] ?? null) === null);
+    check('La carpeta i la base de dades hi són',
+        is_file($site . '/tenants/lariera/config.php') && $dbExists($prefix . 'lariera'));
+    check('El web neix amagat', (int) ($riera['published'] ?? 1) === 0);
+    $fitxa = Db::one("SELECT * FROM clients WHERE contact_email = 'ona@example.cat'");
+    check('I es crea la fitxa del client', $fitxa !== null);
+    check('Que és qui té el web', (int) ($riera['client_id'] ?? 0) === (int) ($fitxa['id'] ?? -1));
+    $correus = (string) @file_get_contents($site . '/storage/logs/app-' . date('Y-m') . '.log');
+    check('Se li envia el correu de confirmació', str_contains($correus, 'ona@example.cat'));
+
+    $benvinguda = $web('GET', '/benvinguda', [], 'esportweb.test');
+    check('La pantalla de després diu on mirar',
+        $benvinguda['status'] === 200 && str_contains(text($benvinguda['body']), 'ona@example.cat'),
+        'estat ' . $benvinguda['status']);
+    check('I quina serà l\'adreça del panell',
+        str_contains(text($benvinguda['body']), 'lariera.esportweb.test/admin'));
+    check('Sense cap drecera per entrar-hi sense el correu',
+        !str_contains($benvinguda['body'], '/admin/clau/'));
+    check('Tornar-hi no ensenya res', $web('GET', '/benvinguda', [], 'esportweb.test')['status'] === 302);
+
+    check('Al panell hi surt marcada com a pendent de validar',
+        str_contains($web('GET', '/instancies')['body'], 'Correu per validar'));
+
+    // El botó del correu: entra al panell i, alhora, valida l'adreça.
+    $porta = Instance::accessLink((int) $riera['id'], 'welcome', $site, 'Prova del registre');
+    check('Es pot fer l\'enllaç d\'estrena', $porta['ok'], (string) $porta['error']);
+    $cami = (string) parse_url((string) $porta['url'], PHP_URL_PATH);
+    $entrada = $web('GET', $cami, [], 'lariera.esportweb.test');
+    check('El botó del correu fa entrar al panell',
+        $entrada['status'] === 302 && str_contains($entrada['headers'], '/admin/clau'),
+        'estat ' . $entrada['status']);
+    $riera = Db::one("SELECT * FROM instances WHERE slug = 'lariera'");
+    check('I amb això el correu queda validat', ($riera['verified_at'] ?? null) !== null);
+    check('Al panell ja no hi surt l\'avís',
+        !str_contains($web('GET', '/instancies/' . (int) $riera['id'])['body'], 'Correu per validar'));
+    check('I diu que el correu és bo',
+        str_contains($web('GET', '/instancies/' . (int) $riera['id'])['body'], 'Correu validat'));
+
+    // També queda apuntat al seu web.
+    $seuaPdo = new PDO(
+        sprintf('mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4', $db['host'], $db['port'], $prefix . 'lariera'),
+        $db['admin_user'], $db['admin_pass'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+    );
+    $quan = $seuaPdo->query("SELECT email_verified_at FROM users WHERE email = 'ona@example.cat'")->fetchColumn();
+    check('I al seu propi web també', $quan !== null && $quan !== false);
+
+    // Amb les altes tancades no se'n pot fer cap més.
+    $altes = $web('GET', '/configuracio/requests?domini=esportweb.test');
+    $web('POST', '/configuracio/requests?domini=esportweb.test', [
+        '_token' => $token($altes['body']),
+        'platform_requests_closed_text' => 'Ara no en donem.',
+        'platform_directory' => '1',
+    ], 'admin.crosescolar.test');
+    $tancat = $web('GET', '/', [], 'esportweb.test');
+    check('Amb les altes tancades el formulari desapareix',
+        !str_contains($tancat['body'], 'name="admin_email"'));
+    $intent = $web('POST', '/registre', [
+        '_token' => $token($portada['body']),
+        'site_name' => 'Una altra', 'admin_name' => 'Ona Vidal',
+        'admin_email' => 'ona@example.cat', 'slug' => 'unaaltra',
+        'domain' => 'esportweb.test', 'consent' => '1',
+    ], 'esportweb.test');
+    check('I tampoc no s\'hi pot entrar per la porta del darrere',
+        $intent['status'] === 302 && Db::one("SELECT * FROM instances WHERE slug = 'unaaltra'") === null);
+    // I es tornen a obrir, que la resta de proves compten que hi són.
+    $reobre = $web('GET', '/configuracio/requests?domini=esportweb.test');
+    $web('POST', '/configuracio/requests?domini=esportweb.test', [
+        '_token' => $token($reobre['body']),
+        'platform_requests_open' => '1',
+        'platform_requests_closed_text' => 'Ara no en donem.',
+        'platform_directory' => '1',
+    ]);
+    check('I es poden tornar a obrir',
+        str_contains($web('GET', '/', [], 'esportweb.test')['body'], 'name="admin_email"'));
+
     echo "\n== Legal i galetes ==\n";
     $legal = $web('GET', '/configuracio/legal');
     check('Hi ha la pantalla legal',
@@ -1489,7 +1613,7 @@ try {
     ]);
     $portada = $web('GET', '/', [], 'crosescolar.test');
     check('Es poden tancar les altes noves',
-        str_contains($portada['body'], 'Tornem al setembre') && !str_contains($portada['body'], 'name="entity"'));
+        str_contains($portada['body'], 'Tornem al setembre') && !str_contains($portada['body'], 'name="admin_email"'));
     $rebutjada = $web('POST', '/sollicitud', [
         '_token' => $abans, 'entity' => 'Qui sigui', 'town' => 'Enlloc',
         'contact_name' => 'Ningú', 'contact_email' => 'ningu@example.cat',
@@ -1507,7 +1631,7 @@ try {
         'platform_requests_closed_text' => 'Tornem al setembre.',
     ]);
     check('I es poden tornar a obrir',
-        str_contains($web('GET', '/', [], 'crosescolar.test')['body'], 'name="entity"'));
+        str_contains($web('GET', '/', [], 'crosescolar.test')['body'], 'name="admin_email"'));
 
     echo "\n== Llistes de correu ==\n";
     $llistes = $web('GET', '/enviaments/llistes');
@@ -1688,7 +1812,7 @@ try {
 
     // Les bases de dades i els usuaris que hagin quedat de les proves.
     try {
-        foreach (['santjordi', 'elbosc', 'lagranada'] as $slug) {
+        foreach (['santjordi', 'elbosc', 'lagranada', 'lariera'] as $slug) {
             $admin->exec('DROP DATABASE IF EXISTS `' . $prefix . $slug . '`');
             $drop = $admin->prepare('DROP USER IF EXISTS ?@?');
             $drop->execute([$prefix . $slug, $db['grant_host']]);

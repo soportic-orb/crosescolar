@@ -449,8 +449,25 @@ pagaments, la vigilància— són de tota la plataforma i valen per a tots.
 | **Imatge** | Logotip, icona i colors | sí |
 | **Legal i galetes** | Condicions del servei, privadesa, política de galetes i l'avís que surt en entrar | sí |
 | **SEO i cercadors** | Descripció per a Google i verificació de Search Console | sí |
-| **Sol·licituds** | Si s'accepten altes noves i si surt el llistat | sí |
+| **Altes** | Si s'accepten altes noves i si surt el llistat | sí |
 | La resta | Correu, pagaments, suport, vigilància i actualitzacions | no |
+
+### Qui es dona d'alta
+
+L'alta és lliure: qui vol un web omple el formulari de la portada i el té fet
+al moment, sense que ningú l'hagi d'aprovar. Tria el subdomini i el domini, i el
+panell sempre li queda a `elseusubdomini.eldomini/admin`.
+
+El que fa de porta és el correu. L'únic camí cap al panell acabat de crear és el
+botó **«Accedeix al teu Panell d'Administració»** que s'envia a l'adreça que ha
+escrit: en prémer-lo hi entra, es posa una contrasenya i, alhora, l'adreça queda
+donada per bona. Fins que no ho faci, a **Instàncies** hi surt marcada com a
+«Correu per validar».
+
+El web neix amagat i no es paga res fins al dia que es vol fer públic, de manera
+que una alta que no arribi enlloc no costa res a ningú. Si convé aturar-ho, a
+**Configuració → Altes** es poden tancar les altes noves; el formulari desapareix
+de la portada i una crida que arribi igualment tampoc no es desa.
 
 ### Com neix la pàgina d'un domini
 

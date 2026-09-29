@@ -330,7 +330,8 @@ try {
         str_contains($home['body'], 'https://santjordi.crosescolar.test'));
     check('No hi surt el que no vol sortir-hi', !str_contains($home['body'], 'Cros discret'));
     check('Hi ha el botó de crear-ne un', str_contains(html_entity_decode($home['body']), 'Crea el web del teu cros'));
-    check('I el formulari', str_contains($home['body'], 'name="entity"') && str_contains($home['body'], 'name="contact_email"'));
+    check('I el formulari de registre',
+        str_contains($home['body'], 'name="site_name"') && str_contains($home['body'], 'name="admin_email"'));
 
     // El subdomini del panell no és el web de cap client: hi mena el panell.
     $console = $web('GET', '/', [], 'admin.crosescolar.test');

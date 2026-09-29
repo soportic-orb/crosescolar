@@ -255,7 +255,7 @@ try {
     $homeStatus = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
     check('La portada de la plataforma respon', $homeStatus === 200, 'estat ' . $homeStatus);
-    check('Amb el formulari per demanar un cros', str_contains($home, 'name="entity"'));
+    check('Amb el formulari per crear-se el web', str_contains($home, 'name="admin_email"'));
 } finally {
     if (is_resource($server)) {
         proc_terminate($server);

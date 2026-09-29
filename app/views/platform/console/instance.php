@@ -51,7 +51,19 @@ $status = (string) $instance['status'];
           <?php endif; ?>
         </td></tr>
         <tr><th>Client</th><td><?= $client ? e($client['name']) . ' · ' . e($client['contact_email']) : '<span class="text-soft">Sense fitxa de client</span>' ?></td></tr>
-        <tr><th>Administrador</th><td><?= e((string) ($instance['admin_email'] ?? '—')) ?></td></tr>
+        <tr><th>Administrador</th><td>
+          <?= e((string) ($instance['admin_email'] ?? '—')) ?>
+          <?php if (!empty($instance['verified_at'])): ?>
+            <span class="badge badge--green" title="Va entrar amb l'enllaç que li vam enviar">Correu validat</span>
+          <?php elseif ((string) ($instance['source'] ?? '') === 'signup'): ?>
+            <span class="badge badge--amber" title="Encara no ha fet servir l'enllaç d'estrena">Correu per validar</span>
+          <?php endif; ?>
+        </td></tr>
+        <tr><th>D'on surt</th><td>
+          <?= (string) ($instance['source'] ?? 'console') === 'signup'
+              ? 'Alta feta des del web, sense passar pel panell'
+              : 'Donada d\'alta des del panell' ?>
+        </td></tr>
         <tr><th>Cursa</th><td><?= $instance['event_date'] ? e(ca_date((string) $instance['event_date'], true)) : '—' ?></td></tr>
         <tr><th>Inscripcions</th><td><?= (int) $instance['registrations'] ?></td></tr>
         <tr><th>Base de dades</th><td><code><?= e($instance['db_name']) ?></code><?= $instance['db_user'] ? ' · usuari <code>' . e($instance['db_user']) . '</code>' : '' ?></td></tr>

@@ -10,11 +10,12 @@ use Cros\Core\View;
 use Cros\Platform\Instance;
 use Cros\Platform\Platform;
 use Cros\Platform\Request;
+use Cros\Platform\Signup;
 use Cros\Platform\Site;
 
 /**
- * La pàgina pública de la plataforma: el llistat dels cros que ja hi són i el
- * formulari per demanar-ne un de nou.
+ * La pàgina pública de la plataforma: el llistat dels webs que ja hi són i el
+ * formulari per crear-ne un.
  */
 class SiteController extends Controller
 {
@@ -31,6 +32,91 @@ class SiteController extends Controller
             'noindex' => \Cros\Core\Settings::bool('platform_noindex'),
             'instances' => Instance::directory(),
             'errors' => [],
+        ]);
+    }
+
+    /**
+     * Algú es dona d'alta des del web.
+     *
+     * No hi ha cap tràmit pel mig: el web es crea al moment i l'accés se li
+     * envia per correu. Aquell correu és l'única porta d'entrada, de manera
+     * que prémer-ne el botó és alhora entrar i validar l'adreça.
+     */
+    public function signup(): void
+    {
+        $this->checkCsrf();
+        if (!Signup::open()) {
+            flash('error', (string) setting('platform_requests_closed_text',
+                'Ara mateix no donem altes noves.'));
+            redirect('/');
+        }
+        // Parany per a robots: un camp que ningú no veu i que només ells omplen.
+        if (trim((string) input('website_url')) !== '') {
+            redirect('/');
+        }
+
+        $data = [
+            'site_name' => trim((string) input('site_name')),
+            'town' => trim((string) input('town')),
+            'admin_name' => trim((string) input('admin_name')),
+            'admin_email' => mb_strtolower(trim((string) input('admin_email'))),
+            'slug' => mb_strtolower(trim((string) input('slug'))),
+            'domain' => Platform::validDomain((string) input('domain')),
+            'event_date' => trim((string) input('event_date')),
+            'consent' => input_bool('consent') ? '1' : '',
+        ];
+        // Qui no s'hagi mirat l'adreça, que en tingui una de raonable.
+        if ($data['slug'] === '') {
+            $data['slug'] = Signup::suggest($data['site_name']);
+        }
+
+        $errors = Signup::check($data);
+        if (!$errors && Signup::tooMany($data['admin_email'])) {
+            $errors['admin_email'] = 'Avui ja heu creat uns quants webs. Proveu-ho demà o escriviu-nos.';
+        }
+        if ($errors) {
+            $this->signupFailed($data, $errors);
+
+            return;
+        }
+
+        try {
+            $alta = Signup::create($data);
+        } catch (\Throwable $e) {
+            log_line('platform', 'Alta lliure fallida', ['slug' => $data['slug'], 'error' => $e->getMessage()]);
+            $this->signupFailed($data, ['slug' => 'No hem pogut crear el web. Proveu-ho d\'aquí una estona o escriviu-nos.']);
+
+            return;
+        }
+
+        $_SESSION['signup'] = ['slug' => $alta['slug'], 'url' => $alta['url'], 'email' => $alta['email']];
+        redirect('/benvinguda');
+    }
+
+    /** Torna a la portada amb el formulari i els errors marcats. */
+    private function signupFailed(array $data, array $errors): void
+    {
+        set_old($data);
+        flash('error', 'Reviseu les dades marcades.');
+        $this->page('platform/home', [
+            'title' => (string) setting('site_name', 'EsportWeb'),
+            'instances' => Instance::directory(),
+            'errors' => $errors,
+        ]);
+    }
+
+    /** «Ja està: mireu el correu». */
+    public function welcome(): void
+    {
+        $alta = (array) ($_SESSION['signup'] ?? []);
+        if (($alta['slug'] ?? '') === '') {
+            redirect('/');
+        }
+        unset($_SESSION['signup']);
+        $this->page('platform/signup-done', [
+            'title' => 'Ja teniu el vostre web',
+            'noindex' => true,
+            'alta' => $alta,
         ]);
     }
 

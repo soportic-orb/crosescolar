@@ -445,7 +445,7 @@ table.data tbody tr:hover { background: var(--green-50); }
 /* ----------------------------------------------------------- Formularis */
 .form { display: grid; gap: 1.2rem; }
 .form-row { display: grid; gap: 1.2rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
-.field { display: grid; gap: .4rem; }
+.field { display: grid; gap: .4rem; align-content: start; }
 .field > label, .field__label { font-weight: 700; font-size: .92rem; color: var(--green-900); }
 .field__hint { font-size: .85rem; color: var(--ink-soft); }
 .field__error { font-size: .85rem; color: var(--accent-dark); font-weight: 600; }

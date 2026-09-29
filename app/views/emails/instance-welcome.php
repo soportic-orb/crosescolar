@@ -1,5 +1,17 @@
-<?php /** Les claus del web acabat de crear. */ ?>
-<h1 style="font-size:20px;margin:0 0 12px;color:#1b452a">Ja teniu el web del vostre cros</h1>
+<?php
+/**
+ * Les claus del web acabat de crear.
+ *
+ * Quan qui l'estrena s'ha donat d'alta tot sol ($signup), aquest correu fa
+ * dues feines alhora: li dona la benvinguda i li valida l'adreça. El botó és
+ * l'únic camí cap al panell, de manera que prement-lo demostra que el correu
+ * és seu.
+ */
+$signup = !empty($signup);
+?>
+<h1 style="font-size:20px;margin:0 0 12px;color:#1b452a">
+  <?= $signup ? 'Ja teniu el vostre web' : 'Ja teniu el web del vostre cros' ?>
+</h1>
 <p style="margin:0 0 16px">Hola, <?= e(explode(' ', trim((string) ($name ?? '')))[0] ?: 'bon dia') ?>,</p>
 <p style="margin:0 0 16px">
   El web de <strong><?= e($site_name ?? '') ?></strong> ja està creat i us n'hem fet administrador.
@@ -17,12 +29,18 @@
 <?php if (!empty($link)): ?>
   <p style="margin:20px 0;text-align:center">
     <a href="<?= e($link) ?>" style="display:inline-block;background:#2f6b3c;color:#fff;text-decoration:none;padding:12px 22px;border-radius:10px;font-weight:700">
-      Entrar i triar la contrasenya
+      <?= $signup ? 'Accedeix al teu Panell d\'Administració' : 'Entrar i triar la contrasenya' ?>
     </a>
   </p>
   <p style="margin:0 0 16px;font-size:13px;color:#5a6b60">
-    Aquest enllaç serveix una sola vegada i val set dies. En prémer-lo entrareu al panell i
-    us podreu posar la contrasenya que vulgueu. Si caduca, demaneu-nos-en un altre.
+    <?php if ($signup): ?>
+      Aquest botó fa dues coses alhora: confirma que aquesta adreça és vostra i us fa entrar
+      al panell, on us podreu posar la contrasenya que vulgueu. Serveix una sola vegada i val
+      set dies; si caduca, demaneu-ne un de nou des de la pantalla d'accés.
+    <?php else: ?>
+      Aquest enllaç serveix una sola vegada i val set dies. En prémer-lo entrareu al panell i
+      us podreu posar la contrasenya que vulgueu. Si caduca, demaneu-nos-en un altre.
+    <?php endif; ?>
   </p>
 <?php endif; ?>
 <p style="margin:12px 0 0;font-size:14px">

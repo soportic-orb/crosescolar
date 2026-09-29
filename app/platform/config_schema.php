@@ -174,17 +174,18 @@ return [
     ],
 
     'requests' => [
-        'title' => 'Sol·licituds',
+        'title' => 'Altes',
         'icon' => 'mail',
         'per_site' => true,
-        'description' => 'El formulari de qui vol el web del seu cros.',
+        'description' => 'El formulari de qui vol el seu web. L\'alta és lliure: el web es crea al '
+            . 'moment i l\'accés va per correu, sense que ningú l\'hagi d\'aprovar.',
         'fields' => [
-            'platform_requests_open' => ['label' => 'Acceptar sol·licituds noves', 'type' => 'bool', 'default' => '1',
-                'help' => 'Si es desactiva, el formulari desapareix de la portada.'],
+            'platform_requests_open' => ['label' => 'Acceptar altes noves', 'type' => 'bool', 'default' => '1',
+                'help' => 'Si es desactiva, el formulari desapareix de la portada i no es pot crear cap web nou.'],
             'platform_requests_closed_text' => ['label' => 'Què es diu quan estan tancades', 'type' => 'textarea', 'rows' => 3,
                 'default' => 'Ara mateix no donem altes noves. Escriviu-nos i us avisarem quan tornem a obrir.',
                 'show_if' => '!platform_requests_open'],
-            'platform_directory' => ['label' => 'Ensenyar el llistat de cros a la portada', 'type' => 'bool', 'default' => '1'],
+            'platform_directory' => ['label' => 'Ensenyar el llistat de webs a la portada', 'type' => 'bool', 'default' => '1'],
         ],
     ],
 

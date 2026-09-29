@@ -192,6 +192,8 @@ class Instance
             'event_date' => !empty($data['event_date']) ? $data['event_date'] : null,
             'version' => app_version(),
             'listed' => isset($data['listed']) ? (int) (bool) $data['listed'] : 1,
+            // D'on surt: del panell o de qui s'ha donat d'alta tot sol.
+            'source' => (string) ($data['source'] ?? '') === 'signup' ? 'signup' : 'console',
             'installed_at' => date('Y-m-d H:i:s'),
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s'),

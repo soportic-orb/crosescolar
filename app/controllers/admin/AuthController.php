@@ -49,6 +49,11 @@ class AuthController extends Controller
         }
         $purpose = (string) $result['link']['purpose'];
         Auth::login($result['user']);
+        // L'enllaç ha arribat al correu de qui el prem: amb això n'hi ha prou
+        // per donar l'adreça per bona. És la validació del registre lliure.
+        if ($purpose !== 'support') {
+            $this->verifyEmail($result['user']);
+        }
         // Que consti al registre del web de qui és: si algú hi entra des de la
         // plataforma, qui el gestiona ho ha de poder veure.
         Auth::logActivity('login_link', 'user', (int) $result['user']['id'], [
@@ -63,6 +68,36 @@ class AuthController extends Controller
 
         $_SESSION['admin_set_password'] = true;
         redirect('/admin/clau');
+    }
+
+    /**
+     * Apunta que el correu d'aquesta persona és bo.
+     *
+     * Es desa al seu web i, si hi ha plataforma, també a la fitxa de la
+     * instància, que és on qui la porta ho ha de poder veure.
+     *
+     * @param array<string,mixed> $user
+     */
+    private function verifyEmail(array $user): void
+    {
+        if (!empty($user['email_verified_at'])) {
+            return;
+        }
+        try {
+            \Cros\Core\Db::update('users', ['email_verified_at' => date('Y-m-d H:i:s')],
+                'id = :id', ['id' => (int) $user['id']]);
+        } catch (\Throwable $e) {
+            return; // encara no té la columna: no val la pena trencar l'entrada
+        }
+        $slug = \Cros\Core\Tenancy::slugOf();
+        if ($slug === '' || !\Cros\Platform\Bridge::available()) {
+            return;
+        }
+        try {
+            \Cros\Platform\Bridge::run(static fn (): bool => \Cros\Platform\Signup::verify($slug));
+        } catch (\Throwable $e) {
+            log_line('platform', 'No s\'ha pogut apuntar el correu validat', ['slug' => $slug, 'error' => $e->getMessage()]);
+        }
     }
 
     /** Pantalla per posar-se una contrasenya després d'entrar amb un enllaç. */

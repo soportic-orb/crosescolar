@@ -165,7 +165,10 @@ foreach ($faqs as $faq) {
   <div class="container-narrow">
     <div class="section__head">
       <h2><?= e($crida) ?></h2>
-      <p class="lead">Crear el compte és gratuït. Només es paga el dia que voleu fer públic el web.</p>
+      <p class="lead">
+        Crear el compte és gratuït i entreu al panell de seguida. Només es paga
+        el dia que voleu fer públic el web, un sol cop.
+      </p>
     </div>
 
     <?php if (!\Cros\Core\Settings::bool('platform_requests_open', true)): ?>
@@ -178,104 +181,79 @@ foreach ($faqs as $faq) {
       </div>
     <?php else: ?>
 
-    <form method="post" action="<?= e(url('/sollicitud')) ?>" class="card">
+    <form method="post" action="<?= e(url('/registre')) ?>" class="card">
       <?= csrf_field() ?>
       <p class="visually-hidden" aria-hidden="true">
         <label for="website_url">No ompliu aquest camp</label>
         <input type="text" id="website_url" name="website_url" tabindex="-1" autocomplete="off">
       </p>
 
-      <h3>L'entitat</h3>
       <div class="form-row">
-        <div class="field<?= isset($errors['entity']) ? ' field--error' : '' ?>">
-          <label for="entity">Nom de l'entitat *</label>
-          <input type="text" id="entity" name="entity" value="<?= e($old('entity')) ?>" placeholder="AFA Escola Jacint Verdaguer" required>
-          <?php if (isset($errors['entity'])): ?><span class="field__error"><?= e($errors['entity']) ?></span><?php endif; ?>
+        <div class="field<?= isset($errors['site_name']) ? ' field--error' : '' ?>">
+          <label for="site_name">Com es diu *</label>
+          <input type="text" id="site_name" name="site_name" value="<?= e($old('site_name')) ?>"
+                 placeholder="Cursa de Tardor de la Granada" required>
+          <span class="field__hint">El nom que sortirà al web. Es pot canviar després.</span>
+          <?php if (isset($errors['site_name'])): ?><span class="field__error"><?= e($errors['site_name']) ?></span><?php endif; ?>
         </div>
         <div class="field">
-          <label for="nif">NIF</label>
-          <input type="text" id="nif" name="nif" value="<?= e($old('nif')) ?>" placeholder="G00000000">
-        </div>
-        <div class="field<?= isset($errors['town']) ? ' field--error' : '' ?>">
-          <label for="town">Població *</label>
-          <input type="text" id="town" name="town" value="<?= e($old('town')) ?>" required>
-          <?php if (isset($errors['town'])): ?><span class="field__error"><?= e($errors['town']) ?></span><?php endif; ?>
-        </div>
-        <div class="field">
-          <label for="website">Web actual</label>
-          <input type="url" id="website" name="website" value="<?= e($old('website')) ?>" placeholder="https://">
+          <label for="town">Població</label>
+          <input type="text" id="town" name="town" value="<?= e($old('town')) ?>">
         </div>
       </div>
 
-      <h3 style="margin-top:1.6rem">Qui ho gestionarà</h3>
-      <div class="form-row">
-        <div class="field<?= isset($errors['contact_name']) ? ' field--error' : '' ?>">
-          <label for="contact_name">Nom i cognoms *</label>
-          <input type="text" id="contact_name" name="contact_name" value="<?= e($old('contact_name')) ?>" required>
-          <?php if (isset($errors['contact_name'])): ?><span class="field__error"><?= e($errors['contact_name']) ?></span><?php endif; ?>
+      <div class="field<?= isset($errors['slug']) ? ' field--error' : '' ?>">
+        <label for="slug">L'adreça que voleu</label>
+        <div class="slug-field">
+          <input type="text" id="slug" name="slug" value="<?= e($old('slug')) ?>" placeholder="<?= e($exemple) ?>">
+          <?php if (count($domains) > 1): ?>
+            <select name="domain" aria-label="Domini">
+              <?php foreach ($domains as $option): ?>
+                <option value="<?= e($option) ?>"<?= $old('domain', $domain) === $option ? ' selected' : '' ?>>.<?= e($option) ?></option>
+              <?php endforeach; ?>
+            </select>
+          <?php else: ?>
+            <span>.<?= e($domain) ?></span>
+          <?php endif; ?>
         </div>
-        <div class="field">
-          <label for="contact_role">Càrrec</label>
-          <input type="text" id="contact_role" name="contact_role" value="<?= e($old('contact_role')) ?>" placeholder="Presidència de l'AFA">
-        </div>
-        <div class="field<?= isset($errors['contact_email']) ? ' field--error' : '' ?>">
-          <label for="contact_email">Correu electrònic *</label>
-          <input type="email" id="contact_email" name="contact_email" value="<?= e($old('contact_email')) ?>" required>
-          <span class="field__hint">Aquí hi enviarem les claus d'accés.</span>
-          <?php if (isset($errors['contact_email'])): ?><span class="field__error"><?= e($errors['contact_email']) ?></span><?php endif; ?>
-        </div>
-        <div class="field<?= isset($errors['contact_phone']) ? ' field--error' : '' ?>">
-          <label for="contact_phone">Telèfon *</label>
-          <input type="tel" id="contact_phone" name="contact_phone" value="<?= e($old('contact_phone')) ?>" required>
-          <?php if (isset($errors['contact_phone'])): ?><span class="field__error"><?= e($errors['contact_phone']) ?></span><?php endif; ?>
-        </div>
+        <span class="field__hint">
+          Lletres, números i guions; si la deixeu buida, en fem una a partir del nom.
+          El vostre panell serà aquesta mateixa adreça acabada amb <code>/admin</code>.
+        </span>
+        <?php if (isset($errors['slug'])): ?><span class="field__error"><?= e($errors['slug']) ?></span><?php endif; ?>
       </div>
 
-      <h3 style="margin-top:1.6rem">La cursa</h3>
       <div class="form-row">
-        <div class="field<?= isset($errors['slug']) ? ' field--error' : '' ?>">
-          <label for="slug">Adreça que voleu</label>
-          <div class="slug-field">
-            <input type="text" id="slug" name="slug" value="<?= e($old('slug')) ?>" placeholder="<?= e($exemple) ?>">
-            <?php if (count($domains) > 1): ?>
-              <select name="domain" aria-label="Domini">
-                <?php foreach ($domains as $option): ?>
-                  <option value="<?= e($option) ?>"<?= $old('domain', $domains[0]) === $option ? ' selected' : '' ?>>.<?= e($option) ?></option>
-                <?php endforeach; ?>
-              </select>
-            <?php else: ?>
-              <span>.<?= e($domain) ?></span>
-            <?php endif; ?>
-          </div>
-          <span class="field__hint">
-            Lletres, números i guions. Us direm si ja està agafada.
-            <?= count($domains) > 1 ? 'Podeu triar el domini: totes dues adreces són equivalents i el web es veurà per les dues.' : '' ?>
-          </span>
-          <?php if (isset($errors['slug'])): ?><span class="field__error"><?= e($errors['slug']) ?></span><?php endif; ?>
+        <div class="field<?= isset($errors['admin_name']) ? ' field--error' : '' ?>">
+          <label for="admin_name">Nom i cognoms *</label>
+          <input type="text" id="admin_name" name="admin_name" value="<?= e($old('admin_name')) ?>" required>
+          <?php if (isset($errors['admin_name'])): ?><span class="field__error"><?= e($errors['admin_name']) ?></span><?php endif; ?>
+        </div>
+        <div class="field<?= isset($errors['admin_email']) ? ' field--error' : '' ?>">
+          <label for="admin_email">Correu electrònic *</label>
+          <input type="email" id="admin_email" name="admin_email" value="<?= e($old('admin_email')) ?>" required>
+          <span class="field__hint">Hi enviem el botó per entrar al panell. Serveix també per confirmar l'adreça.</span>
+          <?php if (isset($errors['admin_email'])): ?><span class="field__error"><?= e($errors['admin_email']) ?></span><?php endif; ?>
         </div>
         <div class="field">
           <label for="event_date">Data prevista</label>
           <input type="date" id="event_date" name="event_date" value="<?= e($old('event_date')) ?>">
+          <span class="field__hint">Si encara no la sabeu, deixeu-ho en blanc.</span>
         </div>
-        <div class="field">
-          <label for="participants">Participants que espereu</label>
-          <input type="number" id="participants" name="participants" value="<?= e($old('participants')) ?>" min="1" max="10000" placeholder="300">
-        </div>
-      </div>
-      <div class="field">
-        <label for="message">Expliqueu-nos què necessiteu</label>
-        <textarea id="message" name="message" rows="3" placeholder="Nombre de proves, categories, si feu avituallament…"><?= e($old('message')) ?></textarea>
       </div>
 
       <label class="checkbox<?= isset($errors['consent']) ? ' field--error' : '' ?>">
         <input type="checkbox" name="consent" value="1" <?= $old('consent') === '1' ? 'checked' : '' ?>>
-        <span>Accepto que tracteu les meves dades per atendre aquesta sol·licitud.</span>
+        <span>
+          Accepto les <a href="<?= e(url('/condicions')) ?>" target="_blank" rel="noopener">condicions del servei</a>
+          i que tracteu les meves dades per donar-me l'accés.
+        </span>
       </label>
       <?php if (isset($errors['consent'])): ?><span class="field__error"><?= e($errors['consent']) ?></span><?php endif; ?>
 
       <div class="flex" style="margin-top:1.4rem">
-        <button class="btn" type="submit"><?= Icons::svg('check', 'icon', 18) ?> Enviar la sol·licitud</button>
-        <span class="field__hint">Us responem en 48 h feineres.</span>
+        <button class="btn" type="submit"><?= Icons::svg('check', 'icon', 18) ?> Crear el web</button>
+        <span class="field__hint">En un moment el tindreu a punt.</span>
       </div>
     </form>
     <?php endif; ?>
