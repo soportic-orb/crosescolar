@@ -73,7 +73,7 @@ class MailTemplate
             '{{entitat}}' => e(trim((string) ($recipient['entity'] ?? ''))),
             '{{correu}}' => e(trim((string) ($recipient['email'] ?? ''))),
             '{{assumpte}}' => e($subject),
-            '{{plataforma}}' => e((string) Settings::get('site_name', 'Cros Escolar')),
+            '{{plataforma}}' => e((string) Settings::get('site_name', 'EsportWeb')),
             '{{web}}' => e($domain),
             '{{any}}' => date('Y'),
         ];
@@ -84,7 +84,7 @@ class MailTemplate
      */
     private static function frame(string $header, string $body, string $footer, string $subject): string
     {
-        $title = e($subject !== '' ? $subject : (string) Settings::get('site_name', 'Cros Escolar'));
+        $title = e($subject !== '' ? $subject : (string) Settings::get('site_name', 'EsportWeb'));
 
         return '<!doctype html>' . "\n"
             . '<html lang="ca"><head><meta charset="utf-8">'

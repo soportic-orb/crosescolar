@@ -10,6 +10,7 @@ use Cros\Core\View;
 use Cros\Platform\Instance;
 use Cros\Platform\Platform;
 use Cros\Platform\Request;
+use Cros\Platform\Site;
 
 /**
  * La pàgina pública de la plataforma: el llistat dels cros que ja hi són i el
@@ -25,7 +26,7 @@ class SiteController extends Controller
                 ?: 'Inscripcions, dorsals i resultats per al cros escolar de la vostra escola, AFA o club.';
         }
         $this->page('platform/home', [
-            'title' => (string) setting('site_name', 'Cros Escolar') . ' · el web del vostre cros',
+            'title' => (string) setting('site_name', 'EsportWeb') . ' · ' . setting('platform_tagline', ''),
             'description' => $description,
             'noindex' => \Cros\Core\Settings::bool('platform_noindex'),
             'instances' => Instance::directory(),
@@ -92,7 +93,7 @@ class SiteController extends Controller
             set_old($data);
             flash('error', 'Reviseu les dades marcades.');
             $this->page('platform/home', [
-                'title' => 'Cros Escolar · el web del vostre cros',
+                'title' => (string) setting('site_name', 'EsportWeb'),
                 'instances' => Instance::directory(),
                 'errors' => $errors,
             ]);
@@ -171,7 +172,7 @@ class SiteController extends Controller
 
         $this->page('platform/text-page', [
             'title' => $title,
-            'description' => $title . ' de ' . Platform::domain() . '.',
+            'description' => $title . ' de ' . Site::current() . '.',
             'body' => $body,
             'updated' => \Cros\Core\Settings::changedAt([$key]),
         ]);
@@ -190,7 +191,7 @@ class SiteController extends Controller
             '{{entitat}}' => e((string) setting('platform_legal_entity', '') ?: (string) setting('site_name', '')),
             '{{nif}}' => e((string) setting('platform_legal_nif', '')),
             '{{adreca}}' => e((string) setting('platform_legal_address', '')),
-            '{{web}}' => e(Platform::domain()),
+            '{{web}}' => e(Site::current()),
             '{{correu}}' => $email === '' ? '' : '<a href="mailto:' . e($email) . '">' . e($email) . '</a>',
         ]);
     }
@@ -211,7 +212,7 @@ class SiteController extends Controller
         header('X-Robots-Tag: noindex');
         echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
         echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
-        echo '  <url><loc>' . e('https://' . Platform::domain() . '/') . '</loc></url>' . "\n";
+        echo '  <url><loc>' . e('https://' . Site::current() . '/') . '</loc></url>' . "\n";
         foreach (Instance::directory() as $instance) {
             echo '  <url><loc>' . e(Instance::url($instance) . '/') . '</loc></url>' . "\n";
         }
@@ -220,7 +221,7 @@ class SiteController extends Controller
             array_unshift($pages, 'funcionalitats');
         }
         foreach ($pages as $page) {
-            echo '  <url><loc>' . e('https://' . Platform::domain() . '/' . $page) . '</loc></url>' . "\n";
+            echo '  <url><loc>' . e('https://' . Site::current() . '/' . $page) . '</loc></url>' . "\n";
         }
         echo '</urlset>';
         exit;
@@ -290,14 +291,14 @@ class SiteController extends Controller
         echo "Disallow: /sollicitud/\n";
         echo "Allow: /assets/\n";
         echo "\n";
-        echo 'Sitemap: https://' . Platform::domain() . "/sitemap.xml\n";
+        echo 'Sitemap: https://' . Site::current() . "/sitemap.xml\n";
         exit;
     }
 
     /** Avisa qui l'ha demanada i la superadministració. */
     private function notify(array $request): void
     {
-        $domain = Platform::domain();
+        $domain = Site::current();
         $email = (string) $request['contact_email'];
         if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)) {
             Mailer::sendTemplate(

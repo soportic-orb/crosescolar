@@ -205,7 +205,7 @@ class Setup
     {
         $domains = array_values((array) ($values['domains'] ?? []));
         $config = [
-            'name' => (string) ($values['name'] ?? 'Cros Escolar'),
+            'name' => (string) ($values['name'] ?? 'EsportWeb'),
             'base_domain' => (string) array_shift($domains),
             'domains' => $domains,
             'console' => [(string) ($values['console'] ?? 'admin')],
@@ -232,7 +232,7 @@ class Setup
             'monitor' => ['web' => true, 'proxy' => ''],
             'backups' => ['dir' => '', 'keep' => 7],
             'mail' => [
-                'from_name' => (string) ($values['mail']['from_name'] ?? 'Cros Escolar'),
+                'from_name' => (string) ($values['mail']['from_name'] ?? 'EsportWeb'),
                 'from_email' => (string) ($values['mail']['from_email'] ?? ''),
                 'notify' => (string) ($values['mail']['notify'] ?? ''),
                 'transport' => (string) ($values['mail']['transport'] ?? 'mail'),

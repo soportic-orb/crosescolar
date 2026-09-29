@@ -5,10 +5,38 @@
  * @var array  $group
  * @var array  $values
  * @var array  $platformFile  el que hi ha a tenants/platform.php
+ * @var bool   $perSite       aquest grup té un text per cada pàgina pública
+ * @var string $domain        de quina pàgina s'estan tocant els textos
+ * @var array  $domains       totes les pàgines públiques
  */
 use Cros\Core\View;
+
+$perSite = ($perSite ?? false) && count($domains ?? []) > 0;
+$domain = (string) ($domain ?? '');
+$accio = url('/configuracio/' . $groupKey, $perSite ? ['domini' => $domain] : []);
 ?>
-<form method="post" action="<?= e(url('/configuracio/' . $groupKey)) ?>" enctype="multipart/form-data">
+<?php if ($perSite): ?>
+  <div class="panel mb-2">
+    <div class="panel__body">
+      <p class="text-soft" style="margin:0 0 .8rem">
+        Cada domini té la seva pàgina pública i el seu text. Trieu de quina n'esteu
+        canviant les coses; la resta de la plataforma —els clients, la facturació i
+        el correu— és la mateixa per a tots.
+      </p>
+      <div class="site-tabs">
+        <?php foreach ($domains as $opcio): ?>
+          <a class="site-tabs__tab<?= $opcio === $domain ? ' is-active' : '' ?>"
+             href="<?= e(url('/configuracio/' . $groupKey, ['domini' => $opcio])) ?>">
+            <?= \Cros\Core\Icons::svg('globe', 'icon', 16) ?>
+            <span><?= e($opcio) ?></span>
+          </a>
+        <?php endforeach; ?>
+      </div>
+    </div>
+  </div>
+<?php endif; ?>
+
+<form method="post" action="<?= e($accio) ?>" enctype="multipart/form-data">
   <?= csrf_field() ?>
   <div class="panel">
     <div class="panel__head">
@@ -21,11 +49,14 @@ use Cros\Core\View;
 
       <div class="form-grid form-grid--2">
         <?php foreach ($group['fields'] as $name => $field): ?>
-          <?= View::partial('admin/partials/field', [
-              'name' => $name,
-              'field' => $field,
-              'value' => $values[$name] ?? ($field['default'] ?? ''),
-          ]) ?>
+          <?php $ample = in_array($field['type'] ?? 'text', ['html', 'textarea', 'faqs', 'features'], true); ?>
+          <div style="<?= $ample ? 'grid-column:1/-1' : '' ?>">
+            <?= View::partial('admin/partials/field', [
+                'name' => $name,
+                'field' => $field,
+                'value' => $values[$name] ?? ($field['default'] ?? ''),
+            ]) ?>
+          </div>
         <?php endforeach; ?>
       </div>
 

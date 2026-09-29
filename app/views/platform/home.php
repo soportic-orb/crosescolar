@@ -1,14 +1,18 @@
 <?php
 /**
- * Portada de la plataforma: els cros que ja hi són i el formulari per demanar-ne un.
+ * Portada de la plataforma: els webs que ja hi són i el formulari per crear-ne un.
  * @var array<int,array<string,mixed>> $instances
  * @var array<string,string> $errors
  */
 use Cros\Core\Icons;
 use Cros\Platform\Platform;
+use Cros\Platform\Site;
 
-$domain = Platform::domain();
+$domain = Site::current();
 $domains = Platform::domains();
+$crida = (string) setting('platform_cta_label', 'Crea el web de la teva cursa');
+$llistat = (string) setting('platform_nav_directory', 'Curses');
+$exemple = (string) setting('platform_slug_example', 'lavostracursa');
 $old = static fn (string $key, string $default = ''): string => (string) old($key, $default);
 // La imatge del banner i el vel que hi va a sobre perquè el text es llegeixi.
 $heroImage = (string) setting('platform_hero_image', '');
@@ -20,7 +24,7 @@ $heroOverlay = max(0, min(95, (int) setting('platform_hero_overlay', '72'))) / 1
     <?php if ($eyebrow = trim((string) setting('platform_hero_eyebrow', 'Per a escoles, AFA i clubs'))): ?>
       <span class="eyebrow"><?= e($eyebrow) ?></span>
     <?php endif; ?>
-    <h1><?= e(setting('platform_tagline', 'El web del vostre cros, a punt en una setmana')) ?></h1>
+    <h1><?= e(setting('platform_tagline', 'El web de la vostra cursa, a punt en una hora.')) ?></h1>
     <?php if ($lead = trim((string) setting('platform_hero_lead', 'Inscripcions en línia, dorsals en PDF, resultats per categories i correus a les famílies. Tot amb la vostra imatge i a la vostra adreça.'))): ?>
       <p class="lead"><?= e($lead) ?></p>
     <?php endif; ?>
@@ -28,10 +32,10 @@ $heroOverlay = max(0, min(95, (int) setting('platform_hero_overlay', '72'))) / 1
       <div class="lead" style="color:rgba(255,255,255,.85)"><?= \Cros\Core\Html::clean($intro) ?></div>
     <?php endif; ?>
     <div class="flex" style="margin-top:1.6rem">
-      <a class="btn btn--accent" href="#formulari"><?= Icons::svg('plus', 'icon', 18) ?> Crea la web per al teu cros</a>
-      <a class="btn btn--light" href="#cros">Veure els cros que ja hi són</a>
+      <a class="btn btn--accent" href="#formulari"><?= Icons::svg('plus', 'icon', 18) ?> <?= e($crida) ?></a>
+      <a class="btn btn--light" href="#cros">Veure <?= e(mb_strtolower($llistat)) ?></a>
     </div>
-    <p class="platform-hero__address">La vostra adreça serà <strong>elvostrecros<span>.<?= e($domain) ?></span></strong></p>
+    <p class="platform-hero__address">La vostra adreça serà <strong><?= e($exemple) ?><span>.<?= e($domain) ?></span></strong></p>
   </div>
 </section>
 
@@ -39,14 +43,14 @@ $heroOverlay = max(0, min(95, (int) setting('platform_hero_overlay', '72'))) / 1
 <section class="section" id="cros">
   <div class="container">
     <div class="section__head">
-      <h2>Els cros escolars que ja hi corren</h2>
-      <p class="lead">Cliqueu-ne un i aneu al seu web, amb les inscripcions, els recorreguts i els resultats.</p>
+      <h2><?= e(setting('platform_directory_title', 'Les curses que ja hi són')) ?></h2>
+      <p class="lead"><?= e(setting('platform_directory_lead', 'Cliqueu-ne una i aneu al seu web, amb les inscripcions, els recorreguts i els resultats.')) ?></p>
     </div>
 
     <?php if (!$instances): ?>
       <div class="notice-box">
-        Encara no hi ha cap cros publicat. Si organitzeu el primer,
-        <a href="#formulari">demaneu-nos el vostre web</a>.
+        Encara no hi ha res publicat. Si sou els primers,
+        <a href="#formulari">creeu-vos el web</a>.
       </div>
     <?php else: ?>
       <div class="cros-grid">
@@ -76,11 +80,11 @@ $heroOverlay = max(0, min(95, (int) setting('platform_hero_overlay', '72'))) / 1
         <a class="cros-card cros-card--new" href="#formulari">
           <span class="cros-card__plus"><?= Icons::svg('plus', 'icon', 20) ?></span>
           <strong>El vostre, aquí</strong>
-          <span>Creeu la web del vostre cros i sortireu en aquesta llista.</span>
+          <span>Creeu el web de <?= e(setting('platform_activity_one', 'la vostra cursa')) ?> i sortireu en aquesta llista.</span>
         </a>
       </div>
       <p class="field__hint" style="margin-top:1.2rem">
-        Només hi surten els cros que ja han publicat el seu web. Cada entitat decideix si vol aparèixer-hi.
+        Només hi surt qui ja ha publicat el seu web. Cada entitat decideix si vol aparèixer-hi.
       </p>
     <?php endif; ?>
   </div>
@@ -160,8 +164,8 @@ foreach ($faqs as $faq) {
 <section class="section" id="formulari">
   <div class="container-narrow">
     <div class="section__head">
-      <h2>Demaneu la vostra instància</h2>
-      <p class="lead">És gratuït demanar-la i no hi ha cap pagament en línia.</p>
+      <h2><?= e($crida) ?></h2>
+      <p class="lead">Crear el compte és gratuït. Només es paga el dia que voleu fer públic el web.</p>
     </div>
 
     <?php if (!\Cros\Core\Settings::bool('platform_requests_open', true)): ?>
@@ -232,7 +236,7 @@ foreach ($faqs as $faq) {
         <div class="field<?= isset($errors['slug']) ? ' field--error' : '' ?>">
           <label for="slug">Adreça que voleu</label>
           <div class="slug-field">
-            <input type="text" id="slug" name="slug" value="<?= e($old('slug')) ?>" placeholder="elvostrecros">
+            <input type="text" id="slug" name="slug" value="<?= e($old('slug')) ?>" placeholder="<?= e($exemple) ?>">
             <?php if (count($domains) > 1): ?>
               <select name="domain" aria-label="Domini">
                 <?php foreach ($domains as $option): ?>
@@ -250,7 +254,7 @@ foreach ($faqs as $faq) {
           <?php if (isset($errors['slug'])): ?><span class="field__error"><?= e($errors['slug']) ?></span><?php endif; ?>
         </div>
         <div class="field">
-          <label for="event_date">Data prevista de la cursa</label>
+          <label for="event_date">Data prevista</label>
           <input type="date" id="event_date" name="event_date" value="<?= e($old('event_date')) ?>">
         </div>
         <div class="field">
@@ -260,7 +264,7 @@ foreach ($faqs as $faq) {
       </div>
       <div class="field">
         <label for="message">Expliqueu-nos què necessiteu</label>
-        <textarea id="message" name="message" rows="3" placeholder="Nombre de curses, categories, si feu esmorzar…"><?= e($old('message')) ?></textarea>
+        <textarea id="message" name="message" rows="3" placeholder="Nombre de proves, categories, si feu avituallament…"><?= e($old('message')) ?></textarea>
       </div>
 
       <label class="checkbox<?= isset($errors['consent']) ? ' field--error' : '' ?>">

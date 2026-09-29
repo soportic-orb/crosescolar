@@ -149,8 +149,14 @@ class SettingsForm
     /** Una imatge o un document: es puja, o es treu si ho han demanat. */
     private static function saveUpload(string $name, array $field, string $type): string
     {
+        // Amb més d'una pàgina pública, el mateix fitxer pot estar apuntat
+        // des de dos dominis. Traiem-lo d'on toca, però no l'esborrem del
+        // disc: qui el comparteix es quedaria sense imatge.
+        $shared = Settings::isScoped($name);
         if (input_bool($name . '_remove') === 1) {
-            Uploader::delete((string) setting($name, ''));
+            if (!$shared) {
+                Uploader::delete((string) setting($name, ''));
+            }
             Settings::set($name, '');
         }
         if (!Uploader::has($name)) {
@@ -167,7 +173,7 @@ class SettingsForm
                 )
                 : Uploader::document($_FILES[$name], $field['folder'] ?? 'documents');
             Settings::set($name, $path);
-            if ($old !== '' && $old !== $path) {
+            if (!$shared && $old !== '' && $old !== $path) {
                 Uploader::delete($old);
             }
         } catch (\RuntimeException $e) {

@@ -70,10 +70,12 @@ switch ($instance['mode']) {
 
     case 'platform':
     case 'console':
-        // La plataforma viu al domini principal: la resta hi mena.
+        // El panell de superadministració és un i viu al domini principal.
+        // Les pàgines públiques, en canvi, són una per domini: cadascuna
+        // es queda a casa seva i només es treu el «www».
         $crosCanonical($instance['mode'] === 'console'
             ? $instance['slug'] . '.' . Tenancy::primary(__DIR__)
-            : Tenancy::primary(__DIR__));
+            : $instance['domain']);
         // La pàgina pública de la plataforma i el panell de superadministració.
         try {
             \Cros\Platform\Platform::boot(__DIR__);
@@ -81,7 +83,7 @@ switch ($instance['mode']) {
             http_response_code(503);
             log_line('platform', 'No s\'ha pogut obrir la plataforma', ['error' => $e->getMessage()]);
             View::render('errors/platform-soon', [
-                'title' => 'Cros Escolar · Plataforma',
+                'title' => 'EsportWeb · Plataforma',
                 'console' => $instance['mode'] === 'console',
                 'noindex' => true,
             ], 'layouts/minimal');

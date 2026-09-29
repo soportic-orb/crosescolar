@@ -36,7 +36,7 @@ use Cros\Platform\Platform;
     <?php endif; ?>
 
     <div class="feature-cta">
-      <a class="btn btn--accent" href="<?= e(url('/')) ?>#formulari">Crea la web per al teu cros</a>
+      <a class="btn btn--accent" href="<?= e(url('/')) ?>#formulari"><?= e(setting('platform_cta_label', 'Crea el web de la teva cursa')) ?></a>
       <a class="btn btn--ghost" href="mailto:<?= e(Platform::notifyEmail()) ?>">Pregunta'ns el que et calgui</a>
     </div>
   </div>

@@ -13,6 +13,21 @@ class Settings
     private static ?array $schema = null;
     private static ?array $defaults = null;
 
+    /**
+     * Àmbit: un prefix per a les claus que no són de tothom.
+     *
+     * La plataforma serveix més d'una pàgina pública —una per domini— amb la
+     * mateixa base de dades. El text de la portada d'un domini no és el de
+     * l'altre, però el servidor de correu o les claus de Stripe sí. Per això
+     * només les claus que s'hi diuen es desen amb prefix; la resta van on
+     * han anat sempre.
+     */
+    private static string $scope = '';
+    /** @var array<string,bool> */
+    private static array $scopeKeys = [];
+    /** @var array<string,string> */
+    private static array $scopeDefaults = [];
+
     /** Carrega tots els valors a memòria. */
     public static function load(bool $force = false): array
     {
@@ -54,9 +69,55 @@ class Settings
         self::$cache = null;
     }
 
+    /**
+     * Fa servir un àmbit per a unes claus concretes.
+     *
+     * @param array<int,string>    $keys     claus que hi pertanyen
+     * @param array<string,string> $defaults què valen si l'àmbit no diu res
+     */
+    public static function scope(string $prefix = '', array $keys = [], array $defaults = []): void
+    {
+        self::$scope = $prefix;
+        self::$scopeKeys = array_fill_keys($keys, true);
+        self::$scopeDefaults = $defaults;
+    }
+
+    /** Quin àmbit hi ha actiu, o '' si cap. */
+    public static function scopeName(): string
+    {
+        return self::$scope;
+    }
+
+    /** Aquesta clau va per àmbits? */
+    public static function isScoped(string $key): bool
+    {
+        return self::$scope !== '' && isset(self::$scopeKeys[$key]);
+    }
+
+    /** Com es diu aquesta clau dins de l'àmbit actiu. */
+    public static function scopedKey(string $key): string
+    {
+        return self::isScoped($key) ? self::$scope . $key : $key;
+    }
+
     public static function get(string $key, $default = null)
     {
         $all = self::load();
+        if (self::isScoped($key)) {
+            $own = $all[self::$scope . $key] ?? null;
+            if ($own !== null && $own !== '') {
+                return $own;
+            }
+            $seed = self::$scopeDefaults[$key] ?? null;
+            if ($seed !== null && $seed !== '') {
+                return $seed;
+            }
+            if ($default !== null) {
+                return $default;
+            }
+
+            return self::defaults()[$key] ?? null;
+        }
         if (array_key_exists($key, $all) && $all[$key] !== null && $all[$key] !== '') {
             return $all[$key];
         }
@@ -86,6 +147,7 @@ class Settings
         if (($field['secret'] ?? false) && $store !== '') {
             $store = Crypto::encrypt($store);
         }
+        $key = self::scopedKey($key);
         $sql = Db::driver() === 'sqlite'
             ? 'INSERT INTO settings (k, v, updated_at) VALUES (:k, :v, CURRENT_TIMESTAMP)
                ON CONFLICT(k) DO UPDATE SET v = excluded.v, updated_at = CURRENT_TIMESTAMP'
@@ -131,6 +193,7 @@ class Settings
     {
         self::$schema = $schema;
         self::$defaults = null;
+        self::scope();
     }
 
     /** Definició d'un camp concret. */

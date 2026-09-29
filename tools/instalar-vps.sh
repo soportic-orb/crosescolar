@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Cros Escolar — instal·lació guiada en un servidor nou.
+# EsportWeb — instal·lació guiada en un servidor nou.
 #
 # Deixa el VPS a punt de dalt a baix: programari, bases de dades, codi, nginx,
 # certificat i feines automàtiques. En acabar obre l'assistent web, que acaba la
@@ -70,7 +70,7 @@ ORIGEN="$(cd "$(dirname "$0")/.." && pwd)"
     exit 1
 }
 
-printf '\n\033[1mInstal·lació del Cros Escolar en un servidor nou\033[0m\n'
+printf '\n\033[1mInstal·lació d'"'"'EsportWeb en un servidor nou\033[0m\n'
 echo "Codi: $ORIGEN"
 [ -r /etc/os-release ] && . /etc/os-release && echo "Sistema: ${PRETTY_NAME:-desconegut}"
 
@@ -79,7 +79,8 @@ echo "Codi: $ORIGEN"
 titol "1/8 · Els dominis"
 if [ -z "$DOMINIS" ]; then
     echo "El primer és el principal: hi viuran la pàgina pública i el panell."
-    echo "Si en teniu més d'un, separeu-los amb comes (crosescolar.cat,crosescolar.com)."
+    echo "Si en teniu més d'un, separeu-los amb comes (esportweb.cat,crosescolar.cat)."
+    echo "Cadascun tindrà la seva pàgina pública; el panell viu al principal."
     read -rp "   Dominis: " DOMINIS
 fi
 IFS=',' read -ra LLISTA <<< "$DOMINIS"

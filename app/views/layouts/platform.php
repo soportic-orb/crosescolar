@@ -4,9 +4,13 @@
  * @var string $content
  */
 use Cros\Platform\Platform;
+use Cros\Platform\Site;
 
-$domain = Platform::domain();
-$name = (string) setting('site_name', 'Cros Escolar');
+// Cada domini és una pàgina pública diferent, amb el seu nom i el seu text.
+$domain = Site::current();
+$name = (string) setting('site_name', 'EsportWeb');
+$crida = (string) setting('platform_cta_label', 'Crea el web de la teva cursa');
+$llistat = (string) setting('platform_nav_directory', 'Curses');
 ?>
 <!doctype html>
 <html lang="ca">
@@ -17,8 +21,8 @@ $name = (string) setting('site_name', 'Cros Escolar');
 <?php if (!empty($description)): ?><meta name="description" content="<?= e($description) ?>"><?php endif; ?>
 <meta name="robots" content="<?= !empty($noindex) ? 'noindex, nofollow' : 'index, follow, max-image-preview:large' ?>">
 <?php
-// Adreça canònica: sempre el domini principal, encara que s'hi hagi arribat
-// pel secundari, perquè els dos webs no competeixin entre ells.
+// Adreça canònica: la d'aquest domini. Cada pàgina pública és un web seu,
+// amb el seu text, i no competeix amb la de l'altre domini.
 $canonical = 'https://' . $domain . rtrim((string) ($currentPath ?? '/'), '/');
 $platformLogo = (string) setting('platform_logo', '');
 ?>
@@ -41,7 +45,7 @@ $platformLogo = (string) setting('platform_logo', '');
 <?php if ($favicon !== ''): ?>
   <link rel="icon" href="<?= e(upload_url($favicon)) ?>">
 <?php else: ?>
-  <link rel="icon" href="data:image/svg+xml,<?= rawurlencode('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#2f6b3c"/><text x="16" y="22" font-size="16" font-family="sans-serif" fill="#fff" text-anchor="middle">C</text></svg>') ?>">
+  <link rel="icon" href="data:image/svg+xml,<?= rawurlencode('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#2f6b3c"/><text x="16" y="22" font-size="16" font-family="sans-serif" fill="#fff" text-anchor="middle">' . htmlspecialchars(mb_strtoupper(mb_substr($name, 0, 1)), ENT_QUOTES) . '</text></svg>') ?>">
 <?php endif; ?>
 <style>
   :root{
@@ -75,10 +79,10 @@ $platformLogo = (string) setting('platform_logo', '');
     </button>
     <?php $funcionalitats = \Cros\Core\Settings::bool('features_enabled', true); ?>
     <nav class="nav" id="menu-plataforma" aria-label="Menú principal">
-      <a href="<?= e(url('/')) ?>#cros">Cros escolars</a>
+      <a href="<?= e(url('/')) ?>#cros"><?= e($llistat) ?></a>
       <?php if ($funcionalitats): ?><a href="<?= e(url('/funcionalitats')) ?>">Funcionalitats</a><?php endif; ?>
       <a href="<?= e(url('/')) ?>#com-va">Com funciona</a>
-      <a class="btn btn--accent btn--sm" href="<?= e(url('/')) ?>#formulari">Crea la web per al teu cros</a>
+      <a class="btn btn--accent btn--sm" href="<?= e(url('/')) ?>#formulari"><?= e($crida) ?></a>
     </nav>
   </div>
 </header>
@@ -100,15 +104,15 @@ $platformLogo = (string) setting('platform_logo', '');
     <div class="footer-grid">
       <div>
         <h4><?= e($name) ?></h4>
-        <p style="font-size:.95rem">La plataforma per als cros escolars de les escoles, AFA i clubs: inscripcions, dorsals i resultats, cadascú a la seva adreça.</p>
+        <p style="font-size:.95rem"><?= e(setting('platform_footer_text', 'La plataforma per a curses i activitats esportives: inscripcions, dorsals, resultats i cobraments, cadascú a la seva adreça.')) ?></p>
       </div>
       <div>
         <h4>La plataforma</h4>
         <ul class="footer-links">
-          <li><a href="<?= e(url('/')) ?>#cros">Cros escolars</a></li>
+          <li><a href="<?= e(url('/')) ?>#cros"><?= e($llistat) ?></a></li>
           <?php if ($funcionalitats): ?><li><a href="<?= e(url('/funcionalitats')) ?>">Funcionalitats</a></li><?php endif; ?>
           <li><a href="<?= e(url('/')) ?>#com-va">Com funciona</a></li>
-          <li><a href="<?= e(url('/')) ?>#formulari">Crea la web per al teu cros</a></li>
+          <li><a href="<?= e(url('/')) ?>#formulari"><?= e($crida) ?></a></li>
         </ul>
       </div>
       <div>

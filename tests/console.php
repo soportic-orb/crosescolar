@@ -76,7 +76,7 @@ copy($root . '/index.php', $site . '/index.php');
 @unlink($site . '/app/config.php');
 file_put_contents($site . '/tenants/platform.php', "<?php return " . var_export([
     'base_domain' => 'crosescolar.test',
-    'domains' => ['crosescolar.example'],
+    'domains' => ['crosescolar.example', 'esportweb.test'],
     'name' => 'Cros Escolar',
     'console' => ['admin'],
     'mail' => ['from_email' => 'hola@crosescolar.test', 'notify' => 'hola@crosescolar.test', 'transport' => 'log'],
@@ -920,6 +920,8 @@ try {
         'santjordi.crosescolar.test' => ['10.0.0.1'],
         'crosescolar.example' => ['10.0.0.1'],
         'admin.crosescolar.example' => ['10.0.0.1'],
+        'esportweb.test' => ['10.0.0.1'],
+        'admin.esportweb.test' => ['10.0.0.1'],
     ];
     // Amb comodí: qualsevol nom del domini respon.
     Dns::using(static function (string $host) use ($zona): array {
@@ -1147,8 +1149,11 @@ try {
     check('La portada de la plataforma surt pels dos dominis',
         $web('GET', '/', [], 'crosescolar.test')['status'] === 200);
     $secondary = $web('GET', '/', [], 'crosescolar.example');
-    check('I el domini secundari mena al principal',
-        $secondary['status'] === 301 && str_contains($secondary['headers'], 'crosescolar.test'));
+    check('Cada domini es queda a casa seva', $secondary['status'] === 200, 'estat ' . $secondary['status']);
+    $ambWww = $web('GET', '/', [], 'www.crosescolar.example');
+    check('I amb «www» hi mena sense sortir del domini',
+        $ambWww['status'] === 301 && str_contains($ambWww['headers'], '//crosescolar.example'),
+        'estat ' . $ambWww['status']);
 
     // Canviar de domini un web que ja funciona.
     $detail = $web('GET', '/instancies/' . (int) $bosc['id']);
@@ -1247,8 +1252,8 @@ try {
         'platform_contact_email' => 'hola@crosescolar.test',
     ]);
     check('Es desa el que s\'hi escriu', $desat['status'] === 302);
-    check('I queda a la base de dades',
-        (string) Db::val("SELECT v FROM settings WHERE k = 'site_name'", [], '') === 'Cros Escolar del Penedès');
+    check('I queda a la base de dades, al seu domini',
+        (string) Db::val("SELECT v FROM settings WHERE k = 'site:crosescolar.test:site_name'", [], '') === 'Cros Escolar del Penedès');
     check('El panell ja en porta el nom',
         str_contains($web('GET', '/')['body'], 'Cros Escolar del Penedès'));
     check('I la portada pública també',
@@ -1325,7 +1330,7 @@ try {
         'platform_hero_image' => new CURLFile($fitxer, 'image/jpeg', basename($fitxer)),
     ]));
     check('La imatge del banner es puja', $pujada['status'] === 302, 'estat ' . $pujada['status']);
-    $desada = (string) Db::val("SELECT v FROM settings WHERE k = 'platform_hero_image'", [], '');
+    $desada = (string) Db::val("SELECT v FROM settings WHERE k = 'site:crosescolar.test:platform_hero_image'", [], '');
     check('I queda desada a la configuració', $desada !== '', $desada);
     check('El fitxer és al disc', $desada !== '' && is_file($site . '/uploads/' . $desada),
         $site . '/uploads/' . $desada);
@@ -1375,6 +1380,55 @@ try {
         && $web('GET', '/funcionalitats', [], 'crosescolar.test')['status'] === 404);
     check('I llavors tampoc no surt al mapa del web',
         !str_contains($web('GET', '/sitemap.xml', [], 'crosescolar.test')['body'], '/funcionalitats'));
+
+    echo "\n== Una pàgina pública per domini ==\n";
+    // La portada de crosescolar.test ja porta el nom i el lema que s'hi han
+    // desat abans. La d'esportweb.test no n'ha de saber res: és un altre web.
+    $cros = $web('GET', '/', [], 'crosescolar.test');
+    $esport = $web('GET', '/', [], 'esportweb.test');
+    check('El domini nou respon', $esport['status'] === 200, 'estat ' . $esport['status']);
+    check('Amb el nom que li toca', str_contains($esport['body'], 'EsportWeb'));
+    check('I sense el text de l\'altre domini',
+        !str_contains($esport['body'], 'Cros Escolar del Penedès'));
+    check('Que sí que surt al seu', str_contains($cros['body'], 'Cros Escolar del Penedès'));
+    check('Cada domini parla del que li pertoca',
+        str_contains(text($esport['body']), 'Les curses que ja hi són')
+        && str_contains(text($cros['body']), 'Els cros escolars que ja hi corren'));
+    check('I diu l\'adreça del seu domini',
+        str_contains($esport['body'], 'lavostracursa<span>.esportweb.test</span>'));
+    check('La canònica és la seva',
+        str_contains($esport['body'], 'rel="canonical" href="https://esportweb.test/'));
+
+    // Al panell, els grups que van per domini porten les pestanyes.
+    $general = $web('GET', '/configuracio/general');
+    check('La configuració avisa que hi ha un web per domini',
+        str_contains($general['body'], 'site-tabs') && str_contains($general['body'], 'domini=esportweb.test'));
+    check('I el que és de tota la plataforma, no',
+        !str_contains($web('GET', '/configuracio/mail')['body'], 'site-tabs'));
+
+    $altre = $web('GET', '/configuracio/general?domini=esportweb.test');
+    check('S\'hi pot triar l\'altre domini', $altre['status'] === 200, 'estat ' . $altre['status']);
+    check('I ensenya els seus valors', str_contains($altre['body'], 'value="EsportWeb"'));
+    check('Sense que el panell canviï de marca',
+        str_contains($altre['body'], '<strong>Cros Escolar del Penedès</strong><small>crosescolar.test</small>'));
+    $canviat = $web('POST', '/configuracio/general?domini=esportweb.test', array_merge(formData($altre['body']), [
+        '_token' => $token($altre['body']),
+        'site_name' => 'EsportWeb Catalunya',
+        'platform_tagline' => 'Qualsevol cursa, qualsevol esport.',
+    ]));
+    check('El canvi es desa', $canviat['status'] === 302, 'estat ' . $canviat['status']);
+    check('I es veu al seu domini',
+        str_contains($web('GET', '/', [], 'esportweb.test')['body'], 'Qualsevol cursa, qualsevol esport.'));
+    check('Sense tocar el domini de sempre',
+        str_contains($web('GET', '/', [], 'crosescolar.test')['body'], 'Cros Escolar del Penedès'));
+    check('Cadascun es desa a la seva clau',
+        (string) Db::val("SELECT v FROM settings WHERE k = 'site:esportweb.test:site_name'", [], '') === 'EsportWeb Catalunya'
+        && (string) Db::val("SELECT v FROM settings WHERE k = 'site:crosescolar.test:site_name'", [], '') === 'Cros Escolar del Penedès');
+
+    // Un domini que no és nostre no es pot editar: es cau al principal.
+    $inventat = $web('GET', '/configuracio/general?domini=uncosinventat.test');
+    check('Un domini que no és nostre no s\'edita',
+        $inventat['status'] === 200 && str_contains($inventat['body'], 'value="Cros Escolar del Penedès"'));
 
     echo "\n== Legal i galetes ==\n";
     $legal = $web('GET', '/configuracio/legal');

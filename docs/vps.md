@@ -1,15 +1,23 @@
 # Muntar la plataforma en un VPS nou
 
-Guia completa per deixar el servei en marxa a `crosescolar.cat` (i
-`crosescolar.com`) en un VPS acabat de crear, i per portar-hi el cros de La
+Guia completa per deixar EsportWeb en marxa a `esportweb.cat` (i
+`crosescolar.cat`) en un VPS acabat de crear, i per portar-hi el cros de La
 Granada que ara funciona pel seu compte.
+
+La plataforma es diu **EsportWeb** i serveix qualsevol cursa o activitat
+esportiva. Cada domini que se li posa té la **seva pàgina pública**, amb el seu
+text i la seva imatge: `esportweb.cat` parla d'esport en general i
+`crosescolar.cat`, de cros escolars. Tota la resta —els clients, la facturació,
+el correu i el panell de cada client— és la mateixa per a tots, i es porta des
+d'un sol panell de superadministració, a `admin.esportweb.cat`.
 
 Parteix d'un **Ubuntu 24.04 net** amb accés `root` per SSH, com el que dona
 Clouding.io. Si el VPS ja porta un tauler (CloudPanel, Plesk…), useu la guia
 [`instalacio.md`](instalacio.md) i salteu-vos els apartats 1 i 2 d'aquí.
 
-Al llarg de la guia, canvieu `crosescolar.cat` i `crosescolar.com` pels vostres
-dominis si són uns altres.
+Al llarg de la guia, canvieu `esportweb.cat` i `crosescolar.cat` pels vostres
+dominis si són uns altres. El **primer** de la llista és el principal: és on
+viu el panell de superadministració.
 
 ---
 
@@ -224,8 +232,8 @@ Els valors que cal tocar:
 
 ```php
 return [
-    'base_domain' => 'crosescolar.cat',
-    'domains' => ['crosescolar.com'],
+    'base_domain' => 'esportweb.cat',
+    'domains' => ['crosescolar.cat'],
     'console' => ['admin'],
     'reserved' => [],
 
@@ -367,10 +375,12 @@ pantalla**: apunteu-la, no es tornarà a veure.
 
 Proveu-ho:
 
-- `https://crosescolar.cat` → la pàgina pública, encara sense cap cros.
-- `https://admin.crosescolar.cat` → el panell, que demana les credencials.
-- `https://crosescolar.com` → ha de redirigir a `https://crosescolar.cat`.
-- `https://elquesigui.crosescolar.cat` → «aquesta adreça no existeix».
+- `https://esportweb.cat` → la pàgina pública d'EsportWeb, encara sense cap web.
+- `https://admin.esportweb.cat` → el panell, que demana les credencials.
+- `https://crosescolar.cat` → la **seva** pàgina pública, que parla de cros
+  escolars. No redirigeix enlloc: és un altre web.
+- `https://www.esportweb.cat` → ha de redirigir a `https://esportweb.cat`.
+- `https://elquesigui.esportweb.cat` → «aquesta adreça no existeix».
 
 ## 8. Feines automàtiques
 
@@ -425,15 +435,37 @@ els noms que cobreix. Amb això:
 
 ## La portada i els textos legals
 
-Tot el que es veu a `crosescolar.cat` s'edita des del panell de
-superadministració, a **Configuració**:
+Tot el que es veu a la pàgina pública s'edita des del panell de
+superadministració, a **Configuració**. Com que hi ha **una pàgina per domini**,
+aquests apartats porten a dalt de tot les pestanyes amb els dominis: trieu de
+quin n'esteu canviant les coses. Els apartats que no en porten —el correu, els
+pagaments, la vigilància— són de tota la plataforma i valen per a tots.
 
-| Apartat | Què s'hi toca |
-|---|---|
-| **La portada** | Imatge de fons del banner i l'opacitat del vel, la frase de sobre i la de sota el títol, els tres passos de «Com funciona» i les **preguntes freqüents** |
-| **Imatge** | Logotip, icona i colors |
-| **Legal i galetes** | Condicions del servei, privadesa, política de galetes i l'avís que surt en entrar |
-| **SEO i cercadors** | Descripció per a Google i verificació de Search Console |
+| Apartat | Què s'hi toca | Per domini |
+|---|---|---|
+| **El servei** | El nom, la frase de la portada, de què parla el web i el text dels botons | sí |
+| **La portada** | Imatge de fons del banner i l'opacitat del vel, la frase de sobre i la de sota el títol, el títol del llistat, els tres passos de «Com funciona» i les **preguntes freqüents** | sí |
+| **Funcionalitats** | La pàgina `/funcionalitats` i la seva llista | sí |
+| **Imatge** | Logotip, icona i colors | sí |
+| **Legal i galetes** | Condicions del servei, privadesa, política de galetes i l'avís que surt en entrar | sí |
+| **SEO i cercadors** | Descripció per a Google i verificació de Search Console | sí |
+| **Sol·licituds** | Si s'accepten altes noves i si surt el llistat | sí |
+| La resta | Correu, pagaments, suport, vigilància i actualitzacions | no |
+
+### Com neix la pàgina d'un domini
+
+El primer cop que s'engega, cada domini es queda una còpia pròpia de tots
+aquests textos:
+
+- El **domini principal** hereta el que ja hi hagués desat, de manera que un
+  servei que ja funcionava es queda igual que estava.
+- **La resta** neixen amb el text que els toca. Si el nom del domini surt a
+  `app/platform/site_content.php` —ara mateix, `crosescolar`— agafen el seu;
+  si no, els textos genèrics d'EsportWeb.
+
+A partir d'aquí mana el panell i aquell fitxer no torna a tocar res. Afegir un
+domini al servidor és, doncs, afegir-lo a `tenants/platform.php`, refer el
+certificat i entrar al panell: la seva pàgina ja hi és, a punt de reescriure.
 
 Les **preguntes freqüents** s'escriuen en una llista de parelles pregunta i
 resposta. Surten a la portada desplegables i, alhora, s'envien als cercadors en

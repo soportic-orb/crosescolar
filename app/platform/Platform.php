@@ -38,6 +38,9 @@ class Platform
         Db::setConnection($pdo);
         // La plataforma té els seus propis camps de configuració.
         Settings::useSchema(require CROS_APP . '/platform/config_schema.php');
+        // I cada domini té la seva pàgina pública, amb el seu text.
+        Site::activate(Tenancy::domain() !== '' ? Tenancy::domain() : self::domain(self::$root));
+        self::ensureSites();
         self::primeSettings($settings);
 
         return $pdo;
@@ -93,10 +96,10 @@ class Platform
         $mail = (array) ($settings['mail'] ?? []);
         $monitor = (array) ($settings['monitor'] ?? []);
         $backups = (array) ($settings['backups'] ?? []);
-        $domain = (string) ($settings['base_domain'] ?? 'crosescolar.cat');
+        $domain = (string) ($settings['base_domain'] ?? 'esportweb.cat');
         $file = [
-            'site_name' => (string) ($settings['name'] ?? 'Cros Escolar'),
-            'mail_from_name' => (string) ($mail['from_name'] ?? ($settings['name'] ?? 'Cros Escolar')),
+            'site_name' => (string) ($settings['name'] ?? 'EsportWeb'),
+            'mail_from_name' => (string) ($mail['from_name'] ?? ($settings['name'] ?? 'EsportWeb')),
             'mail_from_email' => (string) ($mail['from_email'] ?? ('no-reply@' . $domain)),
             'mail_admin_notify' => (string) ($mail['notify'] ?? ('hola@' . $domain)),
             'mail_transport' => (string) ($mail['transport'] ?? 'mail'),
@@ -131,12 +134,40 @@ class Platform
         foreach (Db::all('SELECT k FROM settings') as $row) {
             $existing[$row['k']] = true;
         }
+        $scope = Settings::scopeName();
+        Settings::scope();
         foreach (self::fileValues($settings) as $key => $value) {
             if (!isset($existing[$key]) && (string) $value !== '') {
                 Settings::set($key, (string) $value);
             }
         }
+        // Primer els textos de cada domini, que el principal hereta el que
+        // hi hagi desat: si s'escrivissin abans els valors per defecte, els
+        // heretaria a ells i no pas els seus.
+        Site::seed(self::$root);
         Settings::seedDefaults();
+        if ($scope !== '') {
+            Site::activate(Site::current());
+        }
+    }
+
+    /**
+     * Si algun domini encara no té els seus textos, els hi escriu.
+     *
+     * Passa el primer cop després d'actualitzar i quan s'afegeix un domini
+     * nou al servidor. Val una comprovació a la memòria, que ja hi és.
+     */
+    private static function ensureSites(): void
+    {
+        $desat = Settings::load();
+        if ($desat === [] || !Site::incomplete($desat, self::$root)) {
+            return; // o hi són tots, o encara no hi ha base de dades
+        }
+        try {
+            Site::seed(self::$root);
+        } catch (\Throwable $e) {
+            log_line('platform', 'No s\'han pogut escriure els textos dels dominis', ['error' => $e->getMessage()]);
+        }
     }
 
     /** On arriben els avisos de la plataforma. */

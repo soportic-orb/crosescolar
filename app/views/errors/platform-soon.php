@@ -1,6 +1,6 @@
 <?php /** Espai de la plataforma mentre encara s'està construint. */ ?>
 <div class="login-card" style="text-align:center">
-  <h1><?= !empty($console) ? 'Panell de superadministració' : 'Cros Escolar · Plataforma' ?></h1>
+  <h1><?= !empty($console) ? 'Panell de superadministració' : 'EsportWeb · Plataforma' ?></h1>
   <p class="sub">
     <?= !empty($console)
         ? 'El panell de gestió de clients i instàncies encara no està publicat.'
