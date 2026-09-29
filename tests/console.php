@@ -51,6 +51,7 @@ use Cros\Platform\Instance;
 use Cros\Platform\Charge;
 use Cros\Platform\Invoice;
 use Cros\Platform\Plan;
+use Cros\Platform\Site;
 use Cros\Platform\Platform;
 use Cros\Platform\Provisioner;
 
@@ -1445,6 +1446,31 @@ try {
     $inventat = $web('GET', '/configuracio/general?domini=uncosinventat.test');
     check('Un domini que no és nostre no s\'edita',
         $inventat['status'] === 200 && str_contains($inventat['body'], 'value="Cros Escolar del Penedès"'));
+
+    echo "\n== Afegir un domini més endavant ==\n";
+    // Un domini que s'afegeix quan la plataforma ja fa dies que roda no ha
+    // d'heretar el text del web que hi havia, ni encara que passi a ser el
+    // principal: el que hi ha desat sense àmbit és de l'altre, no seu.
+    $altraArrel = $site . '-ampliat';
+    @mkdir($altraArrel . '/tenants', 0775, true);
+    copy($site . '/tenants/platform.php', $altraArrel . '/tenants/platform.php');
+    $fitxer = (string) file_get_contents($altraArrel . '/tenants/platform.php');
+    $fitxer = str_replace(
+        "'base_domain' => 'crosescolar.test'",
+        "'base_domain' => 'esportweb.nou'",
+        $fitxer
+    );
+    file_put_contents($altraArrel . '/tenants/platform.php', $fitxer);
+
+    Site::seed($altraArrel);
+    check('El domini nou neix amb el text d\'EsportWeb',
+        (string) Db::val("SELECT v FROM settings WHERE k = 'site:esportweb.nou:site_name'", [], '') === 'EsportWeb',
+        (string) Db::val("SELECT v FROM settings WHERE k = 'site:esportweb.nou:site_name'", [], '(res)'));
+    check('I no s\'endú el de qui ja hi era',
+        (string) Db::val("SELECT v FROM settings WHERE k = 'site:crosescolar.test:site_name'", [], '') === 'Cros Escolar del Penedès');
+    check('Que es queda igual que estava',
+        (string) Db::val("SELECT v FROM settings WHERE k = 'site:esportweb.test:site_name'", [], '') === 'EsportWeb Catalunya');
+    exec('rm -rf ' . escapeshellarg($altraArrel));
 
     echo "\n== Registre lliure ==\n";
     $portada = $web('GET', '/', [], 'esportweb.test');

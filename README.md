@@ -89,7 +89,7 @@ Instruccions detallades (nginx, permisos, Stripe, correu): [`docs/instalacio.md`
 | [`docs/actualitzacions.md`](docs/actualitzacions.md) | Sistema OTA, paquets i còpies de seguretat |
 | [`docs/manual.md`](docs/manual.md) | Manual d'ús del panell per a l'AFA |
 | [`docs/pagaments.md`](docs/pagaments.md) | Els dos sistemes de cobrament i les passarel·les |
-| [`docs/vps.md`](docs/vps.md) | Muntar la plataforma en un VPS, de zero |
+| [`docs/vps.md`](docs/vps.md) | Muntar la plataforma en un VPS, de zero, i **afegir-hi un domini nou** |
 | [`docs/cloudflare-dns.md`](docs/cloudflare-dns.md) | Passar el DNS a Cloudflare i tenir el comodí renovant-se sol |
 | [`docs/acme-dns.md`](docs/acme-dns.md) | El mateix sense moure el DNS, amb acme-dns al vostre servidor |
 | [`docs/nginx.conf`](docs/nginx.conf) | Blocs de configuració per a nginx |

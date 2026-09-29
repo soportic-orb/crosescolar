@@ -3,6 +3,15 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.34.1] — 2026-09-29
+
+### Corregit
+- **Un domini afegit més endavant ja no s'endú el text del web que hi havia.**
+  L'herència dels textos de sempre és una sola vegada, quan s'actualitza i
+  encara no hi ha cap domini escrit. Abans es mirava només si el domini era el
+  primer de la llista, de manera que posar `esportweb.cat` al davant li donava
+  la portada del cros en comptes de la seva.
+
 ## [1.34.0] — 2026-09-29
 
 ### Afegit

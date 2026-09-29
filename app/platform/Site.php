@@ -115,10 +115,16 @@ final class Site
     /**
      * Fa el que calgui perquè cada domini tingui els seus textos.
      *
-     * El domini principal es queda el que ja hi havia desat, que és el que
-     * es veia abans que hi hagués una pàgina per domini. La resta neixen
-     * amb el text que els toca —el de site_content.php si n'hi ha, i si no
-     * el de l'esquema— sense heretar el del veí.
+     * El primer cop de tots —just després d'actualitzar—, el domini
+     * principal es queda el que ja hi havia desat, que és el que es veia
+     * abans que hi hagués una pàgina per domini. La resta neixen amb el text
+     * que els toca —el de site_content.php si n'hi ha, i si no el de
+     * l'esquema— sense heretar el del veí.
+     *
+     * Aquella herència és una sola vegada i es fa quan encara no hi ha cap
+     * domini escrit. Un domini que s'afegeixi més endavant, encara que passi
+     * a ser el principal, neix de nou: el que hi ha desat sense àmbit és del
+     * web que hi havia, no seu.
      *
      * Cada opció es mira per separat, de manera que una que s'afegeixi més
      * endavant també arriba als dominis que ja hi eren.
@@ -136,11 +142,20 @@ final class Site
         $previ = Settings::scopeName();
         Settings::scope();
         $defaults = Settings::defaults();
+        // Hi ha cap domini escrit ja? Si n'hi ha, això no és l'actualització:
+        // és un domini nou, i el que hi hagi desat sense àmbit no és seu.
+        $estrena = true;
+        foreach ($domains as $domain) {
+            if (isset($desat[self::prefix($domain) . self::SEEDED])) {
+                $estrena = false;
+                break;
+            }
+        }
         foreach ($domains as $i => $domain) {
             $prefix = self::prefix($domain);
             // Només el principal hereta el que hi havia abans dels dominis,
-            // i només el primer cop.
-            $hereta = $i === 0 && !isset($desat[$prefix . self::SEEDED]);
+            // i només el primer cop de tots.
+            $hereta = $estrena && $i === 0;
             $birth = self::birth($domain);
             foreach (self::keys() as $key) {
                 if (array_key_exists($prefix . $key, $desat)) {

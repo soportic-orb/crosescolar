@@ -753,3 +753,285 @@ sudo -u www-data php tools/platform.php instancies
 | Els tiquets no arriben per correu | L'adreça del departament o la de Configuració → Opcions del suport; mireu el registre de correus |
 | Un client no pot publicar el seu web | Té el pagament d'activació pendent: mireu-ho a Pagaments |
 | Els pagaments es queden pendents | L'avís de Stripe no arriba: comproveu `https://<domini>/pagament/avis` i el secret del webhook |
+
+---
+
+# Afegir un domini nou a una plataforma que ja roda
+
+Aquesta és la feina d'afegir `esportweb.cat` a un servidor que ja serveix
+`crosescolar.cat`, amb el certificat comodí i la renovació automàtica, tal com
+es va fer amb el primer domini. Compteu-hi una hora llarga, la major part
+esperant que el DNS es propagui. **Els webs que ja funcionen no s'aturen** si
+feu els passos en aquest ordre.
+
+Els exemples fan servir `esportweb.cat` com a domini nou, `/var/www/crosescolar`
+com a arrel i `www-data` com a usuari del servidor web. Canvieu-ho pel que
+tingueu.
+
+## 0. Abans de res: actualitzeu a 1.34.0 o posterior
+
+L'ordre importa. La primera vegada que s'engega la 1.34.0, el domini que hi
+hagi de principal es queda tot el que ja teníeu escrit a la configuració (el
+nom, la portada, les preguntes, els textos legals). Si afegíssiu el domini nou
+**abans** d'actualitzar, seria ell qui s'ho quedaria i `crosescolar.cat`
+naixeria amb els textos de fàbrica.
+
+```bash
+cd /var/www/crosescolar
+php -r 'echo (require "app/version.php")["version"], "\n";'   # 1.34.0 o més
+```
+
+També ho teniu a baix de tot del menú del Panell de Superadministració.
+
+Si encara no hi sou: Panell de Superadministració → Sistema → Actualitzacions →
+Comprovar ara. Després entreu a `admin.crosescolar.cat` un cop, que és qui
+aplica les migracions de la plataforma, i comproveu que la portada de
+`crosescolar.cat` continua dient el que deia.
+
+## 1. El registre del domini i el DNS
+
+`esportweb.cat` ha d'estar registrat i la seva zona, a **Cloudflare** (o al
+proveïdor amb API que feu servir per a l'altre domini). Si el domini és nou i
+encara no hi és:
+
+1. Cloudflare → **Add a site** → `esportweb.cat` → pla **Free**.
+2. Copieu els dos servidors de noms que us doni.
+3. Al registrador del domini, canvieu-hi els servidors de noms.
+
+Els registres que ha de tenir, tots tres en **«DNS only»** (núvol gris, mai
+taronja: amb el proxy, els comodins no funcionen al pla gratuït i l'nginx deixa
+de saber qui entra):
+
+| Tipus | Nom | Valor | Proxy |
+|---|---|---|---|
+| A | `@` | la IP del servidor | DNS only |
+| A | `admin` | la IP del servidor | DNS only |
+| A | `*` | la IP del servidor | DNS only |
+
+> El registre `admin` només cal si algun dia voleu que el panell respongui
+> també per aquest domini. El panell viu al **domini principal**, i el
+> definitiu serà `admin.esportweb.cat` a partir del pas 3.
+
+Comproveu-ho abans de continuar:
+
+```bash
+dig +short esportweb.cat A @1.1.1.1
+dig +short admin.esportweb.cat A @1.1.1.1
+dig +short qualsevolcosa.esportweb.cat A @1.1.1.1   # el comodí
+dig +short esportweb.cat NS @1.1.1.1                # han de ser els de Cloudflare
+```
+
+Els tres primers han de donar la IP del servidor. Si no, no seguiu: el
+certificat fallaria i el web donaria un error de nom.
+
+## 2. El testimoni de l'API per al certificat
+
+El certificat comodí només es pot validar pel DNS, i perquè es renovi sol cal
+que el certbot pugui posar els registres ell mateix. Si el domini nou és al
+**mateix compte de Cloudflare** que l'altre, podeu ampliar el testimoni que ja
+teniu o fer-ne un de nou que cobreixi els dos:
+
+Cloudflare → la vostra icona → **My Profile** → **API Tokens** → **Create
+Token** → plantilla **Edit zone DNS** → **Use template**.
+
+- **Permissions**: `Zone` · `DNS` · `Edit`.
+- **Zone Resources**: `Include` · `Specific zone` · `esportweb.cat`
+  (i, si en feu un de sol per als dos, afegiu-hi també `crosescolar.cat`).
+
+Copieu-lo: només es veu un cop. Al servidor, com a root:
+
+```bash
+install -m 600 /dev/null /etc/letsencrypt/cloudflare.ini
+printf 'dns_cloudflare_api_token = EL-TESTIMONI\n' > /etc/letsencrypt/cloudflare.ini
+chmod 600 /etc/letsencrypt/cloudflare.ini
+```
+
+Si ja teníeu el fitxer i el testimoni val per als dos dominis, no cal tocar-hi
+res.
+
+## 3. Dir-li a la plataforma que té un domini més
+
+Com a root, editeu `tenants/platform.php`. **El primer de la llista és el
+principal**: és on viu el panell de superadministració i és el domini que el
+codi fa servir per a les adreces dels correus.
+
+```php
+return [
+    'base_domain' => 'esportweb.cat',
+    'domains' => ['crosescolar.cat'],
+    'console' => ['admin'],
+    …
+];
+```
+
+Amb això, el panell passa a ser `admin.esportweb.cat`. `admin.crosescolar.cat`
+continua funcionant, però hi mena amb una redirecció.
+
+No cal tocar res més: el domini nou neix amb els textos genèrics d'EsportWeb i
+`crosescolar.cat` es queda exactament els seus. Ho podreu comprovar al pas 7.
+
+## 4. nginx
+
+L'nginx ha de servir els dos dominis i saber trobar els fitxers pujats de cada
+subdomini. Hi ha dos fitxers a tocar.
+
+**El dels mapes** (`/etc/nginx/conf.d/cros-map.conf`): afegiu el domini nou al
+patró. Fixeu-vos que el patró és una alternativa amb `|` i que els punts van
+escapats:
+
+```nginx
+map $host $cros_slug {
+    default "";
+    "~^(?<sub>[a-z0-9][a-z0-9-]*)\.(esportweb\.cat|crosescolar\.cat)$" $sub;
+}
+
+map $host $cros_uploads {
+    default "/var/www/crosescolar/uploads";
+    "~^www\.(esportweb\.cat|crosescolar\.cat)$" "/var/www/crosescolar/uploads";
+    "~^admin\.(esportweb\.cat|crosescolar\.cat)$" "/var/www/crosescolar/uploads";
+    "~^(?<pujades>[a-z0-9][a-z0-9-]*)\.(esportweb\.cat|crosescolar\.cat)$" "/var/www/crosescolar/tenants/$pujades/uploads";
+}
+```
+
+> Si us salteu el segon mapa, la portada d'`esportweb.cat` buscaria la seva
+> imatge dins de la carpeta d'un client i us sortiria un 404. És l'errada més
+> típica d'aquest pas.
+
+**El del lloc** (`/etc/nginx/sites-available/crosescolar`): afegiu els noms nous
+als dos blocs `server_name`, el del 443 i el del 80:
+
+```nginx
+server_name esportweb.cat *.esportweb.cat crosescolar.cat *.crosescolar.cat;
+```
+
+I recarregueu:
+
+```bash
+nginx -t && systemctl reload nginx
+```
+
+## 5. El certificat comodí
+
+Un sol certificat amb els quatre noms. El **`--cert-name` és important**: fa que
+substitueixi el que ja teniu en comptes de crear-ne un de nou en una carpeta
+diferent, i així l'nginx continua trobant el bo sense haver-hi de tocar res.
+
+Com a root:
+
+```bash
+apt install -y python3-certbot-dns-cloudflare   # si no hi era
+
+certbot certonly \
+  --dns-cloudflare --dns-cloudflare-credentials /etc/letsencrypt/cloudflare.ini \
+  --dns-cloudflare-propagation-seconds 30 \
+  --cert-name crosescolar.cat \
+  --agree-tos \
+  -d esportweb.cat -d '*.esportweb.cat' \
+  -d crosescolar.cat -d '*.crosescolar.cat'
+
+systemctl reload nginx
+```
+
+> Es continua dient `crosescolar.cat` perquè és el nom de la carpeta a
+> `/etc/letsencrypt/live/` on apunta l'nginx. És només una etiqueta; el
+> certificat cobreix els quatre noms igualment. Si el voleu reanomenar, useu
+> `certbot certificates` per veure'l, `--cert-name esportweb.cat` en una
+> comanda nova i canvieu les dues línies `ssl_certificate*` del vhost abans de
+> recarregar.
+
+## 6. Comprovar que la renovació no demana ningú
+
+Aquest pas és el que dona sentit a tot plegat:
+
+```bash
+certbot renew --dry-run
+```
+
+Ha d'acabar sol, sense demanar-vos cap registre TXT. I mireu amb quin
+autenticador ha quedat:
+
+```bash
+certbot certificates | grep -A 5 'crosescolar.cat'
+grep authenticator /etc/letsencrypt/renewal/crosescolar.cat.conf
+# ha de dir: authenticator = dns-cloudflare
+```
+
+La renovació la fa el cron **de root** que ja hi ha posat des de la
+instal·lació. El panell no pot renovar res —per renovar cal ser root i el
+servidor web no ho és ni ho ha de ser—, de manera que el guió deixa el resultat
+en un fitxer i el panell el llegeix:
+
+```bash
+crontab -l | grep renovar-certificat
+# 17 4 * * *   /var/www/crosescolar/tools/renovar-certificat.sh /var/www/crosescolar
+```
+
+Si no hi és, afegiu-l'hi amb `crontab -e` (el de root, no el de `www-data`).
+Per provar-lo ara mateix:
+
+```bash
+/var/www/crosescolar/tools/renovar-certificat.sh /var/www/crosescolar
+cat /var/www/crosescolar/storage/certificat.json
+```
+
+I per veure com ho veu el panell, sense esperar la vigilància:
+
+```bash
+cd /var/www/crosescolar
+sudo -u www-data php tools/platform.php certificat
+```
+
+Ha de dir que cobreix els quatre noms i **no** ha de sortir cap línia
+«ATENCIÓ, no cobreix».
+
+## 7. El contingut del web nou
+
+Entreu a `https://admin.esportweb.cat` i aneu a **Configuració**. Els apartats
+que fan la pàgina pública porten a dalt les pestanyes dels dos dominis:
+
+| Apartat | Què hi revisareu del domini nou |
+|---|---|
+| **El servei** | El nom, la frase de la portada, de què va el web i el text dels botons |
+| **La portada** | Banner, títol del llistat, els tres passos i les preguntes freqüents |
+| **Funcionalitats** | La llista de `/funcionalitats` |
+| **Imatge** | Logotip, icona i colors |
+| **Legal i galetes** | Condicions, privadesa i galetes |
+| **SEO i cercadors** | Descripció per a Google i la verificació de Search Console |
+| **Altes** | Si s'hi accepten altes i si surt el llistat |
+
+Trieu la pestanya `esportweb.cat` i repasseu-ho. Ha de venir tot amb el text
+genèric d'EsportWeb; si hi veiessiu text del cros, és que us vau saltar el pas
+0 i ho podeu corregir aquí mateix.
+
+La resta —clients, instàncies, facturació, correu, suport, enviaments— és la
+mateixa per als dos dominis i no té pestanyes.
+
+## 8. Comprovacions finals
+
+```bash
+curl -sI https://esportweb.cat/            | head -1   # 200
+curl -sI https://www.esportweb.cat/        | head -1   # 301 cap a esportweb.cat
+curl -sI https://admin.esportweb.cat/      | head -1   # 302 cap a /acces
+curl -sI https://crosescolar.cat/          | head -1   # 200, i el seu text
+curl -sI https://elquesigui.esportweb.cat/ | head -1   # 404: no és de ningú
+```
+
+I al navegador:
+
+- `https://esportweb.cat` ha de parlar de curses i activitats esportives, i el
+  formulari d'alta ha de deixar triar entre els dos dominis al desplegable.
+- `https://crosescolar.cat` ha de continuar dient el de sempre.
+- Creeu-vos un web de prova des del formulari, mireu que us arribi el correu i
+  que el botó us faci entrar al panell. Després esborreu la instància des de
+  **Instàncies**.
+
+## Si alguna cosa no va
+
+| Símptoma | Què mirar |
+|---|---|
+| «Aquesta adreça no existeix» al domini nou | No és a `tenants/platform.php`, o el fitxer té un error de sintaxi: `php -l tenants/platform.php` |
+| Error de certificat | El certificat no cobreix el nom: `certbot certificates` i repetiu el pas 5 |
+| La imatge de la portada dona 404 | Falta el domini al mapa `$cros_uploads` del pas 4 |
+| El panell no respon a `admin.esportweb.cat` | `base_domain` encara no és `esportweb.cat`, o falta el registre A d'`admin` |
+| El domini nou ensenya el text del cros | Es va afegir abans d'actualitzar; corregiu-ho a la pestanya del pas 7 |
+| `certbot renew --dry-run` demana un TXT | El certificat encara és de validació manual: repetiu el pas 5, que el reescriu amb `dns-cloudflare` |
