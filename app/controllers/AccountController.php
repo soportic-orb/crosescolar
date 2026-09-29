@@ -293,6 +293,43 @@ class AccountController extends Controller
             // Amb «session» només s'hi veu el que s'ha inscrit des d'aquest navegador.
             'scope' => $email !== '' ? 'email' : 'session',
             'registrations' => $registrations,
+            // Els pagaments només es poden ensenyar si s'ha demostrat l'adreça:
+            // amb la sessió del navegador no n'hi ha prou per veure diners.
+            'payments' => $email !== '' ? \Cros\Models\Payment::forEmail($email) : [],
+        ]);
+    }
+
+    /**
+     * Els pagaments fets a aquesta organització.
+     *
+     * Cal haver entrat amb el codi que s'envia al correu: qui acaba d'inscriure
+     * algú des d'aquest navegador pot corregir-ne les dades, però per veure el
+     * que s'ha pagat cal haver demostrat que l'adreça és seva.
+     */
+    public function payments(): void
+    {
+        $this->ensureEnabled();
+        $email = self::email();
+        if ($email === '') {
+            flash('info', 'Per veure els vostres pagaments, entreu amb el codi que us enviem al correu.');
+            redirect('/les-meves-inscripcions?codi=1');
+        }
+
+        $payments = \Cros\Models\Payment::forEmail($email);
+        $documents = [];
+        foreach ($payments as $payment) {
+            $document = \Cros\Models\Billing::document((int) $payment['id']);
+            if ($document) {
+                $documents[(int) $payment['id']] = $document;
+            }
+        }
+
+        $this->view('public/account-payments', [
+            'title' => 'Els meus pagaments',
+            'noindex' => true,
+            'email' => $email,
+            'payments' => $payments,
+            'documents' => $documents,
         ]);
     }
 

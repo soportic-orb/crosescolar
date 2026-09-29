@@ -190,6 +190,39 @@ $required = str_contains((string) ($field['rules'] ?? ''), 'required');
         </span>
       <?php break; ?>
 
+      <?php case 'features': ?>
+        <?php
+        // Les funcionalitats que s'ensenyen al web: icona, títol i explicació.
+        // Es desen igual que les preguntes freqüents, com un sol valor en JSON:
+        // per a una llista que s'edita sencera d'una tirada no cal cap taula.
+        $rows = json_decode((string) $value, true);
+        $rows = is_array($rows) ? array_values($rows) : [];
+        $rows[] = ['icon' => '', 'title' => '', 'text' => ''];
+        $icones = \Cros\Core\Icons::names();
+        ?>
+        <div class="faq-rows" data-feature-rows>
+          <?php foreach ($rows as $i => $row): ?>
+            <div class="feature-row">
+              <select name="<?= e($name) ?>_icon[]" aria-label="Icona">
+                <option value="">Sense icona</option>
+                <?php foreach ($icones as $icona): ?>
+                  <option value="<?= e($icona) ?>" <?= (string) ($row['icon'] ?? '') === $icona ? 'selected' : '' ?>>
+                    <?= e($icona) ?>
+                  </option>
+                <?php endforeach; ?>
+              </select>
+              <input type="text" name="<?= e($name) ?>_title[]" value="<?= e((string) ($row['title'] ?? '')) ?>"
+                     placeholder="El que sap fer">
+              <textarea name="<?= e($name) ?>_text[]" rows="3" placeholder="Una explicació curta"><?= e((string) ($row['text'] ?? '')) ?></textarea>
+            </div>
+          <?php endforeach; ?>
+        </div>
+        <span class="hint">
+          Les que deixeu sense títol no es desen. Per treure'n una, buideu-li el títol i deseu.
+          <?= $hint !== '' ? e($hint) : '' ?>
+        </span>
+      <?php break; ?>
+
       <?php default: ?>
         <input type="<?= e(in_array($type, ['email', 'url', 'tel', 'number', 'date', 'time'], true) ? $type : 'text') ?>"
                id="<?= e($id) ?>" name="<?= e($name) ?>" value="<?= e((string) $value) ?>"

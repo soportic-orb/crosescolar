@@ -7,6 +7,8 @@ use Cros\Core\Controller;
 use Cros\Core\Db;
 use Cros\Models\Bib;
 use Cros\Models\Content;
+use Cros\Models\FeeType;
+use Cros\Models\Payment;
 use Cros\Models\Registration;
 
 /** Inscripcions públiques a les curses. */
@@ -35,6 +37,8 @@ class RegistrationController extends Controller
             'description' => excerpt(strip_tags((string) setting('registrations_intro', '')), 160),
             'categories' => Content::categories(),
             'open' => self::open(),
+            'fees' => FeeType::charging() ? FeeType::all() : [],
+            'charging' => FeeType::charging(),
             'errors' => [],
         ]);
     }
@@ -88,6 +92,13 @@ class RegistrationController extends Controller
         }
         $errors = $this->validate($rules, $data);
 
+        // Si la inscripció es cobra, cal haver triat un tipus dels que hi ha.
+        $charging = FeeType::charging();
+        $data['fee_type_id'] = (string) input('fee_type_id');
+        if ($charging && FeeType::choosable((int) $data['fee_type_id']) === null) {
+            $errors['fee_type_id'] = 'Trieu un tipus d\'inscripció.';
+        }
+
         if ($errors) {
             set_old($data);
             flash('error', 'Reviseu les dades marcades.');
@@ -95,6 +106,8 @@ class RegistrationController extends Controller
                 'title' => setting('registrations_title', 'Inscripció a la cursa'),
                 'categories' => Content::categories(),
                 'open' => true,
+                'fees' => $charging ? FeeType::all() : [],
+                'charging' => $charging,
                 'errors' => $errors,
             ]);
             return;
@@ -118,10 +131,41 @@ class RegistrationController extends Controller
             $data['category_id'] = $category['id'] ?? '';
         }
 
-        $registration = Registration::create($data);
+        // Si la inscripció es cobra, neix pendent i no s'avisa ningú fins que
+        // el pagament hagi entrat: una inscripció confirmada que després no es
+        // paga és pitjor que no tenir-la.
+        $fee = $charging ? FeeType::choosable((int) $data['fee_type_id']) : null;
+        $charging = $fee !== null && (int) $fee['price_cents'] > 0;
+
+        $registration = Registration::create($data, [
+            'status' => $charging ? 'pending' : 'confirmed',
+            'notify' => !$charging,
+            'fee_type_id' => $fee['id'] ?? 0,
+        ]);
         // Qui acaba d'inscriure algú pot anar directament a «Les meves
         // inscripcions» i corregir-hi el que calgui, sense esperar cap codi.
         AccountController::remember((int) ($registration['id'] ?? 0));
+
+        if ($charging) {
+            $payment = Payment::create([
+                'concept' => 'registration',
+                'reference_id' => (int) $registration['id'],
+                'payer_name' => (string) ($data['tutor_name'] ?: trim($data['first_name'] . ' ' . $data['last_name'])),
+                'payer_email' => (string) $data['tutor_email'],
+                'payer_phone' => (string) ($data['tutor_phone'] ?? ''),
+            ], [[
+                'description' => (string) $fee['name'] . ' · ' . trim($data['first_name'] . ' ' . $data['last_name']),
+                'qty' => 1,
+                'unit_price_cents' => (int) $fee['price_cents'],
+            ]]);
+            Db::update('registrations', [
+                'payment_id' => (int) $payment['id'],
+                'updated_at' => date('Y-m-d H:i:s'),
+            ], 'id = :id', ['id' => $registration['id']]);
+
+            redirect('/pagament/' . $payment['token'] . '/anar');
+        }
+
         redirect('/inscripcio/confirmada/' . $registration['code']);
     }
 

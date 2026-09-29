@@ -599,6 +599,108 @@ req('POST', $base . '/admin/configuracio/tickets', [
 ]);
 check('El web torna al mode informatiu', !str_contains(req('GET', $base . '/punt-de-recarrega', [], ['anon' => true])['body'], 'name="qty['));
 
+echo "\n== Inscripcions de pagament ==\n";
+// Un tipus d'inscripció amb preu i el cobrament activat.
+$feeForm = req('GET', $base . '/admin/contingut/tipus-inscripcio/nou');
+check('Hi ha el formulari de tipus d\'inscripció', $feeForm['status'] === 200);
+req('POST', $base . '/admin/contingut/tipus-inscripcio/nou', [
+    '_token' => token($feeForm['body']),
+    'name' => 'Inscripció general',
+    'description' => 'Inclou dorsal i avituallament',
+    'price_cents' => '5,00',
+    'sort_order' => '0',
+    'active' => '1',
+]);
+$fees = req('GET', $base . '/admin/contingut/tipus-inscripcio');
+check('El tipus es desa', str_contains($fees['body'], 'Inscripció general'));
+check('Amb el preu en euros', str_contains(text($fees['body']), '5,00'));
+
+$regConf = req('GET', $base . '/admin/configuracio/registrations');
+req('POST', $base . '/admin/configuracio/registrations', array_merge(formData($regConf['body']), [
+    '_token' => token($regConf['body']),
+    'registrations_payment' => '1',
+]));
+$form = req('GET', $base . '/inscripcio');
+check('El formulari demana el tipus d\'inscripció', str_contains($form['body'], 'name="fee_type_id"'));
+check('I en diu el preu', str_contains(text($form['body']), 'Inscripció general'));
+preg_match('/name="fee_type_id" value="(\d+)"/', $form['body'], $m);
+$feeId = (string) ($m[1] ?? '0');
+check('Amb el seu identificador al formulari', $feeId !== '0');
+
+// Sense triar-ne cap no es desa.
+$senseTipus = req('POST', $base . '/inscripcio', [
+    '_token' => token($form['body']),
+    'first_name' => 'Roc', 'last_name' => 'Puig' . $unique, 'birth_year' => '2015', 'gender' => 'masculi',
+    'tutor_name' => 'Marta Puig', 'tutor_email' => 'marta.pagament@example.test',
+    'consent_data' => '1', 'consent_rules' => '1',
+]);
+check('Sense tipus d\'inscripció no es desa',
+    $senseTipus['status'] === 200 && str_contains(text($senseTipus['body']), 'Trieu un tipus d\'inscripció'));
+
+$inscrita = req('POST', $base . '/inscripcio', [
+    '_token' => token(req('GET', $base . '/inscripcio')['body']),
+    'first_name' => 'Roc', 'last_name' => 'Puig' . $unique, 'birth_year' => '2015', 'gender' => 'masculi',
+    'tutor_name' => 'Marta Puig', 'tutor_email' => 'marta.pagament@example.test',
+    'fee_type_id' => $feeId,
+    'consent_data' => '1', 'consent_rules' => '1',
+]);
+preg_match('#/pagament/([0-9a-f]{48})/anar#', $inscrita['headers'], $m);
+$payToken = (string) ($m[1] ?? '');
+check('Amb el tipus triat, se\'n va a pagar',
+    $inscrita['status'] === 302 && $payToken !== '', 'estat ' . $inscrita['status']);
+
+$llista = req('GET', $base . '/admin/inscripcions?q=Puig' . $unique);
+check('La inscripció queda pendent fins que es pagui',
+    str_contains(text($llista['body']), 'Pendent de pagament'), 'no hi diu pendent');
+
+$pagina = req('GET', $base . '/pagament/' . $payToken, [], ['anon' => true]);
+check('Qui té l\'enllaç en veu l\'estat', $pagina['status'] === 200 && str_contains($pagina['body'], 'P-' . date('Y')));
+check('Amb l\'import del tipus triat', str_contains(text($pagina['body']), '5,00'));
+check('I sense passarel·la se li diu', str_contains(text($pagina['body']), 'no es pot pagar en línia'));
+check('Un testimoni inventat no dona res',
+    req('GET', $base . '/pagament/' . str_repeat('a', 48), [], ['anon' => true])['status'] === 404);
+
+$panell = req('GET', $base . '/admin/pagaments?q=marta.pagament%40example.test');
+check('El panell de cobraments respon', $panell['status'] === 200 && str_contains($panell['body'], 'marta.pagament@example.test'));
+check('I avisa que no hi ha passarel·la triada',
+    str_contains(text(req('GET', $base . '/admin/pagaments')['body']), 'no heu triat cap passarel·la'));
+preg_match('#/admin/pagaments/(\d+)"#', $panell['body'], $m);
+$payId = (string) ($m[1] ?? '0');
+
+$fitxa = req('GET', $base . '/admin/pagaments/' . $payId);
+check('La fitxa del cobrament s\'obre', $fitxa['status'] === 200 && str_contains($fitxa['body'], 'Marta Puig'));
+$cobrat = req('POST', $base . '/admin/pagaments/' . $payId . '/accio', [
+    '_token' => token($fitxa['body']), 'action' => 'paid',
+]);
+check('Es pot cobrar en mà des del panell', $cobrat['status'] === 302);
+$llista = req('GET', $base . '/admin/inscripcions?q=Puig' . $unique);
+check('I llavors la inscripció queda confirmada',
+    str_contains(text($llista['body']), 'Puig' . $unique)
+    && !str_contains(text($llista['body']), 'Pendent de pagament'), 'encara hi diu pendent');
+
+$fitxa = req('GET', $base . '/admin/pagaments/' . $payId);
+check('Amb el seu rebut emès', (bool) preg_match('/R-\d{4}-\d{4}/', text($fitxa['body'])), 'no hi surt cap número');
+
+$pdf = req('GET', $base . '/pagament/' . $payToken . '/document', [], ['anon' => true]);
+check('Qui ha pagat se\'l pot descarregar',
+    $pdf['status'] === 200 && str_contains($pdf['headers'], 'application/pdf'), 'estat ' . $pdf['status']);
+check('Amb nom de fitxer', str_contains($pdf['headers'], '.pdf"'));
+$pdfPanell = req('GET', $base . '/admin/pagaments/' . $payId . '/document');
+check('I el panell també', $pdfPanell['status'] === 200 && str_contains($pdfPanell['headers'], 'application/pdf'));
+
+$llistat = req('GET', $base . '/admin/pagaments/documents');
+check('Surt al llistat de rebuts i factures', (bool) preg_match('/R-\d{4}-\d{4}/', text($llistat['body'])));
+check('El llistat diu què falta per poder facturar',
+    str_contains(text($llistat['body']), 'Per poder emetre factures falta'));
+
+// Es deixa com estava perquè la resta de proves no se'n ressentin.
+$regConf = req('GET', $base . '/admin/configuracio/registrations');
+$camps = array_merge(formData($regConf['body']), ['_token' => token($regConf['body'])]);
+unset($camps['registrations_payment']);
+req('POST', $base . '/admin/configuracio/registrations', $camps);
+check('El cobrament de les inscripcions es pot tornar a apagar',
+    !str_contains(req('GET', $base . '/inscripcio')['body'], 'name="fee_type_id"'));
+
 echo "\n== Exportacions ==\n";
 $csv = req('GET', $base . '/admin/comandes/exportar');
 check('Exportació CSV de comandes', $csv['status'] === 200 && str_contains($csv['headers'], 'text/csv'));

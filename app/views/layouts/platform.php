@@ -73,8 +73,10 @@ $platformLogo = (string) setting('platform_logo', '');
     <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="menu-plataforma" aria-label="Obre el menú">
       <?= \Cros\Core\Icons::svg('menu') ?>
     </button>
+    <?php $funcionalitats = \Cros\Core\Settings::bool('features_enabled', true); ?>
     <nav class="nav" id="menu-plataforma" aria-label="Menú principal">
       <a href="<?= e(url('/')) ?>#cros">Cros escolars</a>
+      <?php if ($funcionalitats): ?><a href="<?= e(url('/funcionalitats')) ?>">Funcionalitats</a><?php endif; ?>
       <a href="<?= e(url('/')) ?>#com-va">Com funciona</a>
       <a class="btn btn--accent btn--sm" href="<?= e(url('/')) ?>#formulari">Crea la web per al teu cros</a>
     </nav>
@@ -104,6 +106,7 @@ $platformLogo = (string) setting('platform_logo', '');
         <h4>La plataforma</h4>
         <ul class="footer-links">
           <li><a href="<?= e(url('/')) ?>#cros">Cros escolars</a></li>
+          <?php if ($funcionalitats): ?><li><a href="<?= e(url('/funcionalitats')) ?>">Funcionalitats</a></li><?php endif; ?>
           <li><a href="<?= e(url('/')) ?>#com-va">Com funciona</a></li>
           <li><a href="<?= e(url('/')) ?>#formulari">Crea la web per al teu cros</a></li>
         </ul>

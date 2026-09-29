@@ -22,8 +22,18 @@ class Registration
     public const CANCELLED_BY = ['familia' => 'La família', 'organitzacio' => 'L\'organització'];
 
 
-    public static function create(array $data): array
+    /**
+     * Desa una inscripció.
+     *
+     * Quan la inscripció es cobra, neix **pendent** i no s'avisa ningú: la
+     * confirmació i el correu arriben quan el pagament és bo
+     * ({@see self::confirmPayment()}). Si no es cobra res, tot va com sempre.
+     *
+     * @param array{status?:string,notify?:bool,fee_type_id?:int} $options
+     */
+    public static function create(array $data, array $options = []): array
     {
+        $status = (string) ($options['status'] ?? 'confirmed');
         $id = self::insert([
             'code' => self::generateCode(),
             'first_name' => $data['first_name'],
@@ -36,7 +46,8 @@ class Registration
             'tutor_email' => $data['tutor_email'] ? mb_strtolower($data['tutor_email']) : null,
             'tutor_phone' => $data['tutor_phone'] ?: null,
             'notes' => $data['notes'] ?: null,
-            'status' => 'confirmed',
+            'status' => isset(self::STATUSES[$status]) ? $status : 'confirmed',
+            'fee_type_id' => !empty($options['fee_type_id']) ? (int) $options['fee_type_id'] : null,
             'consent_data' => (int) ($data['consent_data'] ?? 0),
             'consent_image' => (int) ($data['consent_image'] ?? 0),
             'consent_rules' => (int) ($data['consent_rules'] ?? 0),
@@ -45,7 +56,39 @@ class Registration
             'updated_at' => date('Y-m-d H:i:s'),
         ]);
         $registration = self::find($id) ?? [];
+        if ($options['notify'] ?? true) {
+            self::notify($registration);
+        }
+        return $registration;
+    }
+
+    /**
+     * El pagament d'una inscripció ha entrat: es confirma i s'avisa la família.
+     *
+     * Es pot cridar dues vegades sense fer cap mal, perquè l'avís del servidor
+     * de la passarel·la i el retorn del navegador solen arribar tots dos.
+     */
+    public static function confirmPayment(int $id, array $payment = []): ?array
+    {
+        $registration = self::find($id);
+        if (!$registration || (string) $registration['status'] === 'cancelled') {
+            return $registration;
+        }
+        if ((string) $registration['status'] === 'confirmed' && !empty($registration['payment_id'])) {
+            return $registration; // ja estava
+        }
+        Db::update('registrations', [
+            'status' => 'confirmed',
+            'payment_id' => !empty($payment['id']) ? (int) $payment['id'] : ($registration['payment_id'] ?? null),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ], 'id = :id', ['id' => $id]);
+
+        $registration = self::find($id) ?? $registration;
         self::notify($registration);
+        log_line('registrations', 'Inscripció confirmada després del pagament', [
+            'code' => $registration['code'] ?? '', 'payment' => $payment['code'] ?? '',
+        ]);
+
         return $registration;
     }
 

@@ -1200,6 +1200,44 @@ try {
         'estat ' . ($desada !== '' ? $web('GET', '/uploads/' . $desada, [], 'crosescolar.test')['status'] : '?'));
     @unlink($fitxer);
 
+    echo "\n== La pàgina de funcionalitats ==\n";
+    $func = $web('GET', '/funcionalitats', [], 'crosescolar.test');
+    check('La pàgina respon', $func['status'] === 200, 'estat ' . $func['status']);
+    check('Amb la llista que ve de fàbrica',
+        str_contains(text($func['body']), 'Dorsals a punt d\'imprimir'));
+    check('I surt al menú',
+        str_contains($web('GET', '/', [], 'crosescolar.test')['body'], '/funcionalitats'));
+    check('I al mapa del web',
+        str_contains($web('GET', '/sitemap.xml', [], 'crosescolar.test')['body'], '/funcionalitats'));
+
+    $pantalla = $web('GET', '/configuracio/features');
+    check('S\'edita des del panell', $pantalla['status'] === 200 && str_contains($pantalla['body'], 'features_list_title'));
+    $desat = $web('POST', '/configuracio/features', array_merge(formData($pantalla['body']), [
+        '_token' => $token($pantalla['body']),
+        'features_enabled' => '1',
+        'features_list_icon' => ['trophy', ''],
+        'features_list_title' => ['Cronometratge', 'Sense explicació'],
+        'features_list_text' => ['Arribades per dorsal i classificació al moment.', ''],
+    ]));
+    check('S\'hi poden canviar les funcionalitats', $desat['status'] === 302);
+    $func = $web('GET', '/funcionalitats', [], 'crosescolar.test');
+    check('La pàgina ensenya les noves', str_contains($func['body'], 'Cronometratge'));
+    check('I descarta les files a mitges', !str_contains($func['body'], 'Sense explicació'));
+
+    $pantalla = $web('GET', '/configuracio/features');
+    $camps = array_merge(formData($pantalla['body']), [
+        '_token' => $token($pantalla['body']),
+        'features_list_icon' => ['trophy'],
+        'features_list_title' => ['Cronometratge'],
+        'features_list_text' => ['Arribades per dorsal i classificació al moment.'],
+    ]);
+    unset($camps['features_enabled']); // una casella sense marcar no s'envia
+    $tancada = $web('POST', '/configuracio/features', $camps);
+    check('Es pot amagar del tot', $tancada['status'] === 302
+        && $web('GET', '/funcionalitats', [], 'crosescolar.test')['status'] === 404);
+    check('I llavors tampoc no surt al mapa del web',
+        !str_contains($web('GET', '/sitemap.xml', [], 'crosescolar.test')['body'], '/funcionalitats'));
+
     echo "\n== Legal i galetes ==\n";
     $legal = $web('GET', '/configuracio/legal');
     check('Hi ha la pantalla legal',

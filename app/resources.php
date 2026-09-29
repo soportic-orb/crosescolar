@@ -197,6 +197,26 @@ return [
         ],
     ],
 
+    'tipus-inscripcio' => [
+        'table' => 'fee_types',
+        'title' => 'Tipus d\'inscripció',
+        'singular' => 'tipus d\'inscripció',
+        'icon' => 'card',
+        'description' => 'Què val inscriure\'s a la cursa. Si no n\'hi ha cap d\'actiu, o si tots valen 0, la inscripció és gratuïta.',
+        'order' => 'sort_order ASC, id ASC',
+        'search' => ['name'],
+        'columns' => ['name' => 'Tipus', 'price_cents' => 'Preu', 'sort_order' => 'Ordre', 'active' => 'Triable'],
+        'fields' => [
+            'name' => ['label' => 'Nom', 'type' => 'text', 'rules' => 'required|max:150', 'placeholder' => 'Inscripció general'],
+            'description' => ['label' => 'Descripció', 'type' => 'textarea', 'rows' => 3, 'rules' => 'max:400',
+                'placeholder' => 'Inclou dorsal, avituallament i medalla de participació'],
+            'price_cents' => ['label' => 'Preu', 'type' => 'money', 'default' => '0', 'rules' => 'required',
+                'help' => 'Amb l\'impost inclòs, si n\'hi apliqueu cap. Un preu de 0 vol dir gratuïta.'],
+            'sort_order' => ['label' => 'Ordre', 'type' => 'number', 'default' => '0'],
+            'active' => ['label' => 'Es pot triar', 'type' => 'bool', 'default' => '1'],
+        ],
+    ],
+
     'tipus-tiquet' => [
         'table' => 'ticket_types',
         'title' => 'Tipus de tiquet',

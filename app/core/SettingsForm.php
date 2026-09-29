@@ -42,6 +42,11 @@ class SettingsForm
                 continue;
             }
 
+            if ($type === 'features') {
+                Settings::set($name, self::features($name));
+                continue;
+            }
+
             $raw = $overrides[$name] ?? ($_POST[$name] ?? null);
             if ($raw === null) {
                 continue;
@@ -98,6 +103,34 @@ class SettingsForm
                 continue;
             }
             $rows[] = ['q' => mb_substr($question, 0, 300), 'a' => mb_substr($answer, 0, 2000)];
+        }
+
+        return $rows === [] ? '' : (string) json_encode($rows, JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * Les funcionalitats que s'ensenyen al web, amb la mateixa idea que les
+     * preguntes freqüents: un sol valor en JSON. Les files sense títol o sense
+     * explicació es descarten, que és la manera de treure'n una.
+     */
+    private static function features(string $name): string
+    {
+        $icons = (array) ($_POST[$name . '_icon'] ?? []);
+        $titles = (array) ($_POST[$name . '_title'] ?? []);
+        $texts = (array) ($_POST[$name . '_text'] ?? []);
+        $rows = [];
+        foreach ($titles as $i => $title) {
+            $title = trim((string) $title);
+            $text = trim((string) ($texts[$i] ?? ''));
+            if ($title === '' || $text === '') {
+                continue;
+            }
+            $icon = trim((string) ($icons[$i] ?? ''));
+            $rows[] = [
+                'icon' => \Cros\Core\Icons::exists($icon) ? $icon : '',
+                'title' => mb_substr($title, 0, 150),
+                'text' => mb_substr($text, 0, 600),
+            ];
         }
 
         return $rows === [] ? '' : (string) json_encode($rows, JSON_UNESCAPED_UNICODE);

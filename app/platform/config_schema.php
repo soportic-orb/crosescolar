@@ -54,6 +54,22 @@ return [
         ],
     ],
 
+    'features' => [
+        'title' => 'Funcionalitats',
+        'icon' => 'chart',
+        'description' => 'La pàgina que explica què sap fer la plataforma, a /funcionalitats.',
+        'fields' => [
+            'features_enabled' => ['label' => 'Ensenyar la pàgina de funcionalitats', 'type' => 'bool', 'default' => '1',
+                'help' => 'Si es desactiva, l\'adreça deixa d\'existir i desapareix del menú i del mapa del web.'],
+            'features_title' => ['label' => 'Títol', 'type' => 'text', 'default' => 'Tot el que necessita un cros escolar'],
+            'features_intro' => ['label' => 'Entradeta', 'type' => 'textarea', 'rows' => 3,
+                'default' => 'Un web propi per al vostre cros, amb les inscripcions, els dorsals, els resultats i els cobraments al mateix lloc. Us el deixem a punt i nosaltres en portem el manteniment.'],
+            'features_list' => ['label' => 'Funcionalitats', 'type' => 'features', 'default' => '[{"icon":"users","title":"Inscripcions en línia","text":"Formulari propi amb categories per any de naixement, consentiments, avís per correu i «Les meves inscripcions» perquè cada família es corregeixi les dades sense trucar a ningú."},{"icon":"flag","title":"Dorsals a punt d\'imprimir","text":"Numeració automàtica per categoria i dorsals generats sobre la vostra maqueta en PDF, a punt per a la impressora i per enviar-los per correu."},{"icon":"trophy","title":"Resultats el mateix dia","text":"Entrada d\'arribades per dorsal, classificació per categories, publicació al web i exportació en PDF i full de càlcul."},{"icon":"euro","title":"Cobraments amb targeta","text":"Inscripcions i tiquets cobrats amb Stripe, PayPal o el TPV de Redsys, amb el rebut o la factura a nom de la vostra entitat."},{"icon":"mail","title":"Correus a les famílies","text":"Recordatoris i avisos amb editor visual, per tandes i sense repetir-ne cap si l\'enviament s\'atura a mitges."},{"icon":"globe","title":"El vostre web, ben indexat","text":"Adreça pròpia amb certificat, portada, recorreguts, categories, premis i reglament, amb les metadades i el mapa del web que esperen els cercadors."},{"icon":"qr","title":"Punt de recàrrega","text":"Venda de tiquets d\'esmorzar amb codi QR i validació el mateix dia des del mòbil."},{"icon":"refresh","title":"Manteniment inclòs","text":"Actualitzacions, còpies de seguretat i vigilància del web, i un apartat de suport al vostre panell per escriure\'ns quan calgui."}]'],
+            'features_closing' => ['label' => 'Tancament', 'type' => 'textarea', 'rows' => 3,
+                'default' => 'Si hi ha res que no hi veieu, pregunteu-nos-ho: la plataforma creix amb el que ens demanen els cros que ja hi són.'],
+        ],
+    ],
+
     'appearance' => [
         'title' => 'Imatge',
         'icon' => 'image',

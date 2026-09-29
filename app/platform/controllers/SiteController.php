@@ -129,6 +129,30 @@ class SiteController extends Controller
      * El text s'escriu al panell i aquí només se n'hi posen les dades de
      * l'entitat, que així no s'han de repetir a tres llocs.
      */
+    /**
+     * Què sap fer la plataforma.
+     *
+     * La llista s'edita al panell i no és aquí al codi: qui porta el servei hi
+     * afegeix el que va sortint sense haver d'esperar cap versió nova.
+     */
+    public function features(): void
+    {
+        if (!\Cros\Core\Settings::bool('features_enabled', true)) {
+            abort(404, 'Aquesta pàgina no existeix.');
+        }
+        $rows = json_decode((string) setting('features_list', ''), true);
+        $rows = is_array($rows) ? array_values($rows) : [];
+
+        $this->page('platform/features', [
+            'title' => (string) setting('features_title', 'Funcionalitats'),
+            'description' => mb_substr(trim((string) setting('features_intro', '')), 0, 300),
+            'noindex' => \Cros\Core\Settings::bool('platform_noindex'),
+            'intro' => (string) setting('features_intro', ''),
+            'closing' => (string) setting('features_closing', ''),
+            'features' => $rows,
+        ]);
+    }
+
     public function legal(array $params): void
     {
         $pages = [
@@ -191,7 +215,11 @@ class SiteController extends Controller
         foreach (Instance::directory() as $instance) {
             echo '  <url><loc>' . e(Instance::url($instance) . '/') . '</loc></url>' . "\n";
         }
-        foreach (['condicions', 'privadesa', 'galetes'] as $page) {
+        $pages = ['condicions', 'privadesa', 'galetes'];
+        if (\Cros\Core\Settings::bool('features_enabled', true)) {
+            array_unshift($pages, 'funcionalitats');
+        }
+        foreach ($pages as $page) {
             echo '  <url><loc>' . e('https://' . Platform::domain() . '/' . $page) . '</loc></url>' . "\n";
         }
         echo '</urlset>';

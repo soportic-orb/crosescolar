@@ -85,6 +85,14 @@
       <?= \Cros\Core\View::partial('partials/bib-notice') ?>
     <?php endif; ?>
 
+    <?php if (!empty($payments)): ?>
+      <div class="notice-box" style="margin-top:1.5rem">
+        Amb aquesta adreça hi consten <strong><?= count($payments) ?></strong>
+        <?= count($payments) === 1 ? 'pagament' : 'pagaments' ?> a l'organització.
+        <a href="<?= e(url('/les-meves-inscripcions/pagaments')) ?>">Veure'ls i descarregar-ne els comprovants</a>.
+      </div>
+    <?php endif; ?>
+
     <div class="flex" style="margin-top:1.5rem;justify-content:space-between">
       <a class="btn btn--ghost btn--sm" href="<?= e(url('/inscripcio')) ?>">Inscriure un altre participant</a>
       <form method="post" action="<?= e(url('/les-meves-inscripcions/sortir')) ?>">

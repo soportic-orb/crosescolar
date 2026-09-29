@@ -5,11 +5,12 @@ namespace Cros\Controllers;
 
 use Cros\Core\Controller;
 use Cros\Core\Qr;
-use Cros\Core\Stripe;
 use Cros\Models\Content;
 use Cros\Models\Order;
+use Cros\Models\Payment;
 use Cros\Models\Ticket;
 use Cros\Models\TicketType;
+use Cros\Payments\Gateways;
 
 /** Punt de recàrrega: informació, venda i consulta dels tiquets. */
 class TicketsController extends Controller
@@ -42,13 +43,13 @@ class TicketsController extends Controller
             'types' => $types,
             'saleMode' => self::saleMode(),
             'salesOpen' => self::salesOpen() && $types !== [],
-            'stripeReady' => Stripe::configured(),
+            'stripeReady' => Gateways::ready(),
             'errors' => [],
             'sponsors' => Content::sponsorsByTier(),
         ]);
     }
 
-    /** Crea la comanda i envia l'usuari a Stripe Checkout. */
+    /** Crea la comanda i el cobrament, i envia qui compra a la passarel·la. */
     public function checkout(): void
     {
         $this->checkCsrf();
@@ -97,7 +98,7 @@ class TicketsController extends Controller
                 'types' => TicketType::all(),
                 'saleMode' => true,
                 'salesOpen' => true,
-                'stripeReady' => Stripe::configured(),
+                'stripeReady' => Gateways::ready(),
                 'errors' => $errors,
                 'quantities' => $quantities,
                 'sponsors' => Content::sponsorsByTier(),
@@ -118,78 +119,57 @@ class TicketsController extends Controller
             redirect('/tiquets/' . $order['token']);
         }
 
-        if (!Stripe::configured()) {
+        if (!Gateways::ready()) {
             flash('error', 'El pagament en línia no està disponible en aquest moment. Contacteu amb l\'organització.');
             redirect('/punt-de-recarrega');
         }
 
-        try {
-            $lineItems = [];
-            foreach (Order::items((int) $order['id']) as $index => $item) {
-                $lineItems[$index] = [
-                    'quantity' => (int) $item['qty'],
-                    'price_data' => [
-                        'currency' => strtolower((string) $order['currency']),
-                        'unit_amount' => (int) $item['unit_price_cents'],
-                        'product_data' => ['name' => $item['name']],
-                    ],
-                ];
-            }
-            $session = Stripe::createCheckoutSession([
-                'mode' => 'payment',
-                'success_url' => url('/punt-de-recarrega/pagament-correcte') . (str_contains(url('/punt-de-recarrega/pagament-correcte'), '?') ? '&' : '?') . 'session_id={CHECKOUT_SESSION_ID}',
-                'cancel_url' => url('/punt-de-recarrega/pagament-cancellat') . (str_contains(url('/punt-de-recarrega/pagament-cancellat'), '?') ? '&' : '?') . 'comanda=' . $order['code'],
-                'customer_email' => $order['email'],
-                'client_reference_id' => $order['code'],
-                'line_items' => $lineItems,
-                'metadata' => ['order_id' => (string) $order['id'], 'order_code' => $order['code']],
-                'payment_intent_data' => [
-                    'description' => 'Tiquets del punt de recàrrega · ' . setting('site_name', 'Cros Escolar'),
-                    'metadata' => ['order_code' => $order['code']],
-                ],
-                'expires_at' => time() + 3600,
-            ], 'order-' . $order['id'] . '-' . substr((string) $order['token'], 0, 8));
-        } catch (\Throwable $e) {
-            log_line('stripe', 'Error creant la sessió de pagament', ['order' => $order['code'], 'error' => $e->getMessage()]);
-            flash('error', 'No s\'ha pogut iniciar el pagament: ' . $e->getMessage());
-            redirect('/punt-de-recarrega');
-            return;
+        // El cobrament es crea aquí i la passarel·la ja se'n cuida el mòdul
+        // que hi hagi actiu: aquest controlador no sap si és Stripe, PayPal o
+        // el TPV del banc, i tant se li'n dona.
+        $items = [];
+        foreach (Order::items((int) $order['id']) as $item) {
+            $items[] = [
+                'description' => (string) $item['name'],
+                'qty' => (int) $item['qty'],
+                'unit_price_cents' => (int) $item['unit_price_cents'],
+            ];
         }
-
+        $payment = Payment::create([
+            'concept' => 'order',
+            'reference_id' => (int) $order['id'],
+            'payer_name' => (string) $order['name'],
+            'payer_email' => (string) $order['email'],
+            'payer_phone' => (string) ($order['phone'] ?? ''),
+        ], $items);
         \Cros\Core\Db::update('orders', [
-            'stripe_session_id' => $session['id'] ?? null,
+            'payment_id' => (int) $payment['id'],
             'updated_at' => date('Y-m-d H:i:s'),
         ], 'id = :id', ['id' => $order['id']]);
 
-        redirect((string) ($session['url'] ?? url('/punt-de-recarrega')));
+        redirect('/pagament/' . $payment['token'] . '/anar');
     }
 
-    /** Retorn des de Stripe després del pagament. */
+    /**
+     * Retorn de l'antiga adreça de Stripe.
+     *
+     * Els cobraments d'ara van per /pagament/…, però una sessió oberta abans
+     * d'actualitzar encara pot tornar per aquí, i un enllaç d'un correu vell
+     * també. Es reencamina al cobrament, i si no se'n troba cap es mira la
+     * comanda com abans.
+     */
     public function success(): void
     {
         $sessionId = (string) input('session_id');
-        $order = null;
-        $paid = false;
-
         if ($sessionId !== '') {
-            try {
-                $session = Stripe::retrieveSession($sessionId);
-                $order = Order::findBySession($sessionId);
-                if (!$order && !empty($session['metadata']['order_id'])) {
-                    $order = Order::find((int) $session['metadata']['order_id']);
-                }
-                if ($order && ($session['payment_status'] ?? '') === 'paid') {
-                    $paymentIntent = $session['payment_intent'] ?? null;
-                    $order = Order::markPaid($order, [
-                        'payment_intent' => is_array($paymentIntent) ? ($paymentIntent['id'] ?? null) : $paymentIntent,
-                        'session_id' => $sessionId,
-                    ]);
-                    $paid = true;
-                }
-            } catch (\Throwable $e) {
-                log_line('stripe', 'Error verificant el pagament', ['session' => $sessionId, 'error' => $e->getMessage()]);
+            $payment = Payment::findByRef($sessionId);
+            if ($payment) {
+                redirect('/pagament/' . $payment['token'] . '/tornada?session_id=' . rawurlencode($sessionId));
             }
         }
+
+        $order = $sessionId !== '' ? Order::findBySession($sessionId) : null;
+        $paid = $order !== null && (string) $order['status'] === 'paid';
 
         $this->view('public/tickets-success', [
             'title' => $paid ? 'Compra confirmada' : 'Pagament en procés',

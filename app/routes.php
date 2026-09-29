@@ -11,6 +11,7 @@ use Cros\Controllers\Admin\MailingsController;
 use Cros\Controllers\Admin\SupportController;
 use Cros\Controllers\Admin\MenuController;
 use Cros\Controllers\Admin\OrdersController;
+use Cros\Controllers\Admin\PaymentsController;
 use Cros\Controllers\Admin\RegistrationsController;
 use Cros\Controllers\Admin\ResultsController;
 use Cros\Controllers\Admin\SettingsController;
@@ -20,6 +21,7 @@ use Cros\Controllers\Admin\UsersController;
 use Cros\Controllers\AccountController;
 use Cros\Controllers\HomeController;
 use Cros\Controllers\PageController;
+use Cros\Controllers\PaymentController;
 use Cros\Controllers\RegistrationController;
 use Cros\Controllers\TicketsController;
 use Cros\Controllers\WebhookController;
@@ -66,6 +68,20 @@ $router->get('/tiquets/{token}/imprimir', [TicketsController::class, 'printable'
 $router->get('/qr/{code}', [TicketsController::class, 'qr']);
 $router->post('/stripe/webhook', [WebhookController::class, 'stripe']);
 
+/* ----------------------------------------------------------- Cobraments
+   El testimoni del pagament és el que dona accés: qui el té veu aquell
+   cobrament i cap més, sense haver d'entrar enlloc. */
+$router->get('/pagament/avis/{gateway}', [PaymentController::class, 'notify']);
+$router->post('/pagament/avis/{gateway}', [PaymentController::class, 'notify']);
+$router->get('/pagament/{token}', [PaymentController::class, 'show']);
+$router->get('/pagament/{token}/anar', [PaymentController::class, 'start']);
+$router->post('/pagament/{token}/anar', [PaymentController::class, 'start']);
+$router->get('/pagament/{token}/tornada', [PaymentController::class, 'returned']);
+$router->post('/pagament/{token}/tornada', [PaymentController::class, 'returned']);
+$router->get('/pagament/{token}/anullat', [PaymentController::class, 'cancelled']);
+$router->post('/pagament/{token}/anullat', [PaymentController::class, 'cancelled']);
+$router->get('/pagament/{token}/document', [PaymentController::class, 'document']);
+
 /* ----------------------------------------------------------- Inscripcions */
 $router->get('/inscripcio', [RegistrationController::class, 'form']);
 $router->post('/inscripcio', [RegistrationController::class, 'submit']);
@@ -74,6 +90,7 @@ $router->get('/inscripcio/dorsal/{token}', [RegistrationController::class, 'bib'
 $router->get('/inscripcio/dorsals/{token}', [RegistrationController::class, 'bibs']);
 $router->get('/les-meves-inscripcions', [AccountController::class, 'index']);
 $router->post('/les-meves-inscripcions', [AccountController::class, 'requestCode']);
+$router->get('/les-meves-inscripcions/pagaments', [AccountController::class, 'payments']);
 $router->get('/les-meves-inscripcions/codi', [AccountController::class, 'codeForm']);
 $router->post('/les-meves-inscripcions/codi', [AccountController::class, 'verifyCode']);
 $router->post('/les-meves-inscripcions/tornar', [AccountController::class, 'restart']);
@@ -139,6 +156,13 @@ $router->post('/admin/enviaments/{id}/esborrar', [MailingsController::class, 'de
 $router->get('/admin/validacio', [ToolsController::class, 'scanner']);
 $router->post('/admin/validacio', [ToolsController::class, 'validateTicket']);
 $router->get('/validar/{code}', [ToolsController::class, 'validateLink']);
+
+/* Cobraments i facturació del cros */
+$router->get('/admin/pagaments', [PaymentsController::class, 'index']);
+$router->get('/admin/pagaments/documents', [PaymentsController::class, 'documents']);
+$router->get('/admin/pagaments/{id:\d+}', [PaymentsController::class, 'show']);
+$router->post('/admin/pagaments/{id:\d+}/accio', [PaymentsController::class, 'action']);
+$router->get('/admin/pagaments/{id:\d+}/document', [PaymentsController::class, 'document']);
 
 $router->get('/admin/inscripcions', [RegistrationsController::class, 'index']);
 $router->get('/admin/inscripcions/exportar', [RegistrationsController::class, 'export']);

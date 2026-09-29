@@ -50,6 +50,9 @@ use Cros\Core\Icons;
                   Anul·lada<?= !empty($row['cancelled_by']) ? ' · ' . e(\Cros\Models\Registration::CANCELLED_BY[$row['cancelled_by']] ?? '') : '' ?>
                 </div>
               <?php endif; ?>
+              <?php if (!$isCancelled && (string) $row['status'] === 'pending'): ?>
+                <div class="badge badge--amber" title="Encara no s'ha cobrat">Pendent de pagament</div>
+              <?php endif; ?>
               <?php if ((int) $row['consent_image'] === 0): ?><div class="badge badge--amber">Sense dret d'imatge</div><?php endif; ?>
             </td>
             <td><?= e($row['birth_year']) ?></td>

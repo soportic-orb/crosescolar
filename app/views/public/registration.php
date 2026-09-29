@@ -112,6 +112,31 @@ $externalLink = (bool) preg_match('#^https?://#i', $linkUrl);
             <textarea id="notes" name="notes" rows="3"><?= e(old('notes')) ?></textarea>
           </div>
 
+          <?php if (!empty($charging) && !empty($fees)): ?>
+            <div class="field<?= isset($errors['fee_type_id']) ? ' field--error' : '' ?>">
+              <label>Tipus d'inscripció *</label>
+              <div class="fee-options">
+                <?php foreach ($fees as $fee): ?>
+                  <label class="fee-option">
+                    <input type="radio" name="fee_type_id" value="<?= (int) $fee['id'] ?>"
+                           <?= (string) old('fee_type_id') === (string) $fee['id'] ? 'checked' : '' ?> required>
+                    <span>
+                      <strong><?= e($fee['name']) ?></strong>
+                      <em><?= e(money((int) $fee['price_cents'])) ?></em>
+                      <?php if (!empty($fee['description'])): ?>
+                        <small><?= e($fee['description']) ?></small>
+                      <?php endif; ?>
+                    </span>
+                  </label>
+                <?php endforeach; ?>
+              </div>
+              <?php if (trim((string) setting('registrations_payment_note', '')) !== ''): ?>
+                <span class="field__hint"><?= e(setting('registrations_payment_note', '')) ?></span>
+              <?php endif; ?>
+              <?php if (isset($errors['fee_type_id'])): ?><span class="field__error"><?= e($errors['fee_type_id']) ?></span><?php endif; ?>
+            </div>
+          <?php endif; ?>
+
           <label class="checkbox<?= isset($errors['consent_data']) ? ' field--error' : '' ?>">
             <input type="checkbox" name="consent_data" value="1" required>
             <span><?= e(setting('registrations_consent', '')) ?> *</span>

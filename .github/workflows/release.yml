@@ -88,6 +88,9 @@ jobs:
       - name: Proves dels límits de pujada
         run: php tests/pujades.php
 
+      - name: Proves dels cobraments i la facturació
+        run: php tests/cobraments.php
+
       - name: Eines per comprovar els PDF
         run: sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils
 

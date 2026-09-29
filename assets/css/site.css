@@ -536,3 +536,16 @@ input:disabled, select:disabled, textarea:disabled { background: var(--green-50)
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
+
+/* ------------------------------------------------- Tipus d'inscripció
+   Les opcions de preu del formulari: targetes que es poden prémer senceres,
+   no un botó de ràdio minúscul al costat d'un text. */
+.fee-options { display: grid; gap: .6rem; }
+.fee-option { display: flex; gap: .8rem; align-items: flex-start; padding: .85rem 1rem; cursor: pointer;
+  border: 1px solid var(--green-300); border-radius: var(--radius); background: #fff; }
+.fee-option:hover { border-color: var(--green-500, #4a8c5a); }
+.fee-option input { margin-top: .25rem; }
+.fee-option span { display: grid; gap: .15rem; flex: 1; }
+.fee-option em { font-style: normal; font-weight: 700; color: var(--green-700, #2f6b3c); }
+.fee-option small { color: var(--ink-soft); font-size: .88rem; line-height: 1.5; }
+.fee-option:has(input:checked) { border-color: var(--green-700, #2f6b3c); background: var(--green-100); }

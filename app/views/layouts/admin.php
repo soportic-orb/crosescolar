@@ -56,6 +56,10 @@ $pending = (int) \Cros\Core\Db::val('SELECT COUNT(*) FROM orders WHERE status = 
 
     <a class="nav-link<?= $isActive('/admin/enviaments') ? ' is-active' : '' ?>" href="<?= e(url('/admin/enviaments')) ?>"><?= Icons::svg('mail', 'icon', 18) ?> Enviaments</a>
 
+    <div class="sidebar__section">Cobraments</div>
+    <a class="nav-link<?= $path === '/admin/pagaments' || preg_match('#^/admin/pagaments/\d+#', $path) ? ' is-active' : '' ?>" href="<?= e(url('/admin/pagaments')) ?>"><?= Icons::svg('euro', 'icon', 18) ?> Cobraments</a>
+    <a class="nav-link<?= $isActive('/admin/pagaments/documents') ? ' is-active' : '' ?>" href="<?= e(url('/admin/pagaments/documents')) ?>"><?= Icons::svg('file', 'icon', 18) ?> Rebuts i factures</a>
+
     <div class="sidebar__section">Continguts</div>
     <a class="nav-link<?= $isActive('/admin/menu') ? ' is-active' : '' ?>" href="<?= e(url('/admin/menu')) ?>"><?= Icons::svg('menu', 'icon', 18) ?> Menú del web</a>
     <?php foreach ($resources as $key => $resource): ?>

@@ -7,6 +7,8 @@ use Cros\Core\Controller;
 use Cros\Core\Db;
 use Cros\Core\Stripe;
 use Cros\Models\Order;
+use Cros\Models\Payment;
+use Cros\Payments\Checkout;
 
 /** Recepció dels esdeveniments de Stripe. */
 class WebhookController extends Controller
@@ -31,6 +33,16 @@ class WebhookController extends Controller
             switch ($type) {
                 case 'checkout.session.completed':
                 case 'checkout.session.async_payment_succeeded':
+                case 'checkout.session.expired':
+                case 'checkout.session.async_payment_failed':
+                    // Els cobraments d'ara passen tots per la taula de
+                    // pagaments; el mòdul de Stripe ja sap mirar la sessió.
+                    $payment = $this->resolvePayment($object);
+                    if ($payment) {
+                        Checkout::finish($payment, ['session_id' => (string) ($object['id'] ?? '')]);
+                        break;
+                    }
+                    // Una comanda d'abans d'actualitzar, que encara no en té.
                     if (($object['payment_status'] ?? '') === 'paid') {
                         $order = $this->resolveOrder($object);
                         if ($order) {
@@ -39,14 +51,11 @@ class WebhookController extends Controller
                                 'session_id' => $object['id'] ?? null,
                             ]);
                         }
-                    }
-                    break;
-
-                case 'checkout.session.expired':
-                case 'checkout.session.async_payment_failed':
-                    $order = $this->resolveOrder($object);
-                    if ($order && $order['status'] === 'pending') {
-                        Order::cancel($order, 'Sessió de pagament caducada o fallida.');
+                    } elseif (in_array($type, ['checkout.session.expired', 'checkout.session.async_payment_failed'], true)) {
+                        $order = $this->resolveOrder($object);
+                        if ($order && $order['status'] === 'pending') {
+                            Order::cancel($order, 'Sessió de pagament caducada o fallida.');
+                        }
                     }
                     break;
 
@@ -72,6 +81,23 @@ class WebhookController extends Controller
         }
 
         json_out(['received' => true]);
+    }
+
+    /** El cobrament d'una sessió de Stripe, si n'hi ha cap. */
+    private function resolvePayment(array $session): ?array
+    {
+        $payment = Payment::findByRef((string) ($session['id'] ?? ''));
+        if ($payment) {
+            return $payment;
+        }
+        if (!empty($session['metadata']['payment_id'])) {
+            return Payment::find((int) $session['metadata']['payment_id']);
+        }
+        if (!empty($session['metadata']['payment_code'])) {
+            return Payment::findByCode((string) $session['metadata']['payment_code']);
+        }
+
+        return null;
     }
 
     private function resolveOrder(array $session): ?array
