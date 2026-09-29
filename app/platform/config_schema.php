@@ -88,6 +88,8 @@ return [
             'smtp_pass' => ['label' => 'Contrasenya', 'type' => 'password', 'default' => '', 'show_if' => 'mail_transport:smtp'],
             'smtp_secure' => ['label' => 'Xifratge', 'type' => 'select', 'default' => 'tls', 'show_if' => 'mail_transport:smtp',
                 'options' => ['tls' => 'TLS (587)', 'ssl' => 'SSL (465)', 'none' => 'Cap']],
+            'mail_batch_size' => ['label' => 'Correus per tanda', 'type' => 'number', 'default' => '20',
+                'help' => 'Els enviaments es fan a trossos per no saturar el servidor. Amb SMTP propi s\'hi pot pujar; amb la funció del sistema, val més deixar-ho baix.'],
         ],
     ],
 
@@ -140,6 +142,21 @@ return [
                 'default' => 'Ara mateix no donem altes noves. Escriviu-nos i us avisarem quan tornem a obrir.',
                 'show_if' => '!platform_requests_open'],
             'platform_directory' => ['label' => 'Ensenyar el llistat de cros a la portada', 'type' => 'bool', 'default' => '1'],
+        ],
+    ],
+
+    'support' => [
+        'title' => 'Opcions del suport',
+        'icon' => 'mail',
+        'description' => 'L\'apartat de suport que veuen els clients al seu panell.',
+        'fields' => [
+            'support_enabled' => ['label' => 'Els clients poden obrir tiquets', 'type' => 'bool', 'default' => '1',
+                'help' => 'Si es desactiva, l\'apartat desapareix del panell de cada cros i només es poden mirar els tiquets que ja hi ha.'],
+            'support_intro' => ['label' => 'Què es diu a dalt de l\'apartat', 'type' => 'textarea', 'rows' => 3,
+                'default' => 'Expliqueu-nos què us passa i us contestarem tan aviat com puguem. Si és sobre una inscripció concreta, digueu-ne el nom i el dorsal.'],
+            'support_notify' => ['label' => 'On arriben els avisos de tiquet nou', 'type' => 'email', 'default' => '',
+                'help' => 'Si es deixa buit, van a l\'adreça d\'avisos del correu. Cada departament pot tenir-ne una de pròpia.'],
+            'support_hours' => ['label' => 'Horari que s\'ensenya al client', 'type' => 'text', 'default' => 'De dilluns a divendres, de 9 a 18 h.'],
         ],
     ],
 

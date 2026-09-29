@@ -162,6 +162,22 @@ class Platform
     }
 
     /**
+     * Adreça del panell de superadministració.
+     * Serveix per als enllaços dels correus, que s'escriuen des d'altres llocs
+     * —el web d'un client, una feina del cron— on no es pot mirar per on ha
+     * entrat la petició.
+     */
+    public static function consoleUrl(?string $root = null, string $path = '/'): string
+    {
+        $root = $root ?? CROS_ROOT;
+        $console = (array) (Tenancy::settings($root)['console'] ?? []);
+        $subdomain = trim((string) ($console[0] ?? '')) ?: 'admin';
+
+        return 'https://' . $subdomain . '.' . self::domain($root)
+            . ($path === '/' ? '' : '/' . ltrim($path, '/'));
+    }
+
+    /**
      * Dominis on es pot penjar un cros, el principal primer.
      * @return array<int,string>
      */

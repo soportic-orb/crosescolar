@@ -43,6 +43,8 @@ dels tiquets del punt de recàrrega amb Stripe.
 - **Menú del web**: quins apartats surten al menú públic, en quin ordre i amb quin nom.
 - **Enviaments**: correus a les persones inscrites amb editor visual, selector de destinataris
   (totes, per categories o adreces a mà) i enviament per tandes que es pot reprendre.
+- **Suport**: consultes a qui manté la plataforma des del panell mateix, amb departament,
+  prioritat i el fil de la conversa (només als cros allotjats a la plataforma).
 - **Configuració**: credencials de Stripe (xifrades), correu SMTP, colors, SEO i textos legals.
 - **Sistema**: usuaris i rols, registre d'activitat, correus enviats, còpies de seguretat
   i **actualitzacions automàtiques (OTA)**.

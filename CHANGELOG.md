@@ -3,6 +3,44 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.32.0] — 2026-09-29
+
+### Afegit
+- **Suport per tiquets.** Els clients tenen un apartat de **Suport** al seu
+  panell: obren una consulta triant departament i prioritat, la conversa
+  continua al mateix lloc i les respostes els arriben també per correu. Al
+  panell de superadministració hi ha la safata de tots els tiquets, amb
+  pestanyes per estat, filtre per departament i cercador; es contesta, s'hi
+  deixen **notes internes** que el client no veu mai, i se'n canvia l'estat, la
+  prioritat i el departament. Els **departaments** es creen des del panell i
+  cadascun pot tenir la seva adreça d'avisos.
+
+> Els tiquets viuen a la base de dades de la plataforma i no a la de cada
+> client: qui els ha d'atendre els vol tots en una safata i no anar-los a buscar
+> web per web. El panell d'un client hi escriu obrint la connexió de la
+> plataforma, que és la mateixa via que el panell ja feia servir per mirar dins
+> d'una instància, només que al revés.
+
+- **Enviaments de correu de la plataforma**: als contactes dels clients, a les
+  administradores de cada web, a una llista de correu o a adreces escrites a mà.
+  S'envien per tandes, amb barra de progrés, i es poden reprendre sense repetir
+  cap correu.
+- **Llistes de correu** amb nom i entitat. S'hi enganxen adreces una per línia i
+  s'accepten les tres maneres com la gent les té apuntades: l'adreça sola, la
+  forma `Nom <adreça>` i les columnes d'un full de càlcul. Les repetides no es
+  dupliquen i una adreça es pot donar de baixa sense esborrar-la.
+- **Editor de plantilla del correu**: la capçalera i el peu en HTML, amb vista
+  prèvia i marcadors (`{{nom}}`, `{{entitat}}`, `{{correu}}`, `{{assumpte}}`,
+  `{{plataforma}}`, `{{web}}`, `{{any}}`), que també valen a l'assumpte i al cos.
+
+> El marc del correu —la taula que fa que es vegi centrat i s'adapti al mòbil—
+> no s'edita a posta: n'hi ha prou amb una etiqueta mal tancada perquè mig món
+> el vegi escapçat.
+
+### Canviat
+- La plantilla base dels correus ja no ensenya dades de cursa que la plataforma
+  no té: cada línia del peu només surt si hi ha què dir-hi.
+
 ## [1.31.1] — 2026-09-28
 
 ### Corregit

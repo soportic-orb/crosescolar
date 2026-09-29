@@ -3,11 +3,13 @@
 use Cros\Core\Icons;
 use Cros\Platform\Platform;
 use Cros\Platform\Request;
+use Cros\Platform\Support;
 
 $user = \Cros\Platform\Console::user();
 $path = \Cros\Core\Router::currentPath();
 $isActive = static fn (string $href): bool => $path === $href || ($href !== '/' && str_starts_with($path, $href));
 $pending = Request::pending();
+$waiting = Support::pending();
 ?>
 <!doctype html>
 <html lang="ca">
@@ -45,6 +47,11 @@ $pending = Request::pending();
     </a>
     <a class="nav-link<?= $isActive('/instancies') ? ' is-active' : '' ?>" href="<?= e(url('/instancies')) ?>"><?= Icons::svg('run', 'icon', 18) ?> Instàncies</a>
     <a class="nav-link<?= $isActive('/clients') ? ' is-active' : '' ?>" href="<?= e(url('/clients')) ?>"><?= Icons::svg('users', 'icon', 18) ?> Clients</a>
+    <a class="nav-link<?= $isActive('/suport') ? ' is-active' : '' ?>" href="<?= e(url('/suport')) ?>">
+      <?= Icons::svg('help', 'icon', 18) ?> Suport
+      <?php if ($waiting > 0): ?><span class="badge badge--amber"><?= $waiting ?></span><?php endif; ?>
+    </a>
+    <a class="nav-link<?= $isActive('/enviaments') ? ' is-active' : '' ?>" href="<?= e(url('/enviaments')) ?>"><?= Icons::svg('mail', 'icon', 18) ?> Enviaments</a>
 
     <div class="sidebar__section">Configuració</div>
     <?php foreach (\Cros\Core\Settings::schema() as $groupKey => $group): ?>

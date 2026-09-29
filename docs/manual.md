@@ -435,6 +435,28 @@ després i només escriu a aquestes adreces.
 Si l'allotjament limita quants correus es poden enviar per hora, abaixeu **Correus per
 tanda** a la mateixa pantalla de configuració (per defecte, 20).
 
+## Demanar ajuda: l'apartat de Suport
+
+Si el vostre cros va allotjat a la plataforma, al menú hi teniu **Suport**. Serveix per
+escriure directament a qui manté el servei, sense buscar cap adreça de correu i sense
+perdre el fil del que ja us han contestat.
+
+1. **Nova consulta**. Trieu el **departament** (si no ho teniu clar, deixeu-ho com està:
+   ja ho encaminarem nosaltres), digueu **quina pressa corre** i poseu-hi un assumpte
+   d'una línia.
+2. **Expliqueu què passa** amb l'editor de sempre. Com més concret, abans us podrem
+   contestar: on éreu, què heu clicat i què us ha sortit.
+3. **Envieu-la**. Rebreu un número (per exemple `S-2026-014`) i la resposta us arribarà
+   **per correu i al mateix apartat**, on podeu continuar la conversa.
+4. Quan estigui resolta, **tanqueu-la**. Si hi torna a haver res, obriu-ne una de nova i
+   digueu-hi el número de l'antiga.
+
+Al menú, el distintiu verd al costat de **Suport** vol dir que hi ha respostes que encara
+no heu llegit.
+
+> Les consultes són del **web**, no de la persona: qualsevol administradora del vostre
+> cros les veu i hi pot contestar. En canvi, ningú d'un altre cros no les pot llegir.
+
 ## Reglament de la cursa
 
 **Configuració → Reglament** conté el text del reglament, que es publica a `/reglament` i

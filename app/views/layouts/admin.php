@@ -31,6 +31,13 @@ $pending = (int) \Cros\Core\Db::val('SELECT COUNT(*) FROM orders WHERE status = 
 
     <a class="nav-link<?= $path === '/admin' ? ' is-active' : '' ?>" href="<?= e(url('/admin')) ?>"><?= Icons::svg('chart', 'icon', 18) ?> Tauler</a>
     <a class="nav-link<?= $isActive('/') && false ? ' is-active' : '' ?>" href="<?= e(url('/')) ?>" target="_blank"><?= Icons::svg('eye', 'icon', 18) ?> Veure el web</a>
+    <?php if (\Cros\Platform\Support::available() && \Cros\Core\Tenancy::slugOf() !== ''): ?>
+      <?php $respostes = \Cros\Platform\Support::badge(\Cros\Core\Tenancy::slugOf()); ?>
+      <a class="nav-link<?= $isActive('/admin/suport') ? ' is-active' : '' ?>" href="<?= e(url('/admin/suport')) ?>">
+        <?= Icons::svg('help', 'icon', 18) ?> Suport
+        <?php if ($respostes > 0): ?><span class="badge badge--green"><?= $respostes ?></span><?php endif; ?>
+      </a>
+    <?php endif; ?>
 
     <div class="sidebar__section">Punt de recàrrega</div>
     <a class="nav-link<?= $isActive('/admin/comandes') ? ' is-active' : '' ?>" href="<?= e(url('/admin/comandes')) ?>">

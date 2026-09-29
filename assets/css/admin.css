@@ -74,6 +74,9 @@ img { max-width: 100%; }
 .panel__head h2 { margin: 0; font-size: 1.05rem; }
 .panel__head .spacer { margin-left: auto; }
 .panel__body { padding: 1.3rem; }
+/* El peu d'un panell: els botons de desar i el que els acompanya. */
+.panel__foot { padding: 1rem 1.3rem; border-top: 1px solid var(--a-line); display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+.panel__foot .spacer { margin-left: auto; }
 .panel + .panel { margin-top: 1.2rem; }
 
 .grid-cards { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); }
@@ -259,3 +262,20 @@ input[type="color"] { width: 64px; height: 40px; padding: 2px; }
   border: 1px solid var(--line, #d9e2d6); border-radius: 12px; background: #fbfdfa;
 }
 .faq-row input { font-weight: 600; }
+
+/* ---------------------------------------------------------- Suport
+   El fil d'una consulta. Els missatges de qui mira la conversa van a la
+   dreta i amb el color de la casa; els de l'altra banda, a l'esquerra i en
+   blanc. Les notes internes trenquen la simetria a posta: han de cantar. */
+.thread { display: flex; flex-direction: column; gap: .9rem; }
+.thread__msg { max-width: min(100%, 46rem); padding: .85rem 1.05rem; border-radius: 14px;
+  border: 1px solid var(--a-line); background: #fff; }
+.thread__msg--mine { margin-left: auto; background: var(--a-green-light); border-color: #cfe0c6; }
+.thread__msg--internal { margin-left: 0; background: #fff8e6; border-color: #e6cf94; border-style: dashed; }
+.thread__meta { display: flex; gap: .7rem; align-items: baseline; margin-bottom: .45rem;
+  font-size: .8rem; color: var(--a-soft); }
+.thread__meta strong { color: inherit; font-size: .82rem; }
+.thread__meta span { margin-left: auto; }
+.thread__body { font-size: .95rem; line-height: 1.6; overflow-wrap: anywhere; }
+.thread__body p:first-child { margin-top: 0; }
+.thread__body p:last-child { margin-bottom: 0; }

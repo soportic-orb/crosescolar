@@ -457,6 +457,94 @@ poseu analítica o qualsevol galeta que no sigui necessària, això s'ha de refe
 caldrà consentiment de debò, amb opcions separades i sense carregar res abans de
 tenir-lo.
 
+## El suport als clients
+
+**Suport**, al menú del panell, és la safata de les consultes que obren els
+clients des del seu propi panell. Els tiquets no són a la base de dades de cada
+client sinó a la de la plataforma: qui els ha d'atendre els vol tots en un lloc,
+i no anar-los a buscar web per web.
+
+Què s'hi pot fer:
+
+| On | Què |
+|---|---|
+| **Suport** | La safata, amb pestanyes per estat, filtre per departament i cercador per número, assumpte, web o correu |
+| **Suport → una consulta** | El fil sencer, contestar, deixar-hi una **nota interna** i canviar-ne l'estat, la prioritat i el departament |
+| **Suport → Departaments** | Les caselles que tria el client, cadascuna amb la seva adreça d'avisos |
+| **Configuració → Opcions del suport** | Obrir o tancar les consultes noves, el text que llegeix el client i l'horari que se li ensenya |
+
+Com es mou un tiquet, sense que ningú hi hagi de pensar: quan **escriu el
+client** torna a estar *obert* (és a dir, ens espera); quan **contestem
+nosaltres** queda *respost*. Les notes internes no el mouen de lloc i el client
+no les veu mai.
+
+Els avisos de consulta nova van a l'adreça del **departament**; si no en té, a
+la de **Configuració → Opcions del suport**, i si tampoc, a l'adreça d'avisos
+del correu. La resposta arriba al client per correu i li surt al seu panell amb
+un distintiu al menú.
+
+Esborrar un departament **no** esborra les seves consultes: es queden sense
+departament. Per deixar-ne de fer servir un, val més **desactivar-lo**: així les
+que hi havia es queden on eren i els clients ja no el poden triar.
+
+## Escriure als clients: enviaments i llistes
+
+**Enviaments** és el mateix mecanisme que fan servir els cros per escriure a les
+famílies —es prepara la llista de destinataris i s'envia per tandes, perquè un
+servidor compartit no aguanta centenars de correus de cop—, però amb la gent de
+la plataforma.
+
+A qui es pot escriure:
+
+| Destinataris | D'on surten |
+|---|---|
+| Les persones de contacte dels clients | La fitxa de cada client actiu |
+| Les administradores de cada web | El correu de cada instància, només les en marxa o totes |
+| Una llista de correu | Les adreces que hi hàgiu posat i que estiguin d'alta |
+| Adreces escrites a mà | El que enganxeu al formulari |
+
+Les **llistes** (a *Enviaments → Llistes*) serveixen per a gent que encara no és
+clienta de res: una associació de mestres, els contactes d'una fira, les escoles
+d'una comarca. S'hi enganxen adreces una per línia i s'accepten les tres maneres
+com la gent les té apuntades:
+
+```
+anna@example.cat
+Pau Soler <pau@example.cat>
+marta@example.cat; Marta Vila; AFA Sant Jordi
+```
+
+De les columnes, la que sigui una adreça és l'adreça i les altres dues el nom i
+l'entitat. Les repetides no es dupliquen: s'aprofiten per completar el que hi
+falti. Una adreça es pot **donar de baixa** sense esborrar-la, i llavors deixa de
+rebre correus però queda constància que hi era.
+
+La **plantilla** (a *Enviaments → Plantilla*) és la capçalera i el peu que
+embolica cada enviament, en HTML. El **marc** —la taula que fa que el correu es
+vegi centrat i s'adapti al mòbil— no s'edita a posta: el codi d'un correu que es
+vegi bé a l'Outlook, al Gmail i a l'iPhone és d'una altra època i n'hi ha prou
+amb una etiqueta mal tancada perquè mig món el vegi escapçat. Tant a la
+plantilla com a l'assumpte i al cos hi valen aquests marcadors:
+
+| Marcador | Què hi posa |
+|---|---|
+| `{{nom}}` | El nom del destinatari |
+| `{{entitat}}` | La seva entitat o escola |
+| `{{correu}}` | La seva adreça |
+| `{{assumpte}}` | L'assumpte del correu |
+| `{{plataforma}}` | El nom del servei |
+| `{{web}}` | El domini |
+| `{{any}}` | L'any actual |
+
+Abans del primer enviament de debò, poseu **Configuració → Correu → Com
+s'envia** en **«Assaig: no enviar res»** i feu-ne una prova sencera: tot
+funcionarà igual i quedarà al registre, però no sortirà cap correu del servidor.
+Si l'allotjament limita quants correus deixa enviar per hora, abaixeu **Correus
+per tanda** al mateix apartat.
+
+> El peu del correu és on la normativa espera trobar **qui escriu** i **per què
+> el rep qui el rep**. El de fàbrica ja ho diu; si el canvieu, no ho traieu.
+
 ## El DNS, vist des del panell
 
 La mateixa vigilància repassa el DNS, i el que més importa és el **comodí**.
@@ -564,3 +652,5 @@ sudo -u www-data php tools/platform.php instancies
 | Una imatge gran «no es desa» i surt «la sessió ha caducat» | Els límits de PHP són els de sèrie: mireu el `99-cros.ini` del pas 1 |
 | El paquet de migració no puja pel navegador | Deixeu-lo a `storage/imports/` i importeu-lo pel nom |
 | Un subdomini nou dona error de certificat | El certificat no cobreix el comodí d'aquell domini |
+| Al panell d'un client no hi surt Suport | Aquell web no va per plataforma, o `tenants/platform.php` no té dades de connexió |
+| Els tiquets no arriben per correu | L'adreça del departament o la de Configuració → Opcions del suport; mireu el registre de correus |

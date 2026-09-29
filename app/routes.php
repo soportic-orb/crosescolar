@@ -8,6 +8,7 @@ use Cros\Controllers\Admin\AuthController;
 use Cros\Controllers\Admin\CrudController;
 use Cros\Controllers\Admin\DashboardController;
 use Cros\Controllers\Admin\MailingsController;
+use Cros\Controllers\Admin\SupportController;
 use Cros\Controllers\Admin\MenuController;
 use Cros\Controllers\Admin\OrdersController;
 use Cros\Controllers\Admin\RegistrationsController;
@@ -164,6 +165,14 @@ $router->post('/admin/actualitzacions/instalar', [UpdateController::class, 'inst
 $router->post('/admin/actualitzacions/pujar', [UpdateController::class, 'upload']);
 $router->post('/admin/actualitzacions/copia', [UpdateController::class, 'backup']);
 $router->get('/admin/actualitzacions/descarregar', [UpdateController::class, 'download']);
+
+/* Suport: els tiquets viuen a la plataforma, però s'obren des d'aquí. */
+$router->get('/admin/suport', [SupportController::class, 'index']);
+$router->get('/admin/suport/nou', [SupportController::class, 'create']);
+$router->post('/admin/suport/nou', [SupportController::class, 'store']);
+$router->get('/admin/suport/{id:\d+}', [SupportController::class, 'show']);
+$router->post('/admin/suport/{id:\d+}/respondre', [SupportController::class, 'reply']);
+$router->post('/admin/suport/{id:\d+}/tancar', [SupportController::class, 'close']);
 
 $router->get('/admin/dades', [ToolsController::class, 'data']);
 $router->post('/admin/dades', [ToolsController::class, 'download']);

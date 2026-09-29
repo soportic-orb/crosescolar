@@ -14,8 +14,10 @@ use Cros\Core\Router;
 use Cros\Platform\Controllers\ConfigController;
 use Cros\Platform\Controllers\ConsoleController;
 use Cros\Platform\Controllers\InstanceController;
+use Cros\Platform\Controllers\MailoutController;
 use Cros\Platform\Controllers\RequestController;
 use Cros\Platform\Controllers\SiteController;
+use Cros\Platform\Controllers\SupportController;
 use Cros\Platform\Controllers\UpdatesController;
 
 $router = new Router();
@@ -42,6 +44,38 @@ if (($mode ?? 'platform') === 'console') {
     $router->get('/sollicituds', [RequestController::class, 'index']);
     $router->get('/sollicituds/{id:\d+}', [RequestController::class, 'show']);
     $router->post('/sollicituds/{id:\d+}/decidir', [RequestController::class, 'decide']);
+
+    /* Suport: la safata dels tiquets i els departaments. */
+    $router->get('/suport', [SupportController::class, 'index']);
+    $router->get('/suport/departaments', [SupportController::class, 'departments']);
+    $router->post('/suport/departaments/desar', [SupportController::class, 'saveDepartment']);
+    $router->post('/suport/departaments/{id:\d+}/esborrar', [SupportController::class, 'deleteDepartment']);
+    $router->get('/suport/{id:\d+}', [SupportController::class, 'show']);
+    $router->post('/suport/{id:\d+}/respondre', [SupportController::class, 'reply']);
+    $router->post('/suport/{id:\d+}/estat', [SupportController::class, 'update']);
+    $router->post('/suport/{id:\d+}/esborrar', [SupportController::class, 'destroy']);
+
+    /* Enviaments de correu, llistes i plantilla. */
+    $router->get('/enviaments', [MailoutController::class, 'index']);
+    $router->get('/enviaments/nou', [MailoutController::class, 'create']);
+    $router->post('/enviaments/nou', [MailoutController::class, 'store']);
+    $router->get('/enviaments/plantilla', [MailoutController::class, 'template']);
+    $router->post('/enviaments/plantilla', [MailoutController::class, 'saveTemplate']);
+    $router->get('/enviaments/plantilla/vista-previa', [MailoutController::class, 'templatePreview']);
+    $router->get('/enviaments/llistes', [MailoutController::class, 'lists']);
+    $router->post('/enviaments/llistes/desar', [MailoutController::class, 'saveList']);
+    $router->get('/enviaments/llistes/{id:\d+}', [MailoutController::class, 'listShow']);
+    $router->post('/enviaments/llistes/{id:\d+}/contactes', [MailoutController::class, 'addContacts']);
+    $router->post('/enviaments/llistes/{id:\d+}/esborrar', [MailoutController::class, 'deleteList']);
+    $router->post('/enviaments/contactes/{id:\d+}', [MailoutController::class, 'contactAction']);
+    $router->get('/enviaments/{id:\d+}', [MailoutController::class, 'show']);
+    $router->get('/enviaments/{id:\d+}/editar', [MailoutController::class, 'edit']);
+    $router->post('/enviaments/{id:\d+}/editar', [MailoutController::class, 'update']);
+    $router->get('/enviaments/{id:\d+}/vista-previa', [MailoutController::class, 'preview']);
+    $router->post('/enviaments/{id:\d+}/prova', [MailoutController::class, 'test']);
+    $router->post('/enviaments/{id:\d+}/preparar', [MailoutController::class, 'start']);
+    $router->post('/enviaments/{id:\d+}/tanda', [MailoutController::class, 'batch']);
+    $router->post('/enviaments/{id:\d+}/esborrar', [MailoutController::class, 'destroy']);
 
     $router->get('/instancies', [InstanceController::class, 'index']);
     $router->get('/instancies/nova', [InstanceController::class, 'create']);

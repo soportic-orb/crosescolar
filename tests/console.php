@@ -110,9 +110,16 @@ $dbExists = static fn (string $name): bool => (bool) $admin->query(
 $dbTables = static fn (string $name): int => (int) $admin->query(
     'SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = ' . $admin->quote($name)
 )->fetchColumn();
-foreach (['platform_activity', 'instance_requests', 'instances', 'clients', 'platform_users'] as $table) {
+foreach ([
+    'platform_activity', 'instance_requests', 'instances', 'clients', 'platform_users',
+    'support_messages', 'support_tickets',
+    'platform_mailing_recipients', 'platform_mailings', 'mail_contacts', 'mail_lists',
+] as $table) {
     $pdo->exec('DELETE FROM ' . $table);
 }
+// Els departaments no: el que ve de fàbrica l'ha posat la migració i no
+// tornaria. Només se'n treuen els que hagi deixat una passada anterior.
+$pdo->exec("DELETE FROM support_departments WHERE name <> 'Suport general'");
 // La configuració també: una plataforma acabada d'instal·lar no en té cap, i
 // el que digui el fitxer de la instal·lació ha de manar.
 $pdo->exec('DROP TABLE IF EXISTS settings');
@@ -470,6 +477,146 @@ try {
     @unlink($zipFile);
     check('El servidor no es queda el fitxer',
         (glob($site . '/tenants/santjordi/storage/exports/*.zip') ?: []) === []);
+
+    echo "\n== Suport: el client obre una consulta ==\n";
+    // Els tiquets viuen a la base de dades de la plataforma, però s'obren des
+    // del panell del client: això prova el pont entre les dues bases de dades.
+    $menu = $web('GET', '/admin', [], 'santjordi.crosescolar.test');
+    check('Al panell del client hi surt el Suport', str_contains($menu['body'], '/admin/suport'));
+
+    $suport = $web('GET', '/admin/suport', [], 'santjordi.crosescolar.test');
+    check('L\'apartat respon', $suport['status'] === 200, 'estat ' . $suport['status']);
+    check('I diu que encara no n\'hi ha cap', str_contains(text($suport['body']), 'Encara no heu obert cap consulta'));
+
+    $nova = $web('GET', '/admin/suport/nou', [], 'santjordi.crosescolar.test');
+    check('Hi ha el formulari de consulta nova', $nova['status'] === 200);
+    check('Amb el departament que ve de fàbrica', str_contains($nova['body'], 'Suport general'));
+
+    $departmentId = (int) Db::val("SELECT id FROM support_departments WHERE name = 'Suport general'", [], 0);
+    $oberta = $web('POST', '/admin/suport/nou', [
+        '_token' => $token($nova['body']),
+        'department_id' => (string) $departmentId,
+        'priority' => 'high',
+        'subject' => 'No puc canviar la data de la cursa',
+        'body' => '<p>Ho provo des de Dades de la cursa i no es desa.</p>',
+    ], 'santjordi.crosescolar.test');
+    check('La consulta s\'envia', $oberta['status'] === 302, 'estat ' . $oberta['status']);
+
+    $ticket = Db::one('SELECT * FROM support_tickets ORDER BY id DESC LIMIT 1');
+    $ticketId = (int) ($ticket['id'] ?? 0);
+    check('I arriba a la plataforma', $ticketId > 0);
+    check('Amb un número que es pot dir per telèfon',
+        (bool) preg_match('/^S-\d{4}-\d{3}$/', (string) ($ticket['reference'] ?? '')), (string) ($ticket['reference'] ?? ''));
+    check('Sabent de quin web ve',
+        (string) ($ticket['slug'] ?? '') === 'santjordi'
+        && (int) ($ticket['instance_id'] ?? 0) === $instanceId
+        && (string) ($ticket['site_name'] ?? '') === 'Cros Escola Sant Jordi');
+    check('I de qui l\'escriu', (string) ($ticket['author_email'] ?? '') === 'laia@example.cat');
+    check('Neix oberta i esperant-nos',
+        (string) ($ticket['status'] ?? '') === 'open' && (string) ($ticket['last_sender'] ?? '') === 'client');
+    check('Amb la prioritat que ha triat', (string) ($ticket['priority'] ?? '') === 'high');
+    check('I el primer missatge',
+        (int) Db::val('SELECT COUNT(*) FROM support_messages WHERE ticket_id = :id', ['id' => $ticketId], 0) === 1);
+
+    $log = (string) @file_get_contents($site . '/tenants/santjordi/storage/logs/app-' . date('Y-m') . '.log');
+    check('S\'avisa el suport per correu', str_contains($log, 'Consulta nova ' . $ticket['reference']));
+
+    check('El web del client continua funcionant després de tocar la plataforma',
+        $web('GET', '/', [], 'santjordi.crosescolar.test')['status'] === 200);
+    check('I el seu nom no s\'ha barrejat amb el de la plataforma',
+        str_contains($web('GET', '/admin', [], 'santjordi.crosescolar.test')['body'], 'Cros Escola Sant Jordi'));
+
+    echo "\n== Suport: la plataforma contesta ==\n";
+    $safata = $web('GET', '/suport');
+    check('La consulta surt a la safata', $safata['status'] === 200 && str_contains($safata['body'], (string) $ticket['reference']));
+    check('Marcada com que espera resposta', str_contains(text($safata['body']), 'Espera resposta'));
+    check('I el menú ho canta', str_contains($web('GET', '/')['body'], 'Suport'));
+
+    $fitxa = $web('GET', '/suport/' . $ticketId);
+    check('La fitxa s\'obre', $fitxa['status'] === 200 && str_contains($fitxa['body'], 'no es desa'));
+    check('Amb l\'enllaç a la instància', str_contains($fitxa['body'], '/instancies/' . $instanceId));
+
+    $nota = $web('POST', '/suport/' . $ticketId . '/respondre', [
+        '_token' => $token($fitxa['body']),
+        'body' => '<p>Mirar si li falta el permís de configuracio.</p>',
+        'internal' => '1',
+    ]);
+    check('S\'hi pot deixar una nota interna', $nota['status'] === 302);
+    $ticket = Db::one('SELECT * FROM support_tickets WHERE id = :id', ['id' => $ticketId]);
+    check('Que no mou la consulta de lloc', (string) $ticket['status'] === 'open');
+    check('Ni compta com a missatge', (int) $ticket['messages'] === 1);
+
+    $resposta = $web('POST', '/suport/' . $ticketId . '/respondre', [
+        '_token' => $token($web('GET', '/suport/' . $ticketId)['body']),
+        'body' => '<p>Cal desar la data amb el format del calendari. Ho hem provat i va.</p>',
+    ]);
+    check('I contestar el client', $resposta['status'] === 302);
+    $ticket = Db::one('SELECT * FROM support_tickets WHERE id = :id', ['id' => $ticketId]);
+    check('La consulta queda resposta',
+        (string) $ticket['status'] === 'answered' && (string) $ticket['last_sender'] === 'support');
+
+    $llegida = $web('GET', '/admin/suport/' . $ticketId, [], 'santjordi.crosescolar.test');
+    check('El client veu la resposta', str_contains(text($llegida['body']), 'format del calendari'));
+    check('Però no la nota interna', !str_contains($llegida['body'], 'li falta el permís'));
+
+    $seva = $web('POST', '/admin/suport/' . $ticketId . '/respondre', [
+        '_token' => $token($llegida['body']),
+        'body' => '<p>Doncs ara sí. Gràcies!</p>',
+    ], 'santjordi.crosescolar.test');
+    check('I hi pot tornar a escriure', $seva['status'] === 302);
+    $ticket = Db::one('SELECT * FROM support_tickets WHERE id = :id', ['id' => $ticketId]);
+    check('Cosa que la torna a obrir',
+        (string) $ticket['status'] === 'open' && (string) $ticket['last_sender'] === 'client');
+
+    $tancada = $web('POST', '/admin/suport/' . $ticketId . '/tancar', [
+        '_token' => $token($web('GET', '/admin/suport/' . $ticketId, [], 'santjordi.crosescolar.test')['body']),
+    ], 'santjordi.crosescolar.test');
+    check('El client la pot donar per resolta', $tancada['status'] === 302);
+    check('I queda tancada',
+        (string) Db::val('SELECT status FROM support_tickets WHERE id = :id', ['id' => $ticketId], '') === 'closed');
+
+    // Un tiquet d'un altre web no s'ha de poder llegir des d'aquest.
+    $altre = Db::insert('support_tickets', [
+        'reference' => 'S-' . date('Y') . '-999', 'subject' => 'Consulta d\'un altre cros',
+        'slug' => 'unaltrecros', 'author_email' => 'algu@example.cat', 'status' => 'open',
+        'priority' => 'normal', 'last_sender' => 'client', 'last_message_at' => date('Y-m-d H:i:s'),
+        'created_at' => date('Y-m-d H:i:s'),
+    ]);
+    check('Un client no pot llegir la consulta d\'un altre',
+        $web('GET', '/admin/suport/' . $altre, [], 'santjordi.crosescolar.test')['status'] === 404);
+    Db::delete('support_tickets', 'id = :id', ['id' => $altre]);
+
+    echo "\n== Suport: els departaments ==\n";
+    $deps = $web('GET', '/suport/departaments');
+    check('La pantalla de departaments respon', $deps['status'] === 200);
+    $nouDep = $web('POST', '/suport/departaments/desar', [
+        '_token' => $token($deps['body']), 'id' => '0', 'name' => 'Inscripcions i dorsals',
+        'description' => 'Tot el que té a veure amb qui corre.', 'email' => 'inscripcions@crosescolar.test',
+        'sort_order' => '20', 'active' => '1',
+    ]);
+    check('Se\'n pot crear un de nou', $nouDep['status'] === 302);
+    $dep = Db::one("SELECT * FROM support_departments WHERE name = 'Inscripcions i dorsals'");
+    check('Amb la seva adreça d\'avisos', (string) ($dep['email'] ?? '') === 'inscripcions@crosescolar.test');
+    check('I el client el pot triar',
+        str_contains($web('GET', '/admin/suport/nou', [], 'santjordi.crosescolar.test')['body'], 'Inscripcions i dorsals'));
+
+    $desat = $web('POST', '/suport/departaments/desar', [
+        '_token' => $token($web('GET', '/suport/departaments')['body']), 'id' => (string) (int) $dep['id'],
+        'name' => 'Inscripcions i dorsals', 'description' => '', 'email' => 'aixòNoÉsUnCorreu',
+        'sort_order' => '20', 'active' => '1',
+    ]);
+    check('Una adreça que no ho és no s\'accepta', $desat['status'] === 302
+        && (string) Db::val('SELECT email FROM support_departments WHERE id = :id', ['id' => (int) $dep['id']], '')
+           === 'inscripcions@crosescolar.test');
+
+    Db::update('support_tickets', ['department_id' => (int) $dep['id']], 'id = :id', ['id' => $ticketId]);
+    $fora = $web('POST', '/suport/departaments/' . (int) $dep['id'] . '/esborrar', [
+        '_token' => $token($web('GET', '/suport/departaments')['body']),
+    ]);
+    check('En esborrar-ne un, la consulta no es perd', $fora['status'] === 302
+        && Db::one('SELECT id FROM support_tickets WHERE id = :id', ['id' => $ticketId]) !== null);
+    check('Només es queda sense departament',
+        Db::val('SELECT department_id FROM support_tickets WHERE id = :id', ['id' => $ticketId]) === null);
 
     echo "\n== Vigilància ==\n";
     $report = Health::run($site);
@@ -1131,6 +1278,146 @@ try {
     ]);
     check('I es poden tornar a obrir',
         str_contains($web('GET', '/', [], 'crosescolar.test')['body'], 'name="entity"'));
+
+    echo "\n== Llistes de correu ==\n";
+    $llistes = $web('GET', '/enviaments/llistes');
+    check('La pantalla de llistes respon', $llistes['status'] === 200);
+    $novaLlista = $web('POST', '/enviaments/llistes/desar', [
+        '_token' => $token($llistes['body']), 'id' => '0',
+        'name' => 'Escoles del Penedès', 'description' => 'Contactes de la fira d\'entitats',
+    ]);
+    $listId = (int) Db::val("SELECT id FROM mail_lists WHERE name = 'Escoles del Penedès'", [], 0);
+    check('Se\'n pot crear una', $novaLlista['status'] === 302 && $listId > 0);
+
+    $fitxaLlista = $web('GET', '/enviaments/llistes/' . $listId);
+    check('I obrir-la', $fitxaLlista['status'] === 200);
+    $afegides = $web('POST', '/enviaments/llistes/' . $listId . '/contactes', [
+        '_token' => $token($fitxaLlista['body']),
+        'contacts' => "anna@example.cat\n"
+            . "Pau Soler <pau@example.cat>\n"
+            . "marta@example.cat; Marta Vila; AFA Sant Jordi\n"
+            . "ANNA@example.cat\n"
+            . "això no és cap adreça\n",
+    ]);
+    check('S\'hi enganxen adreces de qualsevol manera', $afegides['status'] === 302);
+    $contactes = Db::all('SELECT * FROM mail_contacts WHERE list_id = :id ORDER BY email', ['id' => $listId]);
+    check('N\'entren tres i prou', count($contactes) === 3, (string) count($contactes));
+    $per = [];
+    foreach ($contactes as $contacte) {
+        $per[(string) $contacte['email']] = $contacte;
+    }
+    check('L\'adreça sola hi és', isset($per['anna@example.cat']));
+    check('La forma «Nom <adreça>» en treu el nom',
+        (string) ($per['pau@example.cat']['name'] ?? '') === 'Pau Soler');
+    check('I les columnes, el nom i l\'entitat',
+        (string) ($per['marta@example.cat']['name'] ?? '') === 'Marta Vila'
+        && (string) ($per['marta@example.cat']['entity'] ?? '') === 'AFA Sant Jordi');
+    check('Una adreça repetida no es duplica',
+        (int) Db::val('SELECT COUNT(*) FROM mail_contacts WHERE list_id = :id AND email = :e',
+            ['id' => $listId, 'e' => 'anna@example.cat'], 0) === 1);
+    check('I el que no és cap adreça es diu', str_contains(text($web('GET', '/enviaments/llistes/' . $listId)['body']), 'Marta Vila'));
+
+    $baixa = $web('POST', '/enviaments/contactes/' . (int) $per['anna@example.cat']['id'], [
+        '_token' => $token($web('GET', '/enviaments/llistes/' . $listId)['body']),
+        'list_id' => (string) $listId, 'action' => 'toggle',
+    ]);
+    check('Una adreça es pot donar de baixa sense esborrar-la', $baixa['status'] === 302
+        && (int) Db::val('SELECT active FROM mail_contacts WHERE id = :id',
+            ['id' => (int) $per['anna@example.cat']['id']], 1) === 0);
+
+    echo "\n== La plantilla del correu ==\n";
+    $plantilla = $web('GET', '/enviaments/plantilla');
+    check('L\'editor de plantilla respon', $plantilla['status'] === 200);
+    check('I porta la capçalera de fàbrica', str_contains($plantilla['body'], '{{plataforma}}'));
+    $mostra = $web('GET', '/enviaments/plantilla/vista-previa');
+    check('La vista prèvia és un correu sencer',
+        str_contains($mostra['body'], '<!doctype html>') && str_contains($mostra['body'], 'Anna Duran'));
+    check('Amb els marcadors ja substituïts', !str_contains($mostra['body'], '{{nom}}'));
+
+    $desada = $web('POST', '/enviaments/plantilla', [
+        '_token' => $token($plantilla['body']),
+        'header' => '<div style="padding:20px">Hola de part de {{plataforma}}</div>',
+        'footer' => '<div style="padding:20px">Escriviu-nos a hola@{{web}} · {{any}}</div>',
+    ]);
+    check('La plantilla es desa', $desada['status'] === 302);
+    $mostra = $web('GET', '/enviaments/plantilla/vista-previa');
+    check('I la vista prèvia la fa servir',
+        str_contains($mostra['body'], 'Hola de part de Cros Escolar')
+        && str_contains($mostra['body'], 'hola@crosescolar.test'));
+
+    echo "\n== Enviaments de la plataforma ==\n";
+    $nouEnv = $web('GET', '/enviaments/nou');
+    check('El formulari d\'enviament respon', $nouEnv['status'] === 200);
+    $creat = $web('POST', '/enviaments/nou', [
+        '_token' => $token($nouEnv['body']),
+        'subject' => 'Novetats per a {{entitat}}',
+        'body' => '<p>Hola, {{nom}}. Us escrivim a {{correu}}.</p>',
+        'audience' => 'list', 'list_id' => (string) $listId,
+        'instance_status' => 'active', 'manual_emails' => '',
+    ]);
+    $mailingId = (int) Db::val('SELECT id FROM platform_mailings ORDER BY id DESC LIMIT 1', [], 0);
+    check('L\'esborrany es desa', $creat['status'] === 302 && $mailingId > 0);
+
+    $fitxaEnv = $web('GET', '/enviaments/' . $mailingId);
+    check('La fitxa s\'obre', $fitxaEnv['status'] === 200);
+    check('I només compta les adreces d\'alta',
+        str_contains($fitxaEnv['body'], 'Veure les 2 adreces'), 'no hi diu 2');
+
+    $previa = $web('GET', '/enviaments/' . $mailingId . '/vista-previa');
+    check('La vista prèvia porta la plantilla i el cos',
+        str_contains($previa['body'], 'Hola de part de Cros Escolar') && str_contains($previa['body'], 'Us escrivim a'));
+
+    $preparat = $web('POST', '/enviaments/' . $mailingId . '/preparar', ['_token' => $token($fitxaEnv['body'])]);
+    check('Es prepara', $preparat['status'] === 302);
+    check('Amb un destinatari per adreça d\'alta',
+        (int) Db::val('SELECT COUNT(*) FROM platform_mailing_recipients WHERE mailing_id = :id', ['id' => $mailingId], 0) === 2);
+
+    $tanda = $web('POST', '/enviaments/' . $mailingId . '/tanda', [
+        '_token' => $token($web('GET', '/enviaments/' . $mailingId)['body']),
+    ]);
+    $enviament = Db::one('SELECT * FROM platform_mailings WHERE id = :id', ['id' => $mailingId]);
+    check('I s\'envia', $tanda['status'] === 302 && (string) $enviament['status'] === 'sent');
+    check('Sense cap error', (int) $enviament['sent'] === 2 && (int) $enviament['failed'] === 0,
+        $enviament['sent'] . '/' . $enviament['failed']);
+
+    $log = (string) @file_get_contents($site . '/storage/logs/app-' . date('Y-m') . '.log');
+    check('L\'assumpte porta els marcadors substituïts',
+        str_contains($log, 'Novetats per a AFA Sant Jordi'), 'no surt al registre');
+    check('I no queda cap marcador per posar', !str_contains($log, 'Novetats per a {{entitat}}'));
+
+    $repetit = $web('POST', '/enviaments/' . $mailingId . '/preparar', [
+        '_token' => $token($web('GET', '/enviaments/' . $mailingId)['body']),
+    ]);
+    check('Tornar-hi no repeteix cap correu', $repetit['status'] === 302
+        && (int) Db::val('SELECT COUNT(*) FROM platform_mailing_recipients WHERE mailing_id = :id', ['id' => $mailingId], 0) === 2);
+
+    // Un enviament a les administradores dels webs: la llista surt de les instàncies.
+    $alsWebs = $web('POST', '/enviaments/nou', [
+        '_token' => $token($web('GET', '/enviaments/nou')['body']),
+        'subject' => 'Manteniment del dissabte',
+        'body' => '<p>Aquest dissabte el servei estarà aturat una estona.</p>',
+        'audience' => 'instances', 'list_id' => '0', 'instance_status' => 'active', 'manual_emails' => '',
+    ]);
+    $webId = (int) Db::val('SELECT id FROM platform_mailings ORDER BY id DESC LIMIT 1', [], 0);
+    check('També se\'n pot fer un a les administradores', $alsWebs['status'] === 302);
+    $web('POST', '/enviaments/' . $webId . '/preparar', ['_token' => $token($web('GET', '/enviaments/' . $webId)['body'])]);
+    $esperats = array_column(Db::all(
+        "SELECT DISTINCT admin_email FROM instances WHERE status = 'active' AND admin_email <> ''"
+    ), 'admin_email');
+    $rebran = array_column(Db::all(
+        'SELECT email FROM platform_mailing_recipients WHERE mailing_id = :id ORDER BY email', ['id' => $webId]
+    ), 'email');
+    sort($esperats);
+    check('Que agafa l\'adreça de cada web en marxa i cap més',
+        $rebran === $esperats && $rebran !== [], implode(', ', $rebran) . ' vs ' . implode(', ', $esperats));
+
+    $sense = $web('POST', '/enviaments/nou', [
+        '_token' => $token($web('GET', '/enviaments/nou')['body']),
+        'subject' => '', 'body' => '', 'audience' => 'clients', 'list_id' => '0',
+        'instance_status' => 'active', 'manual_emails' => '',
+    ]);
+    check('Un enviament sense assumpte ni cos no es desa',
+        $sense['status'] === 200 && str_contains(text($sense['body']), 'Cal posar un assumpte'));
 
     echo "\n== Actualitzacions del sistema ==\n";
     $updates = $web('GET', '/actualitzacions');
