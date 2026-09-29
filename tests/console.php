@@ -1559,6 +1559,32 @@ try {
     ], 'esportweb.test');
     check('I tampoc no s\'hi pot entrar per la porta del darrere',
         $intent['status'] === 302 && Db::one("SELECT * FROM instances WHERE slug = 'unaaltra'") === null);
+    // Una instal·lació que acaba d'actualitzar-se encara no té les columnes
+    // noves: la pàgina pública no migra a cada visita, però una alta sí que
+    // ha de trobar-ho tot al seu lloc.
+    $pdo->exec('ALTER TABLE instances DROP COLUMN verified_at');
+    $pdo->exec('ALTER TABLE instances DROP COLUMN source');
+    $pdo->exec("DELETE FROM platform_migrations WHERE name = '0010_registre.sql'");
+    $reoberta = $web('GET', '/configuracio/requests?domini=esportweb.test');
+    $web('POST', '/configuracio/requests?domini=esportweb.test', [
+        '_token' => $token($reoberta['body']),
+        'platform_requests_open' => '1',
+        'platform_requests_closed_text' => 'Ara no en donem.',
+        'platform_directory' => '1',
+    ]);
+    $tardana = $web('POST', '/registre', [
+        '_token' => $token($web('GET', '/', [], 'esportweb.test')['body']),
+        'site_name' => 'Duatló de Tardor', 'admin_name' => 'Roc Vila',
+        'admin_email' => 'roc@example.cat', 'slug' => 'duatlotardor',
+        'domain' => 'esportweb.test', 'consent' => '1',
+    ], 'esportweb.test');
+    check('Una alta just després d\'actualitzar posa la base de dades al dia',
+        $tardana['status'] === 302 && str_contains($tardana['headers'], '/benvinguda'),
+        'estat ' . $tardana['status']);
+    $duatlo = Db::one("SELECT * FROM instances WHERE slug = 'duatlotardor'");
+    check('I el web queda creat igualment',
+        $duatlo !== null && (string) ($duatlo['source'] ?? '') === 'signup');
+
     // I es tornen a obrir, que la resta de proves compten que hi són.
     $reobre = $web('GET', '/configuracio/requests?domini=esportweb.test');
     $web('POST', '/configuracio/requests?domini=esportweb.test', [
@@ -1828,7 +1854,7 @@ try {
 
     // Les bases de dades i els usuaris que hagin quedat de les proves.
     try {
-        foreach (['santjordi', 'elbosc', 'lagranada', 'lariera'] as $slug) {
+        foreach (['santjordi', 'elbosc', 'lagranada', 'lariera', 'duatlotardor'] as $slug) {
             $admin->exec('DROP DATABASE IF EXISTS `' . $prefix . $slug . '`');
             $drop = $admin->prepare('DROP USER IF EXISTS ?@?');
             $drop->execute([$prefix . $slug, $db['grant_host']]);

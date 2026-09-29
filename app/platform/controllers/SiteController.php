@@ -54,6 +54,15 @@ class SiteController extends Controller
         if (trim((string) input('website_url')) !== '') {
             redirect('/');
         }
+        // La pàgina pública no posa al dia la base de dades a cada visita, que
+        // és la que rep el trànsit. Però una alta sí que hi escriu, i ha de
+        // trobar-hi les taules al dia encara que ningú no hagi obert el panell
+        // des de l'última actualització.
+        try {
+            Platform::migrate();
+        } catch (\Throwable $e) {
+            log_line('platform', 'No s\'han pogut aplicar les migracions abans d\'una alta', ['error' => $e->getMessage()]);
+        }
 
         $data = [
             'site_name' => trim((string) input('site_name')),

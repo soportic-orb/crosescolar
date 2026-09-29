@@ -1,13 +1,28 @@
-# Cros Escolar La Granada
+# EsportWeb
 
-Web oficial del **Cros Escolar de La Granada** (Alt Penedès): informació de la cursa,
-recorreguts amb mapes de Wikiloc, categories i premis, inscripcions i venda en línia
-dels tiquets del punt de recàrrega amb Stripe.
+Plataforma per a webs de curses i activitats esportives. El mateix codi serveix
+tres coses:
 
-- **Domini:** https://cros.afalagranada.cat
+- **El web d'una prova** —portada, recorreguts, categories, inscripcions,
+  dorsals, resultats, cobraments i punt de recàrrega— a la seva adreça.
+- **Les pàgines públiques de la plataforma**, una per domini: `esportweb.cat`
+  parla d'esport en general i `crosescolar.cat`, de cros escolars. El text, la
+  imatge i les preguntes de cadascuna s'editen des del panell.
+- **El panell de superadministració**, a `admin.esportweb.cat`: clients,
+  instàncies, facturació, suport, enviaments i actualitzacions.
+
+Qui vol el seu web se'l fa ell mateix des de la portada i entra al panell amb el
+botó que li arriba per correu. El web neix amagat i només es paga el dia que es
+vol fer públic, un sol cop.
+
+Va néixer com el web del **Cros Escolar de La Granada** (Alt Penedès), que encara
+és la instal·lació de referència i d'on surten els exemples d'aquesta
+documentació.
+
+- **Dominis:** https://esportweb.cat · https://crosescolar.cat
 - **Idioma:** català
 - **Tecnologia:** PHP 8 + MySQL/MariaDB, **sense cap dependència externa** (ni Composer ni npm)
-- **Allotjament:** servidor VPS compartit amb CloudPanel (nginx + PHP-FPM)
+- **Allotjament:** VPS amb nginx + PHP-FPM
 
 ---
 
@@ -96,6 +111,9 @@ Instruccions detallades (nginx, permisos, Stripe, correu): [`docs/instalacio.md`
 │   ├── core/              Nucli: Db, Router, View, Auth, Mailer, Stripe, Qr, Pdf, Updater…
 │   ├── controllers/       Controladors públics i del panell (`admin/`)
 │   ├── models/            Comandes, tiquets, inscripcions i continguts
+│   ├── payments/          Les passarel·les del client (Stripe, PayPal, Redsys)
+│   ├── platform/          La plataforma: instàncies, clients, altes, facturació
+│   │                      i les seves pàgines públiques (una per domini)
 │   ├── migrations/        Migracions SQL numerades
 │   └── views/             Plantilles (públiques, panell i correus)
 ├── assets/                CSS i JavaScript (sense compilació)

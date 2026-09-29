@@ -199,7 +199,7 @@ return [
                 'help' => 'Amb això desactivat, qualsevol client pot publicar el seu web quan vulgui, sense pagar res.'],
             'plan_name' => ['label' => 'Com se\'n diu', 'type' => 'text', 'default' => 'Activació del web',
                 'help' => 'És el que surt al concepte del pagament i a la factura.'],
-            'plan_price_cents' => ['label' => 'Preu base (sense impostos)', 'type' => 'money', 'default' => '0',
+            'plan_price_cents' => ['label' => 'Preu base (sense impostos)', 'type' => 'money', 'default' => '30000',
                 'help' => 'És la base imposable. Els impostos es calculen a sobre, i just aquí sota hi teniu el compte fet.'],
             'plan_vat_enabled' => ['label' => 'Aplicar-hi IVA', 'type' => 'bool', 'default' => '1',
                 'help' => 'Se suma a la base: és el que es repercuteix a qui paga.'],
@@ -210,7 +210,7 @@ return [
                     . 'Només s\'aplica quan qui paga és una empresa o professional obligat a retenir.'],
             'plan_irpf_rate' => ['label' => 'Tipus d\'IRPF (%)', 'type' => 'text', 'default' => '15', 'show_if' => 'plan_irpf_enabled'],
             'plan_description' => ['label' => 'Què inclou', 'type' => 'html', 'rows' => 6,
-                'default' => '<p>Amb l\'activació, el web del vostre cros queda publicat a la vostra adreça, amb certificat i còpies de seguretat, i el manteniment i les actualitzacions van a càrrec nostre.</p><p>És un pagament únic: no hi ha quota mensual ni comissió per inscripció.</p>'],
+                'default' => '<p>Amb l\'activació, el vostre web queda publicat a la vostra adreça, amb certificat i còpies de seguretat, i el manteniment i les actualitzacions van a càrrec nostre.</p><p>És un pagament únic: no hi ha quota mensual, ni comissió per inscripció, ni límit d\'inscrits o de transaccions.</p>'],
         ],
     ],
 

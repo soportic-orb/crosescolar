@@ -187,7 +187,7 @@ jobs:
         with:
           tag_name: ${{ steps.versio.outputs.tag }}
           target_commitish: ${{ github.sha }}
-          name: "Cros Escolar La Granada ${{ steps.versio.outputs.tag }}"
+          name: "EsportWeb ${{ steps.versio.outputs.tag }}"
           files: |
             dist/*.zip
             dist/manifest.json

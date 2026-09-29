@@ -3,6 +3,48 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.34.0] — 2026-09-29
+
+### Afegit
+- **EsportWeb.** El nucli de la plataforma passa a dir-se així i parla de curses
+  i activitats esportives en general, no només de cros escolars. Les
+  funcionalitats són exactament les mateixes.
+- **Una pàgina pública per cada domini.** `esportweb.cat` i `crosescolar.cat`
+  són dos webs amb el seu nom, el seu text, la seva imatge i les seves
+  preguntes, servits pel mateix codi i editats des del mateix panell: els grups
+  de configuració que fan la pàgina pública porten a dalt les pestanyes dels
+  dominis. La resta —clients, facturació, correu, suport— és la mateixa per a
+  tots, i el panell de superadministració és un de sol, al domini principal.
+- **Registre lliure.** Qui vol un web l'omple des de la portada i el té fet al
+  moment, triant el subdomini i el domini. No cal que ningú l'aprovi.
+- **El correu com a porta.** L'única manera d'entrar al panell acabat de crear
+  és el botó «Accedeix al teu Panell d'Administració» que s'hi envia: en
+  prémer-lo s'hi entra, es tria contrasenya i l'adreça queda validada. Al panell
+  de superadministració, qui encara no l'hagi premut surt com a «Correu per
+  validar».
+- **Avís de web no publicat** a dalt de tot del panell del client, amb el preu i
+  el botó per publicar-lo.
+- **Pagament amb targeta sense sortir del web.** La pantalla de publicar porta
+  el desglossament i el formulari de la targeta allà mateix, dibuixat per
+  Stripe.js a partir d'un PaymentIntent. El número de la targeta no passa mai
+  pel nostre servidor.
+- **IVA i IRPF al cobrament d'activació**, cadascun activable a part. El preu
+  del plà passa a ser la base imposable: l'IVA s'hi suma i la retenció d'IRPF
+  (15 % per defecte) s'hi resta. El desglossament surt a la configuració, a la
+  fitxa del cobrament, al panell del client i a la factura, que explica qui
+  ingressa la retenció.
+- **Icones d'esport al lloc del logotip.** A l'Aparença del client es pot triar
+  una de les 26 icones en comptes de pujar un logotip; la que es tria surt al
+  web públic i al panell.
+
+### Canviat
+- Un domini secundari ja no mena al principal: és un altre web i s'hi queda.
+  Només es continua traient el «www».
+- El preu d'activació que ve de fàbrica és de 300 € de base.
+- L'apartat «Sol·licituds» de la configuració passa a dir-se «Altes».
+- El tauler del client ja no repeteix l'avís de web amagat: ara és a la barra de
+  dalt de tot.
+
 ## [1.33.0] — 2026-09-29
 
 ### Afegit

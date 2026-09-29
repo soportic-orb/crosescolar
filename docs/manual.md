@@ -21,13 +21,14 @@ A partir d'aquell moment:
 - Qualsevol visitant veu només l'avís, amb la data de la cursa, el compte enrere i
   el contacte (podeu amagar aquests dos blocs).
 - **Vosaltres continueu veient el web sencer** sempre que tingueu la sessió iniciada
-  al panell. A dalt de tot hi apareix una barra recordant que el web està amagat,
-  amb un botó per publicar-lo a l'instant.
+  al panell. A dalt de tot del panell hi ha una barra que ho recorda a cada pantalla,
+  amb el botó **Publicar web**.
 - El panell, la validació de tiquets i el webhook de Stripe continuen funcionant.
 - El web no s'indexa als cercadors mentre estigui amagat.
 
-Per publicar-lo: botó **Publicar el web ara** (a la barra superior o al tauler) o
-desactiveu l'opció a la configuració.
+Per publicar-lo, premeu **Publicar web** a la barra de dalt. Si publicar-lo té un
+pagament d'activació, el botó us hi porta i el podeu fer allà mateix amb la targeta;
+si no en té, el web queda públic a l'instant.
 
 ## Abans de la cursa
 
@@ -64,7 +65,18 @@ toqui.
 
 El botó **«Inscriu-te!»** hi és sempre, al final del menú, i no es pot treure des d'aquí.
 
-### 2. Personalitzar la portada
+### 2. La marca: icona o logotip
+
+A **Configuració → Aparença** trieu què surt al costat del nom del web:
+
+- **Una icona d'esport.** Hi ha un mosaic amb 26 icones —cursa a peu, ciclisme,
+  natació, bàsquet, patinatge…— i en trieu la que us vagi. No cal dissenyar res.
+- **El vostre logotip**, si en teniu. Si trieu aquesta opció i no n'heu pujat cap,
+  es fa servir la icona.
+
+Al mateix apartat hi ha els colors del web i el text del peu.
+
+### 3. Personalitzar la portada
 **Configuració → Portada**
 - *Imatge del banner*: fotografia horitzontal (1920×1080). Si no n'hi ha cap es mostra
   el fons il·lustrat de vinyes.
@@ -72,7 +84,7 @@ El botó **«Inscriu-te!»** hi és sempre, al final del menú, i no es pot treu
 - Botons principals i compte enrere.
 - Textos de cada secció: introducció, recorreguts, programa, galeria, ubicació i patrocinadors.
 
-### 2.1. Avisos: la barra de dalt i el cartell emergent
+### 3.1. Avisos: la barra de dalt i el cartell emergent
 **Configuració → Avisos**
 
 Dues maneres d'anunciar una cosa puntual —un canvi d'horari, l'últim dia per
@@ -103,7 +115,7 @@ apagades i es poden engegar i apagar quan convingui.
 
 El cartell es tanca amb la creu, clicant-hi fora o amb la tecla Esc.
 
-### 3. Recorreguts amb Wikiloc
+### 4. Recorreguts amb Wikiloc
 **Recorreguts → Afegir**
 - Enganxeu l'**URL de Wikiloc** de la ruta (per exemple
   `https://ca.wikiloc.com/rutes-senderisme/cros-la-granada-123456789`). El número
@@ -114,17 +126,17 @@ El cartell es tanca amb la creu, clicant-hi fora o amb la tecla Esc.
 > Els mapes de Wikiloc només es carreguen quan la persona hi fa clic: així la pàgina
 > va més ràpida i no es comparteixen dades amb tercers sense consentiment.
 
-### 4. Categories i premis
+### 5. Categories i premis
 **Categories** — nom, anys de naixement, hora de sortida, distància i recorregut assignat.
 Si la categoria és d'un sol any, poseu el mateix any als dos camps: al web i als dorsals
 hi sortirà una sola vegada (*2020*, no *2020–2020*).
 **Premis** — targetes que es mostren a la pàgina de categories.
 
-### 5. Patrocinadors
+### 6. Patrocinadors
 **Patrocinadors → Afegir**: nom, logotip (PNG o SVG amb fons transparent), enllaç i tipus
 (institucional, principal, col·laborador). Arrossegueu les files per canviar-ne l'ordre.
 
-### 6. Inscripcions: amb formulari o només informació
+### 7. Inscripcions: amb formulari o només informació
 
 **Configuració → Inscripcions** decideix què veu la gent a la pàgina d'inscripció:
 
@@ -149,7 +161,7 @@ convé tenir present abans d'inscriure's. El títol i el contingut s'editen a
 l'editor visual: llistes, negretes i enllaços), i l'interruptor *Mostrar el requadre de
 recordatoris* el treu de la pàgina si no el voleu.
 
-### 6.1. «Les meves inscripcions»
+### 7.1. «Les meves inscripcions»
 
 Les famílies poden revisar i corregir les dades que van posar sense haver d'escriure-us.
 A **Les meves inscripcions** del web escriuen la seva adreça electrònica, reben un
@@ -187,7 +199,7 @@ Si preferiu que ningú no pugui tocar les seves dades, desactiveu
 **Configuració → Inscripcions → «Les meves inscripcions» actiu** i la pàgina desapareix
 (amb ella, també la possibilitat d'anul·lar-se).
 
-### 6.2. Recorreguts i voltes de cada categoria
+### 7.2. Recorreguts i voltes de cada categoria
 
 Una cursa pot fer més d'un recorregut: per exemple, **1 volta al circuit A i 2 voltes al
 circuit B**. A **Categories → editar → Recorreguts i voltes** s'hi afegeixen tants
@@ -202,7 +214,7 @@ fan. Les voltes sempre s'hi indiquen, també quan només n'hi ha una. Si deixeu 
 **distància** de la categoria en blanc, al web s'hi calcula la suma dels recorreguts per
 les voltes.
 
-### 7. Dorsals dels participants
+### 8. Dorsals dels participants
 
 Cada inscripció rep automàticament un **número de dorsal** (001, 002, 003…) i les
 famílies el poden descarregar en PDF des del correu de confirmació.
@@ -286,7 +298,7 @@ desa res. Si buideu el camp, se n'hi posa un de nou automàticament. El botó
 **«Assignar dorsals»** dona número a les inscripcions antigues que encara no en
 tinguin.
 
-### 8. Punt de recàrrega (tiquets)
+### 9. Punt de recàrrega (tiquets)
 **Tipus de tiquet**: nom, descripció, preu, existències i màxim per comanda.
 Deixeu les existències en blanc per no limitar-les.
 El **punt de recàrrega** és el servei de bar de la cursa: on els participants recuperen
@@ -531,9 +543,14 @@ Si el vostre cros va allotjat a la plataforma, pot ser que publicar el web tingu
 no costa res i podeu trastejar tant com calgui; el pagament només cal el dia que vulgueu
 que el web es vegi al públic.
 
-A **Activació del web** (al menú) hi teniu el preu, què inclou i el botó per pagar-ho amb
-targeta. Un cop fet, podeu publicar i despublicar el web les vegades que vulgueu sense
-tornar a pagar res, i us podeu descarregar la factura des d'aquella mateixa pantalla.
+A **Activació del web** (al menú) hi teniu el preu, què inclou i el botó per pagar-ho. El
+botó **Publicar web** de la barra de dalt hi porta igualment.
+
+El pagament es fa **sense sortir del panell**: a la mateixa pantalla hi veieu el
+desglossament —base, IVA i, si escau, la retenció d'IRPF— i el formulari de la targeta.
+Les dades de la targeta van directament al proveïdor de pagaments; aquest web no les veu
+mai. Un cop fet, podeu publicar i despublicar el web les vegades que vulgueu sense tornar
+a pagar res, i us podeu descarregar la factura des d'aquella mateixa pantalla.
 
 > **No ho confongueu amb els vostres cobraments.** L'activació és el que pagueu vosaltres a
 > qui manté la plataforma. El que cobreu vosaltres als participants és una altra cosa, va a
