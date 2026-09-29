@@ -96,6 +96,34 @@ try {
     } else {
         echo "\n(Proves contra GitHub omeses: definiu CROS_TEST_ONLINE=1)\n";
     }
+    echo "\n== Els permisos després d'actualitzar ==\n";
+    // El cron de root crida tools/renovar-certificat.sh pel seu nom. Si en
+    // copiar la versió nova se li treu el permís d'execució, el certificat
+    // deixa de renovar-se i no ho diu ningú fins que caduca.
+    $origen = sys_get_temp_dir() . '/cros-permisos-' . bin2hex(random_bytes(3));
+    $desti = $origen . '-desti';
+    @mkdir($origen . '/tools', 0775, true);
+    @mkdir($desti, 0775, true);
+    file_put_contents($origen . '/tools/renovar-certificat.sh', "#!/usr/bin/env bash\necho hola\n");
+    file_put_contents($origen . '/tools/platform.php', "<?php\n");
+    file_put_contents($origen . '/index.php', "<?php\n");
+    // Al paquet hi arriben sense permisos, que és com els deixa el ZIP.
+    chmod($origen . '/tools/renovar-certificat.sh', 0644);
+
+    $copia = new ReflectionMethod(Updater::class, 'copyTree');
+    $copia->setAccessible(true);
+    $copia->invoke(null, $origen, $desti);
+
+    $mode = static fn (string $f): int => (int) (fileperms($f) & 0777);
+    check('El guió de consola queda executable',
+        $mode($desti . '/tools/renovar-certificat.sh') === 0755,
+        decoct($mode($desti . '/tools/renovar-certificat.sh')));
+    check('I la resta de fitxers, no',
+        $mode($desti . '/tools/platform.php') === 0644 && $mode($desti . '/index.php') === 0644,
+        decoct($mode($desti . '/tools/platform.php')));
+
+    exec('rm -rf ' . escapeshellarg($origen) . ' ' . escapeshellarg($desti));
+
 } finally {
     if (is_resource($server)) {
         proc_terminate($server);

@@ -3,6 +3,15 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.34.3] — 2026-09-29
+
+### Corregit
+- **Els guions de consola perdien el permís d'execució a cada actualització.**
+  L'actualitzador posava `0644` a tot, de manera que després d'actualitzar el
+  cron de root ja no podia executar `tools/renovar-certificat.sh` i el
+  certificat deixava de renovar-se sense que ho digués ningú. Ara els `.sh` es
+  copien amb `0755`.
+
 ## [1.34.2] — 2026-09-29
 
 ### Corregit

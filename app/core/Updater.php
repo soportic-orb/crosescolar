@@ -464,7 +464,11 @@ class Updater
             if (!@copy($item->getPathname(), $destination)) {
                 throw new \RuntimeException('No s\'ha pogut escriure el fitxer: ' . $relative);
             }
-            @chmod($destination, 0644);
+            // Els guions de consola s'han de poder executar: el cron de root
+            // crida tools/renovar-certificat.sh pel seu nom, i si se li treu
+            // el permís a cada actualització el certificat deixa de renovar-se
+            // sense que ho digui ningú.
+            @chmod($destination, str_ends_with($relative, '.sh') ? 0755 : 0644);
             $count++;
         }
         return $count;
