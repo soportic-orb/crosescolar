@@ -47,6 +47,16 @@ class SettingsForm
                 continue;
             }
 
+            if ($type === 'money') {
+                // S'escriu en euros («30,00») i es desa en cèntims, com a
+                // tot arreu: així no hi ha decimals que s'arrodoneixin sols.
+                $raw = $_POST[$name] ?? null;
+                if ($raw !== null) {
+                    Settings::set($name, (string) to_cents((string) $raw));
+                }
+                continue;
+            }
+
             $raw = $overrides[$name] ?? ($_POST[$name] ?? null);
             if ($raw === null) {
                 continue;

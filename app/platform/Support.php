@@ -5,9 +5,6 @@ namespace Cros\Platform;
 
 use Cros\Core\Db;
 use Cros\Core\Html;
-use Cros\Core\Settings;
-use Cros\Core\Tenancy;
-use RuntimeException;
 
 /**
  * El servei de suport: els tiquets que obren els clients i les respostes que
@@ -44,9 +41,6 @@ class Support
     /** Qui ha escrit un missatge. */
     public const SENDERS = ['client' => 'El client', 'support' => 'Suport'];
 
-    /** Evita obrir una connexió dins d'una altra. */
-    private static bool $inside = false;
-
     // ----------------------------------------------------------- el pont
 
     /**
@@ -57,61 +51,20 @@ class Support
      */
     public static function available(?string $root = null): bool
     {
-        return self::config($root ?? CROS_ROOT) !== [];
+        return Bridge::available($root);
     }
 
     /**
-     * Executa una consulta contra la base de dades de la plataforma i torna a
-     * deixar la connexió on era.
-     *
-     * La configuració es descarta en sortir: la que hi havia carregada podria
-     * ser la del cros i la d'aquí no s'hi assembla gens. Es torna a llegir la
-     * primera vegada que algú demani un valor.
+     * Executa una consulta contra la base de dades de la plataforma.
+     * El pont és compartit amb el pagament d'activació: {@see Bridge}.
      *
      * @template T
      * @param callable():T $fn
-     * @param bool $withSettings  també la configuració de la plataforma, per
-     *                            enviar correu amb el seu remitent i no el del cros
      * @return T
      */
     public static function run(callable $fn, ?string $root = null, bool $withSettings = false)
     {
-        if (self::$inside) {
-            return $fn(); // ja hi som: qui ha obert la connexió la tancarà
-        }
-        $root = $root ?? CROS_ROOT;
-        $db = self::config($root);
-        if ($db === []) {
-            throw new RuntimeException('Aquesta instal·lació no té plataforma configurada.');
-        }
-        $previous = Db::connection();
-        $schema = Settings::currentSchema();
-        self::$inside = true;
-        try {
-            Db::setConnection(Db::connect($db + ['charset' => 'utf8mb4', 'timeout' => 10]));
-            if ($withSettings) {
-                Settings::forget();
-                Platform::prime($root);
-            }
-
-            return $fn();
-        } finally {
-            self::$inside = false;
-            Db::setConnection($previous);
-            Settings::forget();
-            Settings::useSchema($schema);
-        }
-    }
-
-    /**
-     * Les dades de connexió de la plataforma, o [] si no n'hi ha.
-     * @return array<string,mixed>
-     */
-    private static function config(string $root): array
-    {
-        $db = (array) (Tenancy::settings($root)['db'] ?? []);
-
-        return trim((string) ($db['name'] ?? '')) === '' ? [] : $db;
+        return Bridge::run($fn, $root, $withSettings);
     }
 
     // ------------------------------------------------------ departaments

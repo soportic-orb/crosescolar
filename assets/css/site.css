@@ -549,3 +549,9 @@ input:disabled, select:disabled, textarea:disabled { background: var(--green-50)
 .fee-option em { font-style: normal; font-weight: 700; color: var(--green-700, #2f6b3c); }
 .fee-option small { color: var(--ink-soft); font-size: .88rem; line-height: 1.5; }
 .fee-option:has(input:checked) { border-color: var(--green-700, #2f6b3c); background: var(--green-100); }
+
+/* Alineació a la dreta per als imports de les taules públiques. */
+.text-right { text-align: right; }
+table.data td.text-right, table.data th.text-right { text-align: right; }
+/* Una taula curta dins d'una targeta: no li cal amplada mínima. */
+table.data--tight { min-width: 0; }

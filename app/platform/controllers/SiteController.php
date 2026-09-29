@@ -226,6 +226,58 @@ class SiteController extends Controller
         exit;
     }
 
+    /**
+     * L'avís de Stripe sobre els pagaments **de la plataforma**.
+     *
+     * És el que mana: si algú tanca la finestra just després de pagar, aquest
+     * és l'únic avís que arriba. No té res a veure amb el webhook del cros,
+     * que va al web del client i amb les claus del client.
+     */
+    public function stripeWebhook(): void
+    {
+        $payload = (string) file_get_contents('php://input');
+        $signature = (string) ($_SERVER['HTTP_STRIPE_SIGNATURE'] ?? '');
+        try {
+            $event = \Cros\Core\Stripe::constructEvent($payload, $signature, \Cros\Core\Stripe::webhookSecret());
+        } catch (\Throwable $e) {
+            log_line('platform', 'Avís de Stripe rebutjat', ['error' => $e->getMessage()]);
+            json_out(['error' => 'Signatura no vàlida'], 400);
+
+            return;
+        }
+
+        $object = $event['data']['object'] ?? [];
+        $type = (string) ($event['type'] ?? '');
+        if (!str_starts_with($type, 'checkout.session.')) {
+            json_out(['received' => true]);
+
+            return;
+        }
+
+        $charge = \Cros\Platform\Charge::findBySession((string) ($object['id'] ?? ''));
+        if (!$charge && !empty($object['metadata']['charge_id'])) {
+            $charge = \Cros\Platform\Charge::find((int) $object['metadata']['charge_id']);
+        }
+        if (!$charge) {
+            json_out(['received' => true]);
+
+            return;
+        }
+
+        try {
+            \Cros\Platform\Charge::confirm($charge, (string) ($object['id'] ?? ''));
+        } catch (\Throwable $e) {
+            log_line('platform', 'Error atenent l\'avís de Stripe', [
+                'code' => $charge['code'], 'error' => $e->getMessage(),
+            ]);
+            json_out(['error' => 'Error intern'], 500);
+
+            return;
+        }
+
+        json_out(['received' => true]);
+    }
+
     /** Instruccions per als cercadors. */
     public function robots(): void
     {

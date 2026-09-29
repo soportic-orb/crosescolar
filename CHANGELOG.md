@@ -3,6 +3,43 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.33.0] — 2026-09-29
+
+### Afegit
+- **Cobraments al cros, amb la passarel·la que es vulgui.** Stripe, PayPal o el
+  TPV de **Redsys**, cadascuna un mòdul que s'activa i es configura a part.
+  Només se'n pot tenir una d'activa: tenir-ne dues obertes alhora acaba amb
+  mitja comptabilitat en un lloc i mitja en un altre.
+- **Les inscripcions es poden cobrar**: tipus d'inscripció amb preu, tria al
+  formulari públic i pagament abans de quedar confirmat. Fins llavors la
+  inscripció neix pendent, no s'avisa ningú i al llistat del panell hi surt
+  marcada.
+- **Rebuts i factures del cros, a nom de l'entitat organitzadora**, de les
+  inscripcions i dels tiquets. Per emetre factura calen totes les dades
+  fiscals; si en falta cap s'emet un rebut. Sèries i numeració pròpies, sense
+  forats, i un document emès no canvia mai més.
+- **Apartat de cobraments al panell**: llistat amb filtres, fitxa de cada
+  cobrament, cobrament en mà, devolucions i descàrrega dels documents. Les
+  famílies veuen els seus pagaments i se'n descarreguen els comprovants des de
+  «Les meves inscripcions».
+- **Pagament d'activació de la plataforma**: donar-se d'alta i preparar el cros
+  no costa res, i el pagament arriba el dia de publicar el web. El preu i el
+  Stripe es posen al panell de superadministració, que també hi porta els
+  pagaments i les factures; el client ho veu i s'ho descarrega des del seu.
+- **Pàgina pública de funcionalitats** (`/funcionalitats`), amb la llista
+  editable des del panell.
+
+> **Són dos sistemes de facturació separats i no es toquen mai.** El que cobra
+> la plataforma va amb les seves dades fiscals i la seva numeració a la seva
+> base de dades; el que cobra cada cros, amb les seves i a la seva. A un rebut
+> d'un cros no hi surt mai cap dada de la plataforma. Hi ha proves que ho
+> comproven llegint el text dels PDF, i `docs/pagaments.md` ho explica.
+
+### Corregit
+- Un camp de preu de la configuració es desava tal com s'escrivia («30,00») en
+  comptes de convertir-lo a cèntims, de manera que 30 euros es quedaven en 30
+  cèntims.
+
 ## [1.32.0] — 2026-09-29
 
 ### Afegit

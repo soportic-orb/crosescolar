@@ -487,6 +487,54 @@ Esborrar un departament **no** esborra les seves consultes: es queden sense
 departament. Per deixar-ne de fer servir un, val més **desactivar-lo**: així les
 que hi havia es queden on eren i els clients ja no el poden triar.
 
+## Cobrar per publicar el web
+
+Donar-se d'alta i preparar el cros no costa res: el client pot trastejar tant com vulgui.
+El pagament arriba el dia que vol que el seu web es vegi al públic, i és **un pagament únic
+per web**.
+
+Es configura en tres llocs del panell:
+
+| Apartat | Què s'hi posa |
+|---|---|
+| **Configuració → Pagament d'activació** | Si es cobra, com se'n diu, el preu (amb IVA inclòs), l'IVA i què inclou |
+| **Configuració → Stripe de la plataforma** | Les claus amb què cobrem nosaltres. **No són les del client**: cada cros té les seves per cobrar als participants |
+| **Configuració → Dades fiscals** | Amb què s'emeten les nostres factures: nom fiscal, NIF, adreça i sèrie |
+
+Mentre el pagament estigui **desactivat**, qualsevol client pot publicar el seu web quan
+vulgui. En activar-lo, el panell del client canvia: pot amagar el web sempre, però per
+publicar-lo se li demana l'activació i se l'envia a la pantalla que l'explica.
+
+**Pagaments** (al menú) és el llistat de tot el que hem cobrat. De cada pagament es pot
+emetre o descarregar la factura, donar-lo per fet si ha arribat per transferència, i tornar
+els diners. **Factures** és el llistat de tot el que hem emès, amb la nostra numeració
+(`A-2026-0001`).
+
+L'avís de Stripe ha d'apuntar al domini públic:
+
+```
+https://crosescolar.cat/pagament/avis
+```
+
+És el que mana: si algú tanca la finestra just després de pagar, aquest és l'únic avís que
+arriba. Poseu-hi el secret del webhook a *Configuració → Stripe de la plataforma*.
+
+> ### Dos sistemes de facturació que no es toquen
+>
+> Val la pena tenir-ho clar perquè és el que més fàcilment es barreja:
+>
+> | | La plataforma | Cada cros |
+> |---|---|---|
+> | Què cobra | L'activació del web | Inscripcions i tiquets |
+> | A qui | Al client (l'AFA, el club) | Als participants |
+> | Amb què | El nostre Stripe | La passarel·la que ell triï: Stripe, PayPal o Redsys |
+> | On viu | Base de dades de la plataforma | Base de dades del client |
+> | Dades fiscals | Les nostres | Les seves |
+> | Numeració | `A-2026-0001` | `R-2026-0001` / `F-2026-0001` |
+>
+> A un rebut d'un cros no hi surt mai cap dada nostra, i a una factura nostra no hi surt
+> mai cap dada d'un participant. Hi ha proves automàtiques que ho comproven.
+
 ## Escriure als clients: enviaments i llistes
 
 **Enviaments** és el mateix mecanisme que fan servir els cros per escriure a les
@@ -654,3 +702,5 @@ sudo -u www-data php tools/platform.php instancies
 | Un subdomini nou dona error de certificat | El certificat no cobreix el comodí d'aquell domini |
 | Al panell d'un client no hi surt Suport | Aquell web no va per plataforma, o `tenants/platform.php` no té dades de connexió |
 | Els tiquets no arriben per correu | L'adreça del departament o la de Configuració → Opcions del suport; mireu el registre de correus |
+| Un client no pot publicar el seu web | Té el pagament d'activació pendent: mireu-ho a Pagaments |
+| Els pagaments es queden pendents | L'avís de Stripe no arriba: comproveu `https://<domini>/pagament/avis` i el secret del webhook |

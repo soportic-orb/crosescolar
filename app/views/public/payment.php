@@ -33,7 +33,7 @@ $cancelled = $cancelled ?? false;
 
     <div class="card">
       <h2 style="margin-top:0">Què es paga</h2>
-      <table class="table">
+      <table class="data data--tight">
         <tbody>
           <?php foreach ($items as $item): ?>
             <tr>

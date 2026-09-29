@@ -18,7 +18,7 @@ use Cros\Models\Billing;
     </div>
 
     <div class="card">
-      <table class="table">
+      <table class="data data--tight">
         <tbody>
           <?php foreach ($items as $item): ?>
             <tr>

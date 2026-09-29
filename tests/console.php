@@ -48,6 +48,9 @@ use Cros\Platform\Dns;
 use Cros\Platform\Health;
 use Cros\Platform\Importer;
 use Cros\Platform\Instance;
+use Cros\Platform\Charge;
+use Cros\Platform\Invoice;
+use Cros\Platform\Plan;
 use Cros\Platform\Platform;
 use Cros\Platform\Provisioner;
 
@@ -617,6 +620,124 @@ try {
         && Db::one('SELECT id FROM support_tickets WHERE id = :id', ['id' => $ticketId]) !== null);
     check('Només es queda sense departament',
         Db::val('SELECT department_id FROM support_tickets WHERE id = :id', ['id' => $ticketId]) === null);
+
+    echo "\n== Pagament d'activació ==\n";
+    // Dos sistemes de cobrament que no s'han de barrejar: aquest és el que la
+    // plataforma cobra als seus clients.
+    $planForm = $web('GET', '/configuracio/plan');
+    check('Hi ha la pantalla del pla', $planForm['status'] === 200);
+    $web('POST', '/configuracio/plan', array_merge(formData($planForm['body']), [
+        '_token' => $token($planForm['body']),
+        'plan_enabled' => '1',
+        'plan_price_cents' => '30,00',
+        'plan_tax_rate' => '21',
+        'plan_name' => 'Activació del web',
+    ]));
+    $fiscals = $web('GET', '/configuracio/platform_billing');
+    $web('POST', '/configuracio/platform_billing', array_merge(formData($fiscals['body']), [
+        '_token' => $token($fiscals['body']),
+        'platform_billing_entity' => 'Serveis Web del Penedès SL',
+        'platform_billing_nif' => 'B99887766',
+        'platform_billing_address' => 'Avinguda del Cros, 7',
+        'platform_billing_postcode' => '08792',
+        'platform_billing_town' => 'La Granada',
+        'platform_billing_series' => 'A',
+    ]));
+    Settings::forget();
+    Platform::boot($site);
+    check('El pla queda actiu amb el seu preu', Plan::enabled() && Plan::price() === 3000, (string) Plan::price());
+    check('I les dades fiscals de la plataforma hi són', Invoice::complete());
+
+    // El client amaga el web i mira de tornar-lo a publicar.
+    $amaga = $web('POST', '/admin/properament', [
+        '_token' => $token($web('GET', '/admin/configuracio/coming_soon', [], 'santjordi.crosescolar.test')['body']),
+        'enable' => '1',
+    ], 'santjordi.crosescolar.test');
+    check('El client pot amagar el web sempre', $amaga['status'] === 302);
+
+    $activacio = $web('GET', '/admin/activacio', [], 'santjordi.crosescolar.test');
+    check('Té la pantalla d\'activació', $activacio['status'] === 200, 'estat ' . $activacio['status']);
+    check('Amb el preu que s\'ha posat', str_contains(text($activacio['body']), '30,00'));
+    check('I dient que no barregi els dos sistemes',
+        str_contains(text($activacio['body']), 'Això no són els vostres cobraments'));
+    check('Sense Stripe, no es pot pagar encara',
+        str_contains(text($activacio['body']), 'encara no està disponible'));
+
+    $publica = $web('POST', '/admin/properament', [
+        '_token' => $token($web('GET', '/admin/configuracio/coming_soon', [], 'santjordi.crosescolar.test')['body']),
+        'enable' => '0',
+    ], 'santjordi.crosescolar.test');
+    check('Però no el pot publicar sense activar-lo',
+        $publica['status'] === 302 && str_contains($publica['headers'], '/admin/activacio'), $publica['headers']);
+    $tenantConfig = require $site . '/tenants/santjordi/config.php';
+    $tenantPdo = Db::connect((array) $tenantConfig['db'] + ['charset' => 'utf8mb4']);
+    check('I el web es queda amagat',
+        (string) $tenantPdo->query("SELECT v FROM settings WHERE k = 'coming_soon'")->fetchColumn() === '1');
+    $tenantPdo = null;
+
+    // Es cobra: aquí, per transferència, que a les proves no hi ha cap Stripe.
+    $instance = Instance::find($instanceId);
+    $charge = Charge::forActivation($instance, [
+        'name' => 'AFA Escola Sant Jordi', 'email' => 'laia@example.cat', 'nif' => 'G12345678',
+        'address' => 'Carrer Major, 1', 'postcode' => '08870', 'town' => 'Sitges',
+    ]);
+    check('El cobrament es prepara', (int) ($charge['total_cents'] ?? 0) === 3000);
+    check('Amb l\'IVA desglossat cap enrere',
+        (int) $charge['tax_cents'] === 521 && (int) $charge['subtotal_cents'] === 2479,
+        $charge['subtotal_cents'] . ' + ' . $charge['tax_cents']);
+    check('I un codi propi de la plataforma',
+        (bool) preg_match('/^A-\d{4}-\d{4}$/', (string) $charge['code']), (string) $charge['code']);
+    check('Demanar-lo dues vegades no en fa dos',
+        (int) Charge::forActivation($instance)['id'] === (int) $charge['id']);
+
+    $fitxa = $web('GET', '/pagaments/' . (int) $charge['id']);
+    check('Surt al panell de la plataforma', $fitxa['status'] === 200 && str_contains($fitxa['body'], (string) $charge['code']));
+    $cobrat = $web('POST', '/pagaments/' . (int) $charge['id'] . '/accio', [
+        '_token' => $token($fitxa['body']), 'action' => 'paid',
+    ]);
+    check('Es pot donar per pagat', $cobrat['status'] === 302);
+    check('I el web queda activat', !empty(Instance::find($instanceId)['activated_at'] ?? null));
+    $invoice = Invoice::forPayment((int) $charge['id']);
+    check('Amb la factura emesa', $invoice !== null && str_starts_with((string) ($invoice['full_number'] ?? ''), 'A-'),
+        (string) ($invoice['full_number'] ?? ''));
+
+    $publica = $web('POST', '/admin/properament', [
+        '_token' => $token($web('GET', '/admin/configuracio/coming_soon', [], 'santjordi.crosescolar.test')['body']),
+        'enable' => '0',
+    ], 'santjordi.crosescolar.test');
+    check('Ara sí que el pot publicar',
+        $publica['status'] === 302 && !str_contains($publica['headers'], '/admin/activacio'));
+
+    $pdf = $web('GET', '/admin/activacio/factura/' . (int) $charge['id'], [], 'santjordi.crosescolar.test');
+    check('El client se la pot descarregar',
+        $pdf['status'] === 200 && str_contains($pdf['headers'], 'application/pdf'), 'estat ' . $pdf['status']);
+
+    // I ara el que més importa: que cada factura porti les dades de qui toca.
+    $fitxerPdf = sys_get_temp_dir() . '/cros-factura-' . bin2hex(random_bytes(3)) . '.pdf';
+    file_put_contents($fitxerPdf, Invoice::pdf($invoice));
+    $textPdf = trim((string) @shell_exec('pdftotext ' . escapeshellarg($fitxerPdf) . ' - 2>/dev/null'));
+    @unlink($fitxerPdf);
+    if ($textPdf === '') {
+        echo "  (sense pdftotext: no es pot llegir el text de la factura)\n";
+    } else {
+        check('La factura de la plataforma porta les seves dades fiscals',
+            str_contains($textPdf, 'Serveis Web del Penedès SL') && str_contains($textPdf, 'B99887766'));
+        check('I el client hi surt com a client', str_contains($textPdf, 'AFA Escola Sant Jordi'));
+        check('Però el NIF del client no és el de l\'emissor',
+            substr_count($textPdf, 'B99887766') === 1);
+    }
+
+    check('Al panell del client no hi surt cap dada fiscal de la plataforma',
+        !str_contains($web('GET', '/admin/activacio', [], 'santjordi.crosescolar.test')['body'], 'B99887766'));
+
+    // Es deixa el pla com estava perquè la resta de proves no se'n ressentin.
+    $planForm = $web('GET', '/configuracio/plan');
+    $camps = array_merge(formData($planForm['body']), ['_token' => $token($planForm['body'])]);
+    unset($camps['plan_enabled']);
+    $web('POST', '/configuracio/plan', $camps);
+    Settings::forget();
+    Platform::boot($site);
+    check('El pagament d\'activació es pot desactivar', !Plan::enabled());
 
     echo "\n== Vigilància ==\n";
     $report = Health::run($site);

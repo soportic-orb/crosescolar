@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use Cros\Core\Router;
+use Cros\Platform\Controllers\ChargeController;
 use Cros\Platform\Controllers\ConfigController;
 use Cros\Platform\Controllers\ConsoleController;
 use Cros\Platform\Controllers\InstanceController;
@@ -55,6 +56,13 @@ if (($mode ?? 'platform') === 'console') {
     $router->post('/suport/{id:\d+}/estat', [SupportController::class, 'update']);
     $router->post('/suport/{id:\d+}/esborrar', [SupportController::class, 'destroy']);
 
+    /* Els pagaments que la plataforma cobra als seus clients. */
+    $router->get('/pagaments', [ChargeController::class, 'index']);
+    $router->get('/pagaments/factures', [ChargeController::class, 'invoices']);
+    $router->get('/pagaments/{id:\d+}', [ChargeController::class, 'show']);
+    $router->post('/pagaments/{id:\d+}/accio', [ChargeController::class, 'action']);
+    $router->get('/pagaments/{id:\d+}/factura', [ChargeController::class, 'invoice']);
+
     /* Enviaments de correu, llistes i plantilla. */
     $router->get('/enviaments', [MailoutController::class, 'index']);
     $router->get('/enviaments/nou', [MailoutController::class, 'create']);
@@ -92,6 +100,9 @@ $router->get('/', [SiteController::class, 'home']);
 $router->post('/sollicitud', [SiteController::class, 'request']);
 $router->get('/sollicitud/{code}', [SiteController::class, 'sent']);
 $router->get('/funcionalitats', [SiteController::class, 'features']);
+// L'avís de Stripe sobre els pagaments de la plataforma. Va al web públic
+// perquè no hi ha sessió: qui truca és el servidor de Stripe.
+$router->post('/pagament/avis', [SiteController::class, 'stripeWebhook']);
 $router->get('/{page:condicions|privadesa|galetes}', [SiteController::class, 'legal']);
 $router->get('/sitemap.xml', [SiteController::class, 'sitemap']);
 $router->get('/robots.txt', [SiteController::class, 'robots']);

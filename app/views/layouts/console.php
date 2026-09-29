@@ -52,6 +52,7 @@ $waiting = Support::pending();
       <?php if ($waiting > 0): ?><span class="badge badge--amber"><?= $waiting ?></span><?php endif; ?>
     </a>
     <a class="nav-link<?= $isActive('/enviaments') ? ' is-active' : '' ?>" href="<?= e(url('/enviaments')) ?>"><?= Icons::svg('mail', 'icon', 18) ?> Enviaments</a>
+    <a class="nav-link<?= $isActive('/pagaments') ? ' is-active' : '' ?>" href="<?= e(url('/pagaments')) ?>"><?= Icons::svg('euro', 'icon', 18) ?> Pagaments</a>
 
     <div class="sidebar__section">Configuració</div>
     <?php foreach (\Cros\Core\Settings::schema() as $groupKey => $group): ?>

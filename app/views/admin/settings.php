@@ -15,10 +15,16 @@ use Cros\Core\Settings;
     <div class="panel__head">
       <h2><?= e($group['title']) ?></h2>
       <?php if ($groupKey === 'payments'): ?>
+        <?php $passarela = \Cros\Payments\Gateways::chosen(); ?>
         <span class="spacer"></span>
-        <span class="badge <?= \Cros\Core\Stripe::mode() === 'live' ? 'badge--green' : 'badge--amber' ?>">
-          Mode <?= e(\Cros\Core\Stripe::mode()) ?>
-        </span>
+        <?php if ($passarela === ''): ?>
+          <span class="badge">Sense passarel·la</span>
+        <?php else: ?>
+          <span class="badge <?= \Cros\Payments\Gateways::module($passarela)::testing() ? 'badge--amber' : 'badge--green' ?>">
+            <?= e(\Cros\Payments\Gateways::label($passarela)) ?>
+            <?= \Cros\Payments\Gateways::module($passarela)::testing() ? ' · proves' : '' ?>
+          </span>
+        <?php endif; ?>
       <?php endif; ?>
     </div>
     <div class="panel__body">
@@ -26,11 +32,17 @@ use Cros\Core\Settings;
         <p class="text-soft" style="margin-top:0"><?= e($group['description']) ?></p>
       <?php endif; ?>
 
-      <?php if ($groupKey === 'payments'): ?>
+      <?php if ($groupKey === 'payments' && $passarela === 'stripe'): ?>
         <div class="alert alert--info">
-          <strong>Webhook de Stripe:</strong> configureu aquesta adreça al vostre tauler de Stripe
+          <strong>Avís de Stripe:</strong> configureu aquesta adreça al vostre tauler de Stripe
           (esdeveniments <span class="mono">checkout.session.completed</span>, <span class="mono">checkout.session.expired</span> i <span class="mono">charge.refunded</span>):<br>
           <span class="mono"><?= e(url('/stripe/webhook')) ?></span>
+        </div>
+      <?php elseif ($groupKey === 'payments' && $passarela !== ''): ?>
+        <div class="alert alert--info">
+          <strong>Avís de la passarel·la:</strong> si us demana una adreça on avisar dels pagaments
+          (la «notificació en línia», al TPV de Redsys), poseu-hi aquesta:<br>
+          <span class="mono"><?= e(url('/pagament/avis/' . $passarela)) ?></span>
         </div>
       <?php endif; ?>
       <?php if ($groupKey === 'bibs'): ?>
@@ -117,7 +129,7 @@ use Cros\Core\Settings;
   </div>
 </form>
 
-<?php if ($groupKey === 'payments'): ?>
+<?php if ($groupKey === 'payments' && \Cros\Payments\Gateways::chosen() === 'stripe'): ?>
   <form method="post" action="<?= e(url('/admin/stripe/prova')) ?>" class="mt-2">
     <?= csrf_field() ?>
     <button class="btn btn--ghost" type="submit">Provar la connexió amb Stripe</button>

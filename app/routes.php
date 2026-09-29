@@ -4,6 +4,7 @@
  */
 declare(strict_types=1);
 
+use Cros\Controllers\Admin\ActivationController;
 use Cros\Controllers\Admin\AuthController;
 use Cros\Controllers\Admin\CrudController;
 use Cros\Controllers\Admin\DashboardController;
@@ -156,6 +157,12 @@ $router->post('/admin/enviaments/{id}/esborrar', [MailingsController::class, 'de
 $router->get('/admin/validacio', [ToolsController::class, 'scanner']);
 $router->post('/admin/validacio', [ToolsController::class, 'validateTicket']);
 $router->get('/validar/{code}', [ToolsController::class, 'validateLink']);
+
+/* Activació del web: això ho cobra la plataforma, no el cros. */
+$router->get('/admin/activacio', [ActivationController::class, 'index']);
+$router->post('/admin/activacio/pagar', [ActivationController::class, 'pay']);
+$router->get('/admin/activacio/tornada', [ActivationController::class, 'returned']);
+$router->get('/admin/activacio/factura/{id:\d+}', [ActivationController::class, 'invoice']);
 
 /* Cobraments i facturació del cros */
 $router->get('/admin/pagaments', [PaymentsController::class, 'index']);

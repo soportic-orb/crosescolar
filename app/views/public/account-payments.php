@@ -24,7 +24,7 @@ use Cros\Models\Payment;
       <div class="notice-box">Amb aquesta adreça no hi consta cap pagament.</div>
     <?php else: ?>
       <div class="table-wrap">
-        <table class="table">
+        <table class="data">
           <thead><tr><th>Data</th><th>Concepte</th><th>Import</th><th>Comprovant</th></tr></thead>
           <tbody>
             <?php foreach ($payments as $payment): ?>

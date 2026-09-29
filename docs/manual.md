@@ -435,6 +435,73 @@ després i només escriu a aquestes adreces.
 Si l'allotjament limita quants correus es poden enviar per hora, abaixeu **Correus per
 tanda** a la mateixa pantalla de configuració (per defecte, 20).
 
+## Cobrar amb targeta
+
+El web pot cobrar les **inscripcions** i els **tiquets del punt de recàrrega**, i de cada
+venda n'emet un rebut o una factura **a nom vostre**.
+
+### 1. Triar la passarel·la
+
+**Configuració → Cobraments.** Només se'n pot tenir una d'activa: tenir-ne dues obertes
+alhora acaba amb mitja comptabilitat en un lloc i mitja en un altre.
+
+| Passarel·la | Què us cal |
+|---|---|
+| **Stripe** | El mode (proves o producció), la clau pública, la secreta i el secret del webhook |
+| **PayPal** | El mode (sandbox o live), l'identificador del client i la clau secreta |
+| **Redsys** (TPV del banc) | El codi de comerç (FUC), el terminal, la clau secreta en base64 i el nom del comerç |
+
+En triar-ne una, hi surten només les seves dades. Les de les altres es queden desades per
+si algun dia torneu enrere.
+
+> **Proveu-ho sempre en mode de proves abans.** Amb Stripe i PayPal cada passarel·la té el
+> seu entorn de proves; amb Redsys, el banc us dona unes dades de prova a part de les bones.
+
+### 2. Posar els preus
+
+- **Tiquets**: a *Continguts → Tipus de tiquet*, com sempre.
+- **Inscripcions**: activeu **Configuració → Inscripcions → Cobrar la inscripció** i poseu
+  els preus a *Continguts → Tipus d'inscripció*. Si no n'hi ha cap d'actiu, o si tots
+  valen 0, la inscripció torna a ser gratuïta.
+
+Els preus s'escriuen **amb l'impost inclòs**, que és com els diu tothom qui ven un tiquet
+d'esmorzar. Al document, l'impost se'n desglossa cap enrere.
+
+### 3. Les vostres dades fiscals
+
+**Configuració → Facturació.** Trieu si de cada venda voleu un **rebut** o una **factura**.
+Per poder emetre factura calen el nom fiscal, el NIF, l'adreça, la població i el codi
+postal; si en falta cap, s'emet un rebut. Val més un rebut correcte que una factura que no
+ho és.
+
+Cada mena de document té la seva sèrie (`R-2026-0001`, `F-2026-0001`) i el número no salta
+mai cap. **Un cop emès, un document no canvia mai més**: encara que després modifiqueu les
+dades de l'entitat, el que ja s'havia lliurat es queda com estava.
+
+Moltes activitats esportives d'entitats sense ànim de lucre estan exemptes d'IVA. Si és el
+vostre cas, deixeu l'IVA a 0 i expliqueu-ho a la nota; si no ho teniu clar, pregunteu-ho a
+qui us porti la comptabilitat.
+
+### 4. El dia a dia
+
+**Cobraments** (al menú) mostra tot el que s'ha cobrat, amb filtres i cercador. De cada
+cobrament podeu:
+
+- **Descarregar-ne el rebut o la factura** en PDF.
+- **Donar-lo per pagat** si algú us ha pagat en mà o per transferència: s'emet el document
+  igual i s'entrega el que s'hagi comprat.
+- **Tornar els diners**, sencers o en part (amb Stripe i PayPal; les devolucions del TPV de
+  Redsys es fan des del portal del banc).
+
+**Rebuts i factures** és el llistat de tot el que heu emès, per a qui us porti els números.
+
+Una inscripció que s'ha començat a pagar i encara no s'ha cobrat surt marcada com
+**«Pendent de pagament»** al llistat d'inscripcions, i no compta com a confirmada.
+
+Les famílies veuen els seus pagaments a **Les meves inscripcions → Els meus pagaments** i
+se'n poden descarregar els comprovants. Per veure-hi diners cal haver entrat amb el codi
+que s'envia al correu: amb la sessió del navegador no n'hi ha prou.
+
 ## Demanar ajuda: l'apartat de Suport
 
 Si el vostre cros va allotjat a la plataforma, al menú hi teniu **Suport**. Serveix per
@@ -456,6 +523,22 @@ no heu llegit.
 
 > Les consultes són del **web**, no de la persona: qualsevol administradora del vostre
 > cros les veu i hi pot contestar. En canvi, ningú d'un altre cros no les pot llegir.
+
+## Publicar el web: l'activació
+
+Si el vostre cros va allotjat a la plataforma, pot ser que publicar el web tingui un
+**pagament únic d'activació**. Preparar-ho tot —categories, recorreguts, dorsals, textos—
+no costa res i podeu trastejar tant com calgui; el pagament només cal el dia que vulgueu
+que el web es vegi al públic.
+
+A **Activació del web** (al menú) hi teniu el preu, què inclou i el botó per pagar-ho amb
+targeta. Un cop fet, podeu publicar i despublicar el web les vegades que vulgueu sense
+tornar a pagar res, i us podeu descarregar la factura des d'aquella mateixa pantalla.
+
+> **No ho confongueu amb els vostres cobraments.** L'activació és el que pagueu vosaltres a
+> qui manté la plataforma. El que cobreu vosaltres als participants és una altra cosa, va a
+> **Cobraments**, i es factura amb les vostres dades fiscals i la vostra numeració. Els dos
+> sistemes són separats i no es barregen mai.
 
 ## Reglament de la cursa
 

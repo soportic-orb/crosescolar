@@ -206,16 +206,48 @@
     });
   });
 
-  /* Camps que només tenen sentit si n'hi ha un altre d'activat (data-show-if). */
+  /* Camps que només tenen sentit segons el que valgui un altre camp.
+     S'escriuen de tres maneres:
+       data-show-if="altre"          → si la casella està marcada
+       data-show-if="!altre"         → si no ho està
+       data-show-if="altre:valor"    → si aquell camp val això
+     L'última és la que fa que cada passarel·la de pagament ensenyi només les
+     seves dades. */
   document.querySelectorAll('[data-show-if]').forEach(function (field) {
-    var master = document.querySelector('[name="' + field.getAttribute('data-show-if') + '"]');
-    if (!master) { return; }
+    var rule = field.getAttribute('data-show-if') || '';
+    var negated = rule.charAt(0) === '!';
+    if (negated) { rule = rule.slice(1); }
+    var parts = rule.split(':');
+    var name = parts.shift();
+    var wanted = parts.length ? parts.join(':') : null;
+
+    var masters = Array.prototype.slice.call(document.querySelectorAll('[name="' + name + '"]'));
+    if (!masters.length) { return; }
+
     // S'amaga la cel·la sencera perquè no quedi un forat a la graella.
     var cell = field.parentElement && field.parentElement.parentElement
       && field.parentElement.parentElement.classList.contains('form-grid')
       ? field.parentElement : field;
-    var update = function () { cell.style.display = master.checked ? '' : 'none'; };
-    master.addEventListener('change', update);
+
+    var value = function () {
+      var checkable = masters.filter(function (m) { return m.type === 'checkbox' || m.type === 'radio'; });
+      if (checkable.length) {
+        var checked = checkable.filter(function (m) { return m.checked; });
+        // Una casella sola val «1» quan està marcada; un grup de ràdio, el seu valor.
+        return checked.length ? (checked[0].type === 'checkbox' ? '1' : checked[0].value) : '';
+      }
+      return masters[0].value;
+    };
+
+    var update = function () {
+      var now = value();
+      var show = wanted === null ? (now !== '' && now !== '0') : now === wanted;
+      cell.style.display = (negated ? !show : show) ? '' : 'none';
+    };
+    masters.forEach(function (master) {
+      master.addEventListener('change', update);
+      master.addEventListener('input', update);
+    });
     update();
   });
 

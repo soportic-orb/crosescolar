@@ -61,7 +61,9 @@ $tones = ['paid' => 'green', 'pending' => 'amber', 'failed' => 'red', 'cancelled
       <div class="kpi">
         <div class="kpi__label"><?= Icons::svg('refresh', 'icon', 16) ?> Retornat</div>
         <div class="kpi__value"><?= e(money((int) $totals['refunded'])) ?></div>
-        <div class="kpi__foot"><?= e(Billing::TYPES[$documentType] ?? 'Rebut') ?> per venda</div>
+        <div class="kpi__foot">
+          <?= e(mb_strtolower(Billing::TYPES[$documentType] ?? 'rebut')) ?> de cada venda
+        </div>
       </div>
     </div>
 

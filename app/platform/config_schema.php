@@ -161,6 +161,63 @@ return [
         ],
     ],
 
+    'plan' => [
+        'title' => 'Pagament d\'activació',
+        'icon' => 'euro',
+        'description' => 'Donar-se d\'alta i preparar el cros no costa res; el pagament arriba el dia que el client '
+            . 'vol que el seu web es vegi. És un pagament únic per cada web.',
+        'fields' => [
+            'plan_enabled' => ['label' => 'Cobrar per publicar el web', 'type' => 'bool', 'default' => '0',
+                'help' => 'Amb això desactivat, qualsevol client pot publicar el seu web quan vulgui, sense pagar res.'],
+            'plan_name' => ['label' => 'Com se\'n diu', 'type' => 'text', 'default' => 'Activació del web',
+                'help' => 'És el que surt al concepte del pagament i a la factura.'],
+            'plan_price_cents' => ['label' => 'Preu', 'type' => 'money', 'default' => '0',
+                'help' => 'Amb l\'impost inclòs. A la factura se\'n desglossa la base.'],
+            'plan_tax_rate' => ['label' => 'IVA inclòs (%)', 'type' => 'text', 'default' => '21'],
+            'plan_description' => ['label' => 'Què inclou', 'type' => 'html', 'rows' => 6,
+                'default' => '<p>Amb l\'activació, el web del vostre cros queda publicat a la vostra adreça, amb certificat i còpies de seguretat, i el manteniment i les actualitzacions van a càrrec nostre.</p><p>És un pagament únic: no hi ha quota mensual ni comissió per inscripció.</p>'],
+        ],
+    ],
+
+    'platform_billing' => [
+        'title' => 'Dades fiscals',
+        'icon' => 'file',
+        'description' => 'Amb què s\'emeten les factures que la plataforma fa als seus clients. '
+            . 'No tenen res a veure amb les que emet cada cros als seus participants.',
+        'fields' => [
+            'platform_billing_entity' => ['label' => 'Nom fiscal', 'type' => 'text', 'default' => ''],
+            'platform_billing_nif' => ['label' => 'NIF', 'type' => 'text', 'default' => ''],
+            'platform_billing_address' => ['label' => 'Adreça', 'type' => 'text', 'default' => ''],
+            'platform_billing_postcode' => ['label' => 'Codi postal', 'type' => 'text', 'default' => ''],
+            'platform_billing_town' => ['label' => 'Població', 'type' => 'text', 'default' => ''],
+            'platform_billing_province' => ['label' => 'Província', 'type' => 'text', 'default' => ''],
+            'platform_billing_country' => ['label' => 'País', 'type' => 'text', 'default' => 'Espanya'],
+            'platform_billing_email' => ['label' => 'Correu de facturació', 'type' => 'email', 'default' => ''],
+            'platform_billing_phone' => ['label' => 'Telèfon', 'type' => 'text', 'default' => ''],
+            'platform_billing_series' => ['label' => 'Sèrie de les factures', 'type' => 'text', 'default' => 'A',
+                'help' => 'Els números queden A-2026-0001, A-2026-0002…'],
+            'platform_billing_tax_note' => ['label' => 'Nota quan no s\'hi aplica IVA', 'type' => 'text', 'default' => ''],
+            'platform_billing_notes' => ['label' => 'Nota al peu de la factura', 'type' => 'text', 'default' => ''],
+        ],
+    ],
+
+    'stripe' => [
+        'title' => 'Stripe de la plataforma',
+        'icon' => 'card',
+        'description' => 'Les claus amb què la plataforma cobra als seus clients. '
+            . 'Cada cros té les seves per cobrar als participants: no són aquestes.',
+        'fields' => [
+            'stripe_mode' => ['label' => 'Mode', 'type' => 'select', 'default' => 'test',
+                'options' => ['test' => 'Proves (test)', 'live' => 'Producció (live)']],
+            'stripe_pk_test' => ['label' => 'Clau pública de proves', 'type' => 'text', 'default' => '', 'placeholder' => 'pk_test_...'],
+            'stripe_sk_test' => ['label' => 'Clau secreta de proves', 'type' => 'password', 'secret' => true, 'default' => '', 'placeholder' => 'sk_test_...'],
+            'stripe_webhook_test' => ['label' => 'Secret del webhook (proves)', 'type' => 'password', 'secret' => true, 'default' => '', 'placeholder' => 'whsec_...'],
+            'stripe_pk_live' => ['label' => 'Clau pública de producció', 'type' => 'text', 'default' => '', 'placeholder' => 'pk_live_...'],
+            'stripe_sk_live' => ['label' => 'Clau secreta de producció', 'type' => 'password', 'secret' => true, 'default' => '', 'placeholder' => 'sk_live_...'],
+            'stripe_webhook_live' => ['label' => 'Secret del webhook (producció)', 'type' => 'password', 'secret' => true, 'default' => '', 'placeholder' => 'whsec_...'],
+        ],
+    ],
+
     'support' => [
         'title' => 'Opcions del suport',
         'icon' => 'mail',
