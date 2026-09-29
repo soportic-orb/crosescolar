@@ -36,10 +36,67 @@ class Plan
         return trim((string) Settings::get('plan_description', ''));
     }
 
-    /** L'impost que hi va inclòs, en tant per cent. */
-    public static function taxRate(): float
+    /**
+     * Els números del pagament, desglossats.
+     *
+     * El preu que es configura és la **base imposable**. A sobre s'hi calculen
+     * els dos impostos, cadascun per separat i cadascun activable:
+     *
+     *   - L'**IVA** se suma: és el que es repercuteix a qui paga.
+     *   - L'**IRPF** es resta: és una retenció que el client no ens paga a
+     *     nosaltres sinó a Hisenda en nom nostre. Per això el total que es
+     *     cobra amb targeta és més petit del que diu la factura de base + IVA.
+     *
+     * Si el client és un particular o una entitat que no reté, l'IRPF es deixa
+     * desactivat i no surt enlloc.
+     *
+     * @return array{base:int,vat_rate:float,vat:int,irpf_rate:float,irpf:int,total:int}
+     */
+    public static function amounts(?int $base = null): array
     {
-        return max(0.0, min(100.0, (float) str_replace(',', '.', (string) Settings::get('plan_tax_rate', '0'))));
+        $base = max(0, $base ?? self::price());
+        $vatRate = self::vatRate();
+        $irpfRate = self::irpfRate();
+        $vat = (int) round($base * $vatRate / 100);
+        $irpf = (int) round($base * $irpfRate / 100);
+
+        return [
+            'base' => $base,
+            'vat_rate' => $vatRate,
+            'vat' => $vat,
+            'irpf_rate' => $irpfRate,
+            'irpf' => $irpf,
+            'total' => max(0, $base + $vat - $irpf),
+        ];
+    }
+
+    /** El que es cobra de debò amb la targeta. */
+    public static function total(): int
+    {
+        return self::amounts()['total'];
+    }
+
+    /** El tipus d'IVA que s'aplica, o 0 si està desactivat. */
+    public static function vatRate(): float
+    {
+        if (!Settings::bool('plan_vat_enabled', true)) {
+            return 0.0;
+        }
+        // «plan_tax_rate» és com es deia abans que hi hagués l'IRPF pel mig.
+        $rate = (string) Settings::get('plan_vat_rate', Settings::get('plan_tax_rate', '21'));
+
+        return self::rate($rate);
+    }
+
+    /** El tipus de retenció d'IRPF, o 0 si està desactivada. */
+    public static function irpfRate(): float
+    {
+        return Settings::bool('plan_irpf_enabled') ? self::rate((string) Settings::get('plan_irpf_rate', '15')) : 0.0;
+    }
+
+    private static function rate(string $value): float
+    {
+        return max(0.0, min(100.0, (float) str_replace(',', '.', trim($value))));
     }
 
     /** Es pot cobrar ara mateix? Cal el pla actiu i el Stripe de la plataforma. */

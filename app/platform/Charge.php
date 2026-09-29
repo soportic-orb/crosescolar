@@ -81,9 +81,7 @@ class Charge
         if ($existing) {
             return $existing;
         }
-        $total = Plan::price();
-        $rate = Plan::taxRate();
-        $tax = $rate > 0 && $total > 0 ? $total - (int) round($total / (1 + $rate / 100)) : 0;
+        $amounts = Plan::amounts();
 
         $id = Db::insert('platform_payments', [
             'code' => self::code(),
@@ -99,10 +97,12 @@ class Charge
             'payer_address' => mb_substr(trim((string) ($client['address'] ?? '')), 0, 255) ?: null,
             'payer_postcode' => mb_substr(trim((string) ($client['postcode'] ?? '')), 0, 20) ?: null,
             'payer_town' => mb_substr(trim((string) ($client['town'] ?? '')), 0, 120) ?: null,
-            'subtotal_cents' => $total - $tax,
-            'tax_rate' => $rate,
-            'tax_cents' => $tax,
-            'total_cents' => $total,
+            'subtotal_cents' => $amounts['base'],
+            'tax_rate' => $amounts['vat_rate'],
+            'tax_cents' => $amounts['vat'],
+            'irpf_rate' => $amounts['irpf_rate'],
+            'irpf_cents' => $amounts['irpf'],
+            'total_cents' => $amounts['total'],
             'currency' => 'EUR',
             'status' => 'pending',
             'created_at' => date('Y-m-d H:i:s'),

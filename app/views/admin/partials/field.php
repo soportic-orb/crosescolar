@@ -223,6 +223,23 @@ $required = str_contains((string) ($field['rules'] ?? ''), 'required');
         </span>
       <?php break; ?>
 
+      <?php case 'sport_icon': ?>
+        <?php
+        // Un mosaic per triar: amb una llista desplegable de noms ningú no
+        // sabria quina és quina fins a desar-ho i mirar el web.
+        $triada = \Cros\Core\Icons::isSport((string) $value) ? (string) $value : 'run';
+        ?>
+        <div class="icon-picker">
+          <?php foreach (\Cros\Core\Icons::sports() as $clau => $nom): ?>
+            <label class="icon-picker__option<?= $triada === $clau ? ' is-chosen' : '' ?>" title="<?= e($nom) ?>">
+              <input type="radio" name="<?= e($name) ?>" value="<?= e($clau) ?>" <?= $triada === $clau ? 'checked' : '' ?>>
+              <?= \Cros\Core\Icons::svg($clau, 'icon', 26) ?>
+              <span><?= e($nom) ?></span>
+            </label>
+          <?php endforeach; ?>
+        </div>
+      <?php break; ?>
+
       <?php default: ?>
         <input type="<?= e(in_array($type, ['email', 'url', 'tel', 'number', 'date', 'time'], true) ? $type : 'text') ?>"
                id="<?= e($id) ?>" name="<?= e($name) ?>" value="<?= e((string) $value) ?>"

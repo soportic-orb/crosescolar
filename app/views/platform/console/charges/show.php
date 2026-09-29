@@ -40,10 +40,17 @@ $tones = ['paid' => 'green', 'pending' => 'amber', 'failed' => 'red', 'cancelled
         <h3>Import</h3>
         <table class="admin-table">
           <tbody>
-            <?php if ((float) $charge['tax_rate'] > 0): ?>
+            <?php $tant = static fn (float $v): string => rtrim(rtrim(number_format($v, 2, ',', '.'), '0'), ',') . ' %'; ?>
+            <?php if ((float) $charge['tax_rate'] > 0 || (float) ($charge['irpf_rate'] ?? 0) > 0): ?>
               <tr><td class="text-soft">Base imposable</td><td class="text-right text-soft"><?= e(money((int) $charge['subtotal_cents'])) ?></td></tr>
-              <tr><td class="text-soft">IVA <?= e(rtrim(rtrim(number_format((float) $charge['tax_rate'], 2, ',', '.'), '0'), ',')) ?> %</td>
+            <?php endif; ?>
+            <?php if ((float) $charge['tax_rate'] > 0): ?>
+              <tr><td class="text-soft">IVA <?= e($tant((float) $charge['tax_rate'])) ?></td>
                   <td class="text-right text-soft"><?= e(money((int) $charge['tax_cents'])) ?></td></tr>
+            <?php endif; ?>
+            <?php if ((float) ($charge['irpf_rate'] ?? 0) > 0): ?>
+              <tr><td class="text-soft">Retenció IRPF <?= e($tant((float) $charge['irpf_rate'])) ?></td>
+                  <td class="text-right text-soft">−<?= e(money((int) $charge['irpf_cents'])) ?></td></tr>
             <?php endif; ?>
             <tr><td><strong>Total</strong></td><td class="text-right"><strong><?= e(money((int) $charge['total_cents'])) ?></strong></td></tr>
             <?php if ((int) $charge['refunded_cents'] > 0): ?>

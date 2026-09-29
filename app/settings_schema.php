@@ -373,7 +373,11 @@ return [
         'icon' => 'palette',
         'description' => 'Colors, logotip i elements visuals.',
         'fields' => [
-            'logo' => ['label' => 'Logotip', 'type' => 'image', 'default' => ''],
+            'brand_mark' => ['label' => 'Què surt al costat del nom', 'type' => 'select', 'default' => 'icon',
+                'options' => ['icon' => 'Una icona d\'esport', 'logo' => 'El vostre logotip'],
+                'help' => 'Si trieu el logotip i no n\'heu pujat cap, es fa servir la icona.'],
+            'site_icon' => ['label' => 'Icona', 'type' => 'sport_icon', 'default' => 'run', 'show_if' => 'brand_mark:icon'],
+            'logo' => ['label' => 'Logotip', 'type' => 'image', 'default' => '', 'show_if' => 'brand_mark:logo'],
             'favicon' => ['label' => 'Icona del navegador', 'type' => 'image', 'default' => ''],
             'color_primary' => ['label' => 'Color principal', 'type' => 'color', 'default' => '#2f6b3c'],
             'color_secondary' => ['label' => 'Color secundari', 'type' => 'color', 'default' => '#7ba05b'],

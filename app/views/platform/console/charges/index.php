@@ -39,7 +39,7 @@ $tones = ['paid' => 'green', 'pending' => 'amber', 'failed' => 'red', 'cancelled
       </div>
     <?php elseif (!$plan['stripe']): ?>
       <div class="alert alert--error">
-        El pla està actiu (<?= e(money((int) $plan['price'])) ?>) però falten les claus de Stripe, de manera
+        El pla està actiu (<?= e(money((int) $plan['total'])) ?>) però falten les claus de Stripe, de manera
         que ningú no pot pagar. Poseu-les a <a href="<?= e(url('/configuracio/stripe')) ?>">Stripe de la plataforma</a>.
       </div>
     <?php elseif ($plan['testing']): ?>
@@ -68,8 +68,13 @@ $tones = ['paid' => 'green', 'pending' => 'amber', 'failed' => 'red', 'cancelled
       </div>
       <div class="kpi">
         <div class="kpi__label"><?= Icons::svg('card', 'icon', 16) ?> Preu ara</div>
-        <div class="kpi__value"><?= e(money((int) $plan['price'])) ?></div>
-        <div class="kpi__foot"><?= e($plan['name']) ?></div>
+        <div class="kpi__value"><?= e(money((int) $plan['total'])) ?></div>
+        <div class="kpi__foot">
+          <?= e($plan['name']) ?>
+          <?php if ((int) $plan['total'] !== (int) $plan['price']): ?>
+            · base <?= e(money((int) $plan['price'])) ?>
+          <?php endif; ?>
+        </div>
       </div>
     </div>
 

@@ -84,7 +84,7 @@ $salesOpen = \Cros\Controllers\TicketsController::salesOpen();
       <div class="flex" style="gap:.8rem;margin-top:1.4rem">
         <?php $registrationsOpen = \Cros\Controllers\RegistrationController::open(); ?>
         <a class="btn" href="<?= e(url('/inscripcio')) ?>">
-          <?= \Cros\Core\Icons::svg('run', 'icon', 18) ?>
+          <?= \Cros\Core\Icons::svg(\Cros\Core\Brand::icon(), 'icon', 18) ?>
           <?= $registrationsOpen ? 'Inscriu-t\'hi' : 'Com inscriure-s\'hi' ?>
         </a>
         <a class="btn btn--ghost" href="<?= e(url('/categories-i-premis')) ?>">Categories i horaris</a>

@@ -25,7 +25,7 @@ $pending = (int) \Cros\Core\Db::val('SELECT COUNT(*) FROM orders WHERE status = 
 <div class="admin-layout">
   <aside class="sidebar">
     <a class="sidebar__brand" href="<?= e(url('/admin')) ?>">
-      <span class="sidebar__mark"><?= Icons::svg('run', 'icon', 22) ?></span>
+      <span class="sidebar__mark"><?= \Cros\Core\Brand::mark(22) ?></span>
       <span><strong><?= e(setting('site_name', 'Cros Escolar')) ?></strong><small>Panell de gestió</small></span>
     </a>
 

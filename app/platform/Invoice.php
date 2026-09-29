@@ -138,6 +138,8 @@ class Invoice
             'subtotal_cents' => (int) $charge['subtotal_cents'],
             'tax_rate' => (float) $charge['tax_rate'],
             'tax_cents' => (int) $charge['tax_cents'],
+            'irpf_rate' => (float) ($charge['irpf_rate'] ?? 0),
+            'irpf_cents' => (int) ($charge['irpf_cents'] ?? 0),
             'total_cents' => (int) $charge['total_cents'],
             'currency' => (string) $charge['currency'],
             'notes' => mb_substr(trim((string) Settings::get('platform_billing_notes', '')), 0, 500) ?: null,
@@ -246,14 +248,25 @@ class Invoice
         $y += 6;
 
         $rate = (float) $invoice['tax_rate'];
+        $irpfRate = (float) ($invoice['irpf_rate'] ?? 0);
+        $percent = static fn (float $value): string => rtrim(rtrim(number_format($value, 2, ',', '.'), '0'), ',') . ' %';
         $pdf->setFont('helvetica', 9.5);
         $pdf->setColor(60, 70, 64);
-        if ($rate > 0) {
+        if ($rate > 0 || $irpfRate > 0) {
             $pdf->text($x + 140, $y, 'Base imposable', ['align' => 'right']);
             $pdf->text($right - 3, $y, money((int) $invoice['subtotal_cents']), ['align' => 'right']);
             $y += 5.4;
-            $pdf->text($x + 140, $y, 'IVA ' . rtrim(rtrim(number_format($rate, 2, ',', '.'), '0'), ',') . ' %', ['align' => 'right']);
+        }
+        if ($rate > 0) {
+            $pdf->text($x + 140, $y, 'IVA ' . $percent($rate), ['align' => 'right']);
             $pdf->text($right - 3, $y, money((int) $invoice['tax_cents']), ['align' => 'right']);
+            $y += 5.4;
+        }
+        if ($irpfRate > 0) {
+            // La retenció es resta: el client la ingressa a Hisenda en nom
+            // nostre i per això no ens la paga a nosaltres.
+            $pdf->text($x + 140, $y, 'Retenció IRPF ' . $percent($irpfRate), ['align' => 'right']);
+            $pdf->text($right - 3, $y, '−' . money((int) $invoice['irpf_cents']), ['align' => 'right']);
             $y += 5.4;
         }
         $pdf->setFont('helvetica-bold', 12);
@@ -266,6 +279,7 @@ class Invoice
         $pdf->setColor(90, 100, 94);
         foreach (array_values(array_filter([
             $rate <= 0 ? (string) ($issuer['tax_note'] ?? '') : '',
+            $irpfRate > 0 ? 'La retenció d\'IRPF l\'ingressa el client a Hisenda en nom de qui emet aquesta factura.' : '',
             !empty($charge['paid_at']) ? 'Pagada el ' . ca_date(substr((string) $charge['paid_at'], 0, 10)) . ' amb targeta.' : '',
             (string) ($invoice['notes'] ?? ''),
             'Referència del pagament: ' . (string) ($charge['code'] ?? ''),

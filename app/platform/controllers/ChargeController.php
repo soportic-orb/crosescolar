@@ -33,6 +33,7 @@ class ChargeController extends Controller
                 'enabled' => Plan::enabled(),
                 'ready' => Plan::ready(),
                 'price' => Plan::price(),
+                'total' => Plan::total(),
                 'name' => Plan::name(),
                 'stripe' => Stripe::configured(),
                 'testing' => Stripe::mode() !== 'live',

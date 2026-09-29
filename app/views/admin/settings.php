@@ -45,6 +45,28 @@ use Cros\Core\Settings;
           <span class="mono"><?= e(url('/pagament/avis/' . $passarela)) ?></span>
         </div>
       <?php endif; ?>
+      <?php if ($groupKey === 'plan'): ?>
+        <?php
+        // El compte fet, perquè qui posa el preu vegi de seguida què cobrarà
+        // i què dirà la factura, que amb la retenció pel mig no és el mateix.
+        $imports = \Cros\Platform\Plan::amounts();
+        $tant = static fn (float $v): string => rtrim(rtrim(number_format($v, 2, ',', '.'), '0'), ',') . ' %';
+        ?>
+        <div class="alert alert--info">
+          <strong>Com queda el pagament:</strong>
+          base <?= e(money($imports['base'])) ?>
+          <?php if ($imports['vat_rate'] > 0): ?>
+            · IVA <?= e($tant($imports['vat_rate'])) ?> <?= e(money($imports['vat'])) ?>
+          <?php endif; ?>
+          <?php if ($imports['irpf_rate'] > 0): ?>
+            · retenció IRPF <?= e($tant($imports['irpf_rate'])) ?> −<?= e(money($imports['irpf'])) ?>
+          <?php endif; ?>
+          → <strong>el client paga <?= e(money($imports['total'])) ?></strong> amb targeta.
+          <?php if ($imports['irpf_rate'] > 0): ?>
+            <br>Els <?= e(money($imports['irpf'])) ?> de la retenció els ingressa ell a Hisenda en nom vostre.
+          <?php endif; ?>
+        </div>
+      <?php endif; ?>
       <?php if ($groupKey === 'bibs'): ?>
         <?php
           $bib = \Cros\Models\Bib::describe();
@@ -102,7 +124,7 @@ use Cros\Core\Settings;
           <?php if (!empty($field['section'])): ?>
             <h3 class="form-section"><?= e($field['section']) ?></h3>
           <?php endif; ?>
-          <?php $fullWidth = in_array($field['type'] ?? 'text', ['html', 'textarea'], true); ?>
+          <?php $fullWidth = in_array($field['type'] ?? 'text', ['html', 'textarea', 'sport_icon'], true); ?>
           <div style="<?= $fullWidth ? 'grid-column:1/-1' : '' ?>">
             <?= \Cros\Core\View::partial('admin/partials/field', [
                 'name' => $name,

@@ -32,7 +32,8 @@ class Activation
     public static function status(?string $root = null): array
     {
         $buit = ['applies' => false, 'paid' => false, 'due' => false, 'ready' => false,
-            'price' => 0, 'name' => '', 'description' => '', 'instance' => null, 'pending' => null];
+            'price' => 0, 'amounts' => ['base' => 0, 'vat_rate' => 0.0, 'vat' => 0, 'irpf_rate' => 0.0, 'irpf' => 0, 'total' => 0],
+            'name' => '', 'description' => '', 'instance' => null, 'pending' => null];
         $slug = Tenancy::slugOf();
         if ($slug === '' || !Bridge::available($root)) {
             return $buit;
@@ -51,6 +52,7 @@ class Activation
                     'due' => Plan::due($instance),
                     'ready' => Plan::ready(),
                     'price' => Plan::price(),
+                    'amounts' => Plan::amounts(),
                     'name' => Plan::name(),
                     'description' => Plan::description(),
                     'instance' => $instance,

@@ -113,10 +113,10 @@ $navItems = \Cros\Models\Menu::visible();
 <header class="site-header">
   <div class="container site-header__inner">
     <a class="brand" href="<?= e(url('/')) ?>">
-      <?php if ($logo !== ''): ?>
+      <?php if (\Cros\Core\Brand::usesLogo()): ?>
         <img src="<?= e(upload_url($logo)) ?>" alt="<?= e($siteName) ?>">
       <?php else: ?>
-        <span class="brand__mark"><?= \Cros\Core\Icons::svg('run', 'icon', 24) ?></span>
+        <span class="brand__mark"><?= \Cros\Core\Brand::mark(24) ?></span>
       <?php endif; ?>
       <span class="brand__text">
         <small><?= e(setting('event_town', 'La Granada')) ?></small>
@@ -131,7 +131,7 @@ $navItems = \Cros\Models\Menu::visible();
         <a href="<?= e(url($item['url'])) ?>"<?= $path === $item['url'] ? ' class="is-active"' : '' ?>><?= e($item['title']) ?></a>
       <?php endforeach; ?>
       <a class="btn btn--accent btn--sm" href="<?= e(url('/inscripcio')) ?>">
-        <?= \Cros\Core\Icons::svg('run', 'icon', 18) ?> Inscriu-te!
+        <?= \Cros\Core\Icons::svg(\Cros\Core\Brand::icon(), 'icon', 18) ?> Inscriu-te!
       </a>
     </nav>
   </div>

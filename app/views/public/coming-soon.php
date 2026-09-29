@@ -16,7 +16,7 @@ $social = array_filter([
   <?php if ($logo !== ''): ?>
     <img class="soon__logo" src="<?= e(upload_url($logo)) ?>" alt="<?= e(setting('site_name', '')) ?>">
   <?php else: ?>
-    <span class="soon__mark"><?= \Cros\Core\Icons::svg('run', 'icon', 38) ?></span>
+    <span class="soon__mark"><?= \Cros\Core\Icons::svg(\Cros\Core\Brand::icon(), 'icon', 38) ?></span>
   <?php endif; ?>
 
   <span class="hero__badge"><?= \Cros\Core\Icons::svg('vine', 'icon', 16) ?> <?= e(setting('site_name', 'Cros Escolar La Granada')) ?></span>

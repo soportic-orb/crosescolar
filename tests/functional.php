@@ -1089,6 +1089,32 @@ $goodSignature = req('POST', $base . '/stripe/webhook', [], [
 ]);
 check('Accepta webhooks signats correctament', $goodSignature['status'] === 200, $goodSignature['body']);
 
+echo "\n== Icona d'esport al lloc del logotip ==\n";
+$aparenca = req('GET', $base . '/admin/configuracio/appearance')['body'];
+check('L\'aparença deixa triar què surt al costat del nom', str_contains($aparenca, 'name="brand_mark"'));
+check('Amb el mosaic d\'icones d\'esport', str_contains($aparenca, 'icon-picker')
+    && str_contains($aparenca, 'name="site_icon"'));
+check('Hi surten moltes icones per triar', substr_count($aparenca, 'icon-picker__option') >= 20,
+    (string) substr_count($aparenca, 'icon-picker__option'));
+check('Cada icona es veu dibuixada', substr_count($aparenca, 'icon-picker__option') > 0
+    && preg_match('/icon-picker__option.{0,400}<svg/s', $aparenca) === 1);
+check('I es diuen pel seu nom', str_contains($aparenca, 'value="cycling"') && str_contains($aparenca, 'value="swimming"'));
+check('El logotip només es demana si es tria logotip',
+    preg_match('/data-show-if="brand_mark:logo"[^>]*>.{0,600}name="logo"/s', $aparenca) === 1);
+
+// Es tria una icona i el web la fa servir de seguida.
+saveSettings($base, 'appearance', ['brand_mark' => 'icon', 'site_icon' => 'cycling']);
+$ambIcona = req('GET', $base . '/', [], ['anon' => true])['body'];
+check('El web públic mostra la icona triada', str_contains($ambIcona, 'M12 19v-4l-3 -3l5 -4l2 3h3'));
+check('I al panell també', str_contains(req('GET', $base . '/admin')['body'], 'M12 19v-4l-3 -3l5 -4l2 3h3'));
+
+// Una icona inventada no trenca res: es torna a la de córrer.
+saveSettings($base, 'appearance', ['site_icon' => 'petanca']);
+check('Una icona que no existeix no trenca el web',
+    req('GET', $base . '/', [], ['anon' => true])['status'] === 200);
+
+saveSettings($base, 'appearance', ['site_icon' => 'run']);
+
 echo "\n== Resultat ==\n";
 echo "  $passed proves correctes, $failed errors\n\n";
 exit($failed === 0 ? 0 : 1);

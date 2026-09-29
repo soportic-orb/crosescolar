@@ -40,10 +40,22 @@ $hidden = \Cros\Core\Settings::bool('coming_soon');
 
     <?php if ($applies && !$paid): ?>
       <div class="grid-cards mb-2" style="margin-top:1.2rem">
+        <?php $imports = $status['amounts']; ?>
         <div class="kpi">
           <div class="kpi__label"><?= Icons::svg('euro', 'icon', 16) ?> Import</div>
-          <div class="kpi__value"><?= e(money((int) $status['price'])) ?></div>
-          <div class="kpi__foot">pagament únic, IVA inclòs</div>
+          <div class="kpi__value"><?= e(money((int) $imports['total'])) ?></div>
+          <div class="kpi__foot">
+            pagament únic
+            <?php if ((float) $imports['vat_rate'] > 0 || (float) $imports['irpf_rate'] > 0): ?>
+              · base <?= e(money((int) $imports['base'])) ?>
+              <?php if ((float) $imports['vat_rate'] > 0): ?>
+                + IVA <?= e(money((int) $imports['vat'])) ?>
+              <?php endif; ?>
+              <?php if ((float) $imports['irpf_rate'] > 0): ?>
+                − IRPF <?= e(money((int) $imports['irpf'])) ?>
+              <?php endif; ?>
+            <?php endif; ?>
+          </div>
         </div>
         <div class="kpi">
           <div class="kpi__label"><?= Icons::svg('eye', 'icon', 16) ?> Estat del web</div>

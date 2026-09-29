@@ -630,7 +630,10 @@ try {
         '_token' => $token($planForm['body']),
         'plan_enabled' => '1',
         'plan_price_cents' => '30,00',
-        'plan_tax_rate' => '21',
+        'plan_vat_enabled' => '1',
+        'plan_vat_rate' => '21',
+        'plan_irpf_enabled' => '1',
+        'plan_irpf_rate' => '15',
         'plan_name' => 'Activació del web',
     ]));
     $fiscals = $web('GET', '/configuracio/platform_billing');
@@ -645,8 +648,15 @@ try {
     ]));
     Settings::forget();
     Platform::boot($site);
-    check('El pla queda actiu amb el seu preu', Plan::enabled() && Plan::price() === 3000, (string) Plan::price());
+    check('El pla queda actiu amb el seu preu base', Plan::enabled() && Plan::price() === 3000, (string) Plan::price());
     check('I les dades fiscals de la plataforma hi són', Invoice::complete());
+
+    // El preu configurat és la base: l'IVA s'hi suma i l'IRPF s'hi resta.
+    $imports = Plan::amounts();
+    check('L\'IVA se suma sobre la base', $imports['vat'] === 630, (string) $imports['vat']);
+    check('I l\'IRPF s\'hi resta', $imports['irpf'] === 450, (string) $imports['irpf']);
+    check('El que es cobra és base + IVA − IRPF',
+        $imports['total'] === 3180 && Plan::total() === 3180, (string) $imports['total']);
 
     // El client amaga el web i mira de tornar-lo a publicar.
     $amaga = $web('POST', '/admin/properament', [
@@ -657,7 +667,9 @@ try {
 
     $activacio = $web('GET', '/admin/activacio', [], 'santjordi.crosescolar.test');
     check('Té la pantalla d\'activació', $activacio['status'] === 200, 'estat ' . $activacio['status']);
-    check('Amb el preu que s\'ha posat', str_contains(text($activacio['body']), '30,00'));
+    check('Amb el total que pagarà', str_contains(text($activacio['body']), '31,80'));
+    check('I el desglossament a la vista',
+        str_contains(text($activacio['body']), 'base 30,00') && str_contains(text($activacio['body']), 'IRPF'));
     check('I dient que no barregi els dos sistemes',
         str_contains(text($activacio['body']), 'Això no són els vostres cobraments'));
     check('Sense Stripe, no es pot pagar encara',
@@ -681,10 +693,12 @@ try {
         'name' => 'AFA Escola Sant Jordi', 'email' => 'laia@example.cat', 'nif' => 'G12345678',
         'address' => 'Carrer Major, 1', 'postcode' => '08870', 'town' => 'Sitges',
     ]);
-    check('El cobrament es prepara', (int) ($charge['total_cents'] ?? 0) === 3000);
-    check('Amb l\'IVA desglossat cap enrere',
-        (int) $charge['tax_cents'] === 521 && (int) $charge['subtotal_cents'] === 2479,
-        $charge['subtotal_cents'] . ' + ' . $charge['tax_cents']);
+    check('El cobrament es prepara amb el total a cobrar', (int) ($charge['total_cents'] ?? 0) === 3180,
+        (string) ($charge['total_cents'] ?? 0));
+    check('Amb la base, l\'IVA i la retenció desglossats',
+        (int) $charge['subtotal_cents'] === 3000 && (int) $charge['tax_cents'] === 630
+        && (int) $charge['irpf_cents'] === 450,
+        $charge['subtotal_cents'] . ' + ' . $charge['tax_cents'] . ' − ' . $charge['irpf_cents']);
     check('I un codi propi de la plataforma',
         (bool) preg_match('/^A-\d{4}-\d{4}$/', (string) $charge['code']), (string) $charge['code']);
     check('Demanar-lo dues vegades no en fa dos',
@@ -723,6 +737,9 @@ try {
         check('La factura de la plataforma porta les seves dades fiscals',
             str_contains($textPdf, 'Serveis Web del Penedès SL') && str_contains($textPdf, 'B99887766'));
         check('I el client hi surt com a client', str_contains($textPdf, 'AFA Escola Sant Jordi'));
+        check('Amb la retenció d\'IRPF ben dita',
+            str_contains($textPdf, 'Retenció IRPF') && str_contains($textPdf, '15 %'));
+        check('I explicant qui la ingressa', str_contains($textPdf, 'ingressa el client a Hisenda'));
         check('Però el NIF del client no és el de l\'emissor',
             substr_count($textPdf, 'B99887766') === 1);
     }

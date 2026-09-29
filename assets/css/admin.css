@@ -285,3 +285,16 @@ input[type="color"] { width: 64px; height: 40px; padding: 2px; }
 .feature-row { display: grid; gap: .5rem; grid-template-columns: 11rem 1fr; align-items: start; margin-bottom: .8rem; }
 .feature-row textarea { grid-column: 1 / -1; }
 @media (max-width: 640px) { .feature-row { grid-template-columns: 1fr; } }
+
+/* ------------------------------------------------ Triar una icona
+   Un mosaic i no una llista desplegable: amb els noms sols ningú no sabria
+   quina és quina fins a desar-ho i anar a mirar el web. */
+.icon-picker { display: grid; gap: .5rem; grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr)); }
+.icon-picker__option { display: flex; flex-direction: column; align-items: center; gap: .3rem; cursor: pointer;
+  padding: .7rem .4rem; border: 1px solid var(--a-line); border-radius: 12px; background: #fff; text-align: center; }
+.icon-picker__option:hover { border-color: var(--a-green); }
+.icon-picker__option input { position: absolute; opacity: 0; width: 0; height: 0; }
+.icon-picker__option span { font-size: .72rem; line-height: 1.25; color: var(--a-soft); }
+.icon-picker__option.is-chosen,
+.icon-picker__option:has(input:checked) { border-color: var(--a-green); background: var(--a-green-light); }
+.icon-picker__option:has(input:checked) span { color: var(--a-green-dark); font-weight: 600; }
