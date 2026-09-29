@@ -3,7 +3,7 @@
 <p style="margin:0 0 16px">
   Escriviu aquest codi al web per veure i modificar
   <?= ($count ?? 1) > 1 ? 'les vostres ' . (int) $count . ' inscripcions' : 'la vostra inscripció' ?>
-  al <?= e(setting('site_name', 'Cros Escolar La Granada')) ?>.
+  al <?= e(site_name()) ?>.
 </p>
 <table role="presentation" width="100%" style="border:1px solid #e3eade;border-radius:12px">
   <tr><td style="padding:22px 16px;text-align:center">

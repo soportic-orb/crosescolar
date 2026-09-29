@@ -78,6 +78,9 @@ class Provisioner
                 'socket' => (string) ($provision['db_socket'] ?? ''),
             ];
             $url = Platform::url($slug, $root, $domain);
+            // Del client se'n sap el nom i el poble: són les úniques dades que
+            // el web nou pot tenir escrites sense que ningú les hi hagi posat.
+            $client = !empty($data['client_id']) ? Client::find((int) $data['client_id']) : null;
             $installer = new Installer([
                 'db_host' => $dbConfig['host'],
                 'db_port' => $dbConfig['port'],
@@ -88,6 +91,8 @@ class Provisioner
                 'base_url' => $url,
                 'site_name' => (string) $data['site_name'],
                 'event_date' => (string) ($data['event_date'] ?? ''),
+                'town' => (string) ($data['town'] ?? ($client['town'] ?? '')),
+                'entity' => (string) ($data['entity'] ?? ($client['name'] ?? '')),
                 'admin_name' => (string) $data['admin_name'],
                 'admin_email' => (string) $data['admin_email'],
                 'admin_pass' => $password,

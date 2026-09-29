@@ -25,25 +25,29 @@ return static function (PDO $pdo): void {
     $lng = trim((string) Settings::get('map_lng', ''));
     $untouched = ($lat === '' || $lat === $oldLat) && ($lng === '' || $lng === $oldLng);
 
-    if ($embed === '' || $embed === $oldEmbed) {
-        // Instal·lació sense configurar: el punt passa a ser la zona esportiva.
-        if ($untouched) {
-            Settings::set('map_lat', '41.376699');
-            Settings::set('map_lng', '1.713535');
-        }
-        if ($embed === $oldEmbed) {
-            Settings::set('map_embed', '');
-        }
-    } elseif ($untouched) {
-        // Hi havia un enllaç propi: se'n treu el punt perquè el marqui el mapa.
-        $point = Map::parse($embed);
-        if ($point !== null) {
-            Settings::set('map_lat', Map::format($point['lat']));
-            Settings::set('map_lng', Map::format($point['lng']));
-        } else {
-            // No se'n poden treure coordenades: es deixen buides i mana l'enllaç.
-            Settings::set('map_lat', '');
-            Settings::set('map_lng', '');
+    // Un web acabat de crear encara no té ni enllaç ni coordenades: no se li ha
+    // d'inventar cap punt, perquè seria el d'una altra cursa.
+    if ($embed !== '' || $lat !== '' || $lng !== '') {
+        if ($embed === '' || $embed === $oldEmbed) {
+            // Instal·lació sense configurar: el punt passa a ser la zona esportiva.
+            if ($untouched) {
+                Settings::set('map_lat', '41.376699');
+                Settings::set('map_lng', '1.713535');
+            }
+            if ($embed === $oldEmbed) {
+                Settings::set('map_embed', '');
+            }
+        } elseif ($untouched) {
+            // Hi havia un enllaç propi: se'n treu el punt perquè el marqui el mapa.
+            $point = Map::parse($embed);
+            if ($point !== null) {
+                Settings::set('map_lat', Map::format($point['lat']));
+                Settings::set('map_lng', Map::format($point['lng']));
+            } else {
+                // No se'n poden treure coordenades: es deixen buides i mana l'enllaç.
+                Settings::set('map_lat', '');
+                Settings::set('map_lng', '');
+            }
         }
     }
 

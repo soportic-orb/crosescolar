@@ -48,7 +48,7 @@ $slug = $prefill('slug', (string) ($request['slug'] ?? ''));
         <div class="field">
           <label for="site_name">Nom del cros</label>
           <input type="text" id="site_name" name="site_name" required maxlength="190"
-                 value="<?= e($prefill('site_name', (string) ($request['entity'] ?? ''))) ?>" placeholder="Cros Escolar La Granada">
+                 value="<?= e($prefill('site_name', (string) ($request['entity'] ?? ''))) ?>" placeholder="Cursa popular de la vila">
         </div>
         <div class="field">
           <label for="town">Població</label>

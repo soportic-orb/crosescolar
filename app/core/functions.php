@@ -145,6 +145,20 @@ function setting(string $key, $default = null)
     return Settings::get($key, $default);
 }
 
+/**
+ * El nom del web, tal com l'ha escrit qui el porta.
+ *
+ * Abans, quan no n'hi havia cap, sortia el nom del primer cros que va fer
+ * servir aquest codi: una cursa acabada de donar d'alta ensenyava el nom d'una
+ * altra. Ara, si encara no n'hi ha, es diu una cosa que val per a tothom.
+ */
+function site_name(string $fallback = 'Aquest web'): string
+{
+    $name = trim((string) Settings::get('site_name', ''));
+
+    return $name !== '' ? $name : $fallback;
+}
+
 /** Text de configuració pensat per mostrar-se com a HTML simple. */
 function setting_html(string $key, string $default = ''): string
 {

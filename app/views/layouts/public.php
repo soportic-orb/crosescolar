@@ -1,6 +1,6 @@
 <?php
 /** @var string $content */
-$siteName = (string) setting('site_name', 'Cros Escolar La Granada');
+$siteName = (string) site_name();
 $pageTitle = isset($title) && $title !== '' ? $title : $siteName;
 $fullTitle = $pageTitle === $siteName ? $siteName . ' — ' . setting('site_tagline', '') : $pageTitle . ' · ' . $siteName;
 // A la portada, qui gestiona el web pot escriure el títol que vol que surti a
@@ -193,14 +193,29 @@ $navItems = \Cros\Models\Menu::visible();
           <?php endif; ?>
         </ul>
       </div>
-      <div>
-        <h4>Quan i on</h4>
-        <ul class="footer-links">
-          <li><?= e(ca_date($eventDate, true)) ?></li>
-          <li><?= e(setting('event_time', '')) ?> h · <?= e(setting('event_place', '')) ?></li>
-          <li><?= e(setting('event_address', '')) ?></li>
-        </ul>
-      </div>
+      <?php
+      // D'un web acabat de crear no se'n sap encara ni el dia ni el lloc: val
+      // més no dir res que ensenyar una llista de ratlles buides.
+      $eventTime = trim((string) setting('event_time', ''));
+      $eventPlace = trim((string) setting('event_place', ''));
+      $eventAddress = trim((string) setting('event_address', ''));
+      ?>
+      <?php if ($eventDate !== '' || $eventTime !== '' || $eventPlace !== '' || $eventAddress !== ''): ?>
+        <div>
+          <h4>Quan i on</h4>
+          <ul class="footer-links">
+            <?php if ($eventDate !== ''): ?>
+              <li><?= e(ca_date($eventDate, true)) ?></li>
+            <?php endif; ?>
+            <?php if ($eventTime !== '' || $eventPlace !== ''): ?>
+              <li><?= $eventTime !== '' ? e($eventTime) . ' h' : '' ?><?= $eventTime !== '' && $eventPlace !== '' ? ' · ' : '' ?><?= e($eventPlace) ?></li>
+            <?php endif; ?>
+            <?php if ($eventAddress !== ''): ?>
+              <li><?= e($eventAddress) ?></li>
+            <?php endif; ?>
+          </ul>
+        </div>
+      <?php endif; ?>
       <div>
         <h4>Contacte</h4>
         <ul class="footer-links">
@@ -215,7 +230,8 @@ $navItems = \Cros\Models\Menu::visible();
       </div>
     </div>
     <div class="footer-bottom">
-      <span>© <?= date('Y') ?> <?= e(setting('legal_entity', setting('organizer', ''))) ?>. Tots els drets reservats.</span>
+      <?php $owner = trim((string) setting('legal_entity', '')) ?: trim((string) setting('organizer', '')) ?: $siteName; ?>
+      <span>© <?= date('Y') ?> <?= e($owner) ?>. Tots els drets reservats.</span>
       <span>
         <a href="<?= e(url('/avis-legal')) ?>">Avís legal</a> ·
         <a href="<?= e(url('/privacitat')) ?>">Privacitat</a> ·

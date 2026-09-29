@@ -1,6 +1,6 @@
 <?php /** Formulari d'accés. */ ?>
 <div class="login-card">
-  <h1><?= e(setting('site_name', 'Cros Escolar La Granada')) ?></h1>
+  <h1><?= e(site_name()) ?></h1>
   <p class="sub">Accés al panell de gestió</p>
 
   <?php foreach (flash() as $message): ?>

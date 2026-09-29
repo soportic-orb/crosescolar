@@ -1,6 +1,10 @@
 <?php
 /** Avís públic mentre el web està en preparació. */
 $logo = (string) setting('logo', '');
+$nom = trim((string) setting('site_name', ''));
+// Un web acabat de crear encara no té cap text escrit: se li'n diu un de sol,
+// amb el nom que hagi posat qui se l'ha fet i res més. Res de dades d'altri.
+$avis = trim((string) setting('coming_soon_text', ''));
 $eventDate = (string) setting('event_date', '');
 $eventTime = (string) setting('event_time', '09:30');
 $showCountdown = setting('coming_soon_countdown', '1') === '1' && $eventDate !== '';
@@ -19,9 +23,17 @@ $social = array_filter([
     <span class="soon__mark"><?= \Cros\Core\Icons::svg(\Cros\Core\Brand::icon(), 'icon', 38) ?></span>
   <?php endif; ?>
 
-  <span class="hero__badge"><?= \Cros\Core\Icons::svg('vine', 'icon', 16) ?> <?= e(setting('site_name', 'Cros Escolar La Granada')) ?></span>
+  <?php if ($nom !== ''): ?>
+    <span class="hero__badge"><?= \Cros\Core\Icons::svg(\Cros\Core\Brand::icon(), 'icon', 16) ?> <?= e($nom) ?></span>
+  <?php endif; ?>
   <h1><?= e(setting('coming_soon_title', 'Aviat publicarem el web')) ?></h1>
-  <div class="soon__text"><?= setting_html('coming_soon_text') ?></div>
+  <div class="soon__text">
+    <?php if ($avis !== ''): ?>
+      <?= setting_html('coming_soon_text') ?>
+    <?php else: ?>
+      <p>Estem preparant aquest web. Torneu-hi ben aviat!</p>
+    <?php endif; ?>
+  </div>
 
   <?php if ($showCountdown): ?>
     <div class="soon__meta">

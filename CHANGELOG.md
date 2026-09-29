@@ -3,6 +3,35 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.36.0] — 2026-09-29
+
+### Corregit
+- **Un web acabat de crear ensenyava les dades del Cros Escolar La Granada.**
+  El nom de la cursa, el lloc, l'entitat organitzadora, els textos legals i fins
+  i tot el punt del mapa venien de fàbrica amb els d'aquell cros, que és el que
+  va estrenar aquest codi. Un client que es donava d'alta es trobava el web d'un
+  altre. Ara els valors de fàbrica són buits i aquelles dades han passat als
+  continguts d'exemple, que només es creen si es demanen.
+- La pàgina de «web en preparació» diu només que s'està preparant i el nom que
+  el client ha indicat en registrar-se; si encara no hi ha cap text escrit, se'n
+  diu un de sol que val per a qualsevol cursa.
+- Les migracions de continguts ja no omplen els textos legals ni el punt del
+  mapa d'una instal·lació que encara no té res escrit: només hi toquen quan hi
+  ha el text antic a substituir.
+- Al peu de pàgina i a les «dades pràctiques» de la portada ja no hi surten
+  files buides, i el copyright porta l'entitat del client (o, si no n'hi ha, el
+  nom del seu web).
+- Arreu del codi, quan no hi havia nom de web hi sortia «Cros Escolar La
+  Granada»: ara hi ha una sola funció, `site_name()`, que no anomena cap cursa.
+
+### Canviat
+- En donar d'alta un web, se li escriu el **poble i l'entitat del client** (les
+  úniques dades que en sabem del registre) i el nom de qui envia els correus,
+  que passa a ser el nom del web.
+- La sanefa de vinyes ve apagada de sèrie: és del Penedès, no de tothom.
+- Els textos de fàbrica que parlaven de l'AFA, de l'escola o de la zona
+  esportiva ara parlen de l'organització i del lloc de sortida.
+
 ## [1.35.1] — 2026-09-29
 
 ### Corregit

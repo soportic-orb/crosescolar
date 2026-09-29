@@ -20,7 +20,10 @@ class Mailer
             $host = parse_url(base_url(), PHP_URL_HOST) ?: 'localhost';
             $fromEmail = 'no-reply@' . preg_replace('/^www\./', '', (string) $host);
         }
-        $fromName = (string) setting('mail_from_name', setting('site_name', 'Cros Escolar La Granada'));
+        $fromName = trim((string) setting('mail_from_name', ''));
+        if ($fromName === '') {
+            $fromName = site_name('');
+        }
         $text = $options['text'] ?? self::htmlToText($html);
         $boundary = 'b' . bin2hex(random_bytes(12));
         $mixedBoundary = 'm' . bin2hex(random_bytes(12));

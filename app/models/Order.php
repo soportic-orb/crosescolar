@@ -183,7 +183,7 @@ class Order
         $tickets = self::tickets((int) $order['id']);
         $sent = Mailer::sendTemplate(
             $order['email'],
-            'Els teus tiquets — ' . setting('site_name', 'Cros Escolar La Granada'),
+            'Els teus tiquets — ' . site_name(),
             'order-confirmation',
             [
                 'order' => $order,

@@ -13,7 +13,7 @@ class HomeController extends Controller
     public function index(): void
     {
         $this->view('public/home', [
-            'title' => setting('site_name', 'Cros Escolar La Granada'),
+            'title' => site_name(),
             'description' => setting('meta_description', ''),
             'courses' => Content::courses(),
             'categories' => Content::categories(),

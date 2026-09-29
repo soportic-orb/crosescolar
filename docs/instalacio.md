@@ -88,7 +88,14 @@ Deseu i CloudPanel recarregarà nginx automàticament.
    del sòcol Unix al camp corresponent.
 4. **Pas 3** — nom del web, data de la cursa i compte d'administració.
    Deixeu marcada l'opció de continguts d'exemple per començar amb una estructura
-   completa que després podreu editar.
+   completa que després podreu editar: hi surten els recorreguts, les categories,
+   el programa i els textos del Cros Escolar de La Granada, que és el cros amb
+   què va néixer aquest codi, i us serveixen de model.
+
+   Si la desmarqueu, el web neix **sense cap dada**: només hi consta el nom que
+   hi heu posat, el poble i l'entitat, i l'avís que s'està preparant. És així com
+   es donen d'alta els webs des del panell de la plataforma, perquè cap client no
+   es trobi les dades d'una altra cursa al seu web.
 
    En prémer **Instal·lar**, la feina es reparteix en sis passos curts
    (configuració → taules → compte → opcions → continguts → final), cadascun en una

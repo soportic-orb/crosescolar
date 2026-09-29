@@ -10,6 +10,7 @@ class Seeder
     public static function run(): void
     {
         Settings::seedDefaults();
+        self::settings();
         self::courses();
         self::categories();
         self::schedule();
@@ -19,6 +20,32 @@ class Seeder
         self::ticketTypes();
         self::sponsors();
         Settings::load(true);
+    }
+
+    /**
+     * La configuració del cros d'exemple.
+     *
+     * Un web acabat de crear neix sense cap dada de cursa: el nom que hagi
+     * posat qui se l'ha fet i prou. Aquestes són les del cros de La Granada, i
+     * només s'escriuen quan es demanen continguts d'exemple.
+     *
+     * Només s'omple el que ningú ha escrit encara: si el valor que hi ha és el
+     * de fàbrica, s'hi posa el de l'exemple. Qui dona d'alta un web ja n'ha dit
+     * el nom i la data, i uns continguts d'exemple no els hi han de trepitjar.
+     */
+    private static function settings(): void
+    {
+        $file = CROS_APP . '/core/sample_settings.php';
+        if (!is_file($file)) {
+            return;
+        }
+        $defaults = Settings::defaults();
+        foreach ((array) require $file as $key => $value) {
+            $current = trim((string) Settings::get((string) $key, ''));
+            if ($current === '' || $current === trim((string) ($defaults[$key] ?? ''))) {
+                Settings::set((string) $key, (string) $value);
+            }
+        }
     }
 
     private static function isEmpty(string $table): bool

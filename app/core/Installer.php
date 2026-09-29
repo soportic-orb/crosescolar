@@ -42,7 +42,8 @@ class Installer
     /**
      * @param array<string,mixed> $data  db_host, db_port, db_name, db_user, db_pass,
      *                                   db_socket, base_url, site_name, event_date,
-     *                                   admin_name, admin_email, admin_pass, demo
+     *                                   town, entity, admin_name, admin_email,
+     *                                   admin_pass, demo
      * @param array<string,mixed> $options  config_file, storage_dir, timezone, debug
      */
     public function __construct(array $data, array $options = [])
@@ -208,6 +209,21 @@ class Installer
         Settings::set('site_name', (string) $this->data['site_name']);
         Settings::set('hero_title', (string) $this->data['site_name']);
         Settings::set('event_date', (string) ($this->data['event_date'] ?? ''));
+
+        // Els correus surten amb el nom del web, no amb el de qui el va fer.
+        Settings::set('mail_from_name', (string) $this->data['site_name']);
+
+        // El poc que se sap del client des del primer dia: el poble i el nom de
+        // qui hi ha al darrere. La resta l'anirà escrivint ell mateix.
+        $town = trim((string) ($this->data['town'] ?? ''));
+        if ($town !== '') {
+            Settings::set('event_town', $town);
+        }
+        $entity = trim((string) ($this->data['entity'] ?? ''));
+        if ($entity !== '') {
+            Settings::set('legal_entity', $entity);
+            Settings::set('organizer', $entity);
+        }
 
         $email = mb_strtolower(trim((string) $this->data['admin_email']));
         Settings::set('contact_email', $email);

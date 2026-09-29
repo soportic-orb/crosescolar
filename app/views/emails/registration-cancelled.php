@@ -2,7 +2,7 @@
 <h1 style="font-size:20px;margin:0 0 12px;color:#1b452a">Inscripció anul·lada</h1>
 <p style="margin:0 0 16px">
   Hem anul·lat la inscripció de <strong><?= e($registration['first_name'] . ' ' . $registration['last_name']) ?></strong>
-  al <?= e(setting('site_name', 'Cros Escolar La Granada')) ?>. Aquest participant ja no consta a la sortida.
+  al <?= e(site_name()) ?>. Aquest participant ja no consta a la sortida.
 </p>
 <table role="presentation" width="100%" style="font-size:14px;border:1px solid #e3eade;border-radius:12px">
   <tr><td style="padding:14px 16px">

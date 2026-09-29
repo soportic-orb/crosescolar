@@ -7,7 +7,9 @@
  * posen els textos complets, amb l'entitat responsable ben anomenada.
  *
  * Com sempre, només es canvia el que encara tenia el text d'exemple: si
- * l'organització ja l'havia redactat, no s'hi toca.
+ * l'organització ja l'havia redactat, no s'hi toca. I si encara no hi ha res
+ * escrit tampoc, que és el cas d'un web acabat de crear: aquests textos parlen
+ * d'una entitat concreta i no serien veritat a casa d'altri.
  */
 
 use Cros\Core\Settings;
@@ -30,7 +32,7 @@ return static function (PDO $pdo): void {
 
     foreach ($replacements as $key => [$olds, $new]) {
         $current = trim((string) Settings::get($key, ''));
-        if ($current === '' || in_array($current, $olds, true)) {
+        if (in_array($current, $olds, true)) {
             Settings::set($key, $new);
         }
     }

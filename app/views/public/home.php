@@ -1,6 +1,8 @@
 <?php
 /** Portada. */
 $heroImage = (string) setting('hero_image', '');
+// Si encara no s'ha escrit cap títol, el de la portada és el nom del web.
+$heroTitle = trim((string) setting('hero_title', '')) ?: site_name();
 $eventDate = (string) setting('event_date', '');
 $eventTime = (string) setting('event_time', '');
 $countdownTarget = $eventDate !== '' ? $eventDate . 'T' . ($eventTime !== '' ? $eventTime : '09:00') . ':00' : '';
@@ -20,9 +22,9 @@ $salesOpen = \Cros\Controllers\TicketsController::salesOpen();
 
   <div class="container">
     <?php if (setting('hero_badge', '')): ?>
-      <span class="hero__badge"><?= \Cros\Core\Icons::svg('vine', 'icon', 16) ?> <?= e(setting('hero_badge')) ?></span>
+      <span class="hero__badge"><?= \Cros\Core\Icons::svg(\Cros\Core\Brand::icon(), 'icon', 16) ?> <?= e(setting('hero_badge')) ?></span>
     <?php endif; ?>
-    <h1><?= e(setting('hero_title', setting('site_name', 'Cros Escolar La Granada'))) ?></h1>
+    <h1><?= e($heroTitle) ?></h1>
     <p class="hero__subtitle"><?= nl(setting('hero_subtitle', '')) ?></p>
 
     <div class="hero__meta">
@@ -78,8 +80,11 @@ $salesOpen = \Cros\Controllers\TicketsController::salesOpen();
 <section class="section<?= $infoBlocks ? ' section--tint' : '' ?>" id="la-cursa">
   <div class="container split">
     <div>
-      <span class="eyebrow"><?= \Cros\Core\Icons::svg('vine', 'icon', 16) ?> La jornada</span>
-      <h2><?= e(setting('intro_title', 'La cursa del poble')) ?></h2>
+      <span class="eyebrow"><?= \Cros\Core\Icons::svg(\Cros\Core\Brand::icon(), 'icon', 16) ?> La jornada</span>
+      <?php $introTitle = trim((string) setting('intro_title', '')); ?>
+      <?php if ($introTitle !== ''): ?>
+        <h2><?= e($introTitle) ?></h2>
+      <?php endif; ?>
       <div class="prose"><?= setting_html('intro_text') ?></div>
       <div class="flex" style="gap:.8rem;margin-top:1.4rem">
         <?php $registrationsOpen = \Cros\Controllers\RegistrationController::open(); ?>
@@ -94,10 +99,19 @@ $salesOpen = \Cros\Controllers\TicketsController::salesOpen();
       <h3 style="margin-bottom:1rem"><?= \Cros\Core\Icons::svg('info', 'icon', 20) ?> Dades pràctiques</h3>
       <table class="data" style="min-width:0">
         <tbody>
-          <tr><th style="width:42%">Data</th><td><?= e(ucfirst(ca_date($eventDate, true))) ?></td></tr>
-          <tr><th>Hora</th><td><?= e($eventTime) ?> h</td></tr>
-          <tr><th>Lloc</th><td><?= e(setting('event_place', '')) ?></td></tr>
-          <tr><th>Organitza</th><td><?= e(setting('organizer', '')) ?></td></tr>
+          <?php
+          // Les dades que el client encara no ha escrit no surten: una fila amb
+          // el títol i res al costat no diu res a ningú.
+          $rows = [
+              'Data' => $eventDate !== '' ? ucfirst(ca_date($eventDate, true)) : '',
+              'Hora' => $eventTime !== '' ? $eventTime . ' h' : '',
+              'Lloc' => trim((string) setting('event_place', '')),
+              'Organitza' => trim((string) setting('organizer', '')),
+          ];
+          ?>
+          <?php foreach (array_filter($rows) as $label => $value): ?>
+            <tr><th<?= $label === 'Data' ? ' style="width:42%"' : '' ?>><?= e($label) ?></th><td><?= e($value) ?></td></tr>
+          <?php endforeach; ?>
           <?php if (setting('collaborators', '')): ?>
             <tr><th>Col·labora</th><td><?= e(setting('collaborators')) ?></td></tr>
           <?php endif; ?>

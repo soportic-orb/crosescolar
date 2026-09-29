@@ -291,7 +291,7 @@ class RaceResult
      */
     public static function pdf(?int $categoryId = null, bool $arrivalOrder = false): string
     {
-        $pdf = new Pdf(['title' => 'Resultats · ' . setting('site_name', 'Cros Escolar La Granada')]);
+        $pdf = new Pdf(['title' => 'Resultats · ' . site_name()]);
 
         if ($arrivalOrder) {
             self::pdfSection($pdf, 'Ordre d\'arribada a meta', 'Totes les categories', self::arrivals(), true);
@@ -392,7 +392,7 @@ class RaceResult
         $pdf->rect(0, 0, 210, 26, 'F');
         $pdf->setFont('helvetica-bold', 15);
         $pdf->setColorHex('#ffffff');
-        $pdf->text(15, 12, setting('site_name', 'Cros Escolar La Granada'));
+        $pdf->text(15, 12, site_name());
         $pdf->setFont('helvetica', 9.5);
         $pdf->text(15, 19, ucfirst(ca_date(setting('event_date', ''), true)) . ' · ' . setting('event_place', ''));
         $pdf->setFont('helvetica', 9);

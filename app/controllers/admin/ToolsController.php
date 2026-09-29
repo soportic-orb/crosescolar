@@ -161,8 +161,8 @@ class ToolsController extends Controller
             flash('error', 'Adreça no vàlida.');
             redirect('/admin/correus');
         }
-        $ok = Mailer::send($to, 'Prova de correu — ' . setting('site_name', 'Cros Escolar'),
-            '<p>Aquest és un correu de prova enviat des del panell del Cros Escolar La Granada.</p>'
+        $ok = Mailer::send($to, 'Prova de correu — ' . site_name(),
+            '<p>Aquest és un correu de prova enviat des del panell de ' . e(site_name()) . '.</p>'
             . '<p>Si el rebeu, la configuració de correu funciona correctament.</p>');
         flash($ok ? 'success' : 'error', $ok ? 'Correu de prova enviat a ' . $to : 'No s\'ha pogut enviar el correu. Reviseu la configuració.');
         redirect('/admin/correus');

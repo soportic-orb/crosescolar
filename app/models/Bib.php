@@ -60,7 +60,7 @@ class Bib
      */
     public static function pdf(array $registrations, bool $duplicate = false): string
     {
-        $pdf = new Pdf(['title' => 'Dorsals · ' . setting('site_name', 'Cros Escolar La Granada')]);
+        $pdf = new Pdf(['title' => 'Dorsals · ' . site_name()]);
         $template = null;
         $layout = self::layout();
         $size = $layout['size'];

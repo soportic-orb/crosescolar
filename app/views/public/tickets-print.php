@@ -5,7 +5,7 @@
 </div>
 
 <div class="head">
-  <h1><?= e(setting('site_name', 'Cros Escolar La Granada')) ?> — tiquets del punt de recàrrega</h1>
+  <h1><?= e(site_name()) ?> — tiquets del punt de recàrrega</h1>
   <p>
     Comanda <strong><?= e($order['code']) ?></strong> · <?= e($order['name']) ?> ·
     <?= e(ucfirst(ca_date(setting('event_date', ''), true))) ?> · <?= e(setting('event_place', '')) ?>

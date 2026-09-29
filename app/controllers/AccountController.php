@@ -120,7 +120,7 @@ class AccountController extends Controller
                 flash('error', 'S\'han demanat massa codis per a aquesta adreça. Torneu-ho a provar d\'aquí una estona.');
                 redirect('/les-meves-inscripcions');
             }
-            Mailer::sendTemplate($email, 'El vostre codi d\'accés — ' . setting('site_name', 'Cros Escolar La Granada'), 'access-code', [
+            Mailer::sendTemplate($email, 'El vostre codi d\'accés — ' . site_name(), 'access-code', [
                 'code' => $code,
                 'minutes' => AccessCode::TTL_MINUTES,
                 'count' => count($registrations),

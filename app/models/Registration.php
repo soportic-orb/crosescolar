@@ -414,7 +414,7 @@ class Registration
         }
         $email = (string) ($registration['tutor_email'] ?? '');
         if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            Mailer::sendTemplate($email, 'Inscripció confirmada — ' . setting('site_name', 'Cros Escolar La Granada'), 'registration-confirmation', [
+            Mailer::sendTemplate($email, 'Inscripció confirmada — ' . site_name(), 'registration-confirmation', [
                 'registration' => $registration,
                 'siblings' => count(self::forEmail($email, true)),
             ]);
@@ -432,7 +432,7 @@ class Registration
     {
         $email = (string) ($registration['tutor_email'] ?? '');
         if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            Mailer::sendTemplate($email, 'Inscripció anul·lada — ' . setting('site_name', 'Cros Escolar La Granada'), 'registration-cancelled', [
+            Mailer::sendTemplate($email, 'Inscripció anul·lada — ' . site_name(), 'registration-cancelled', [
                 'registration' => $registration,
                 'remaining' => count(self::forEmail($email, true)),
             ]);

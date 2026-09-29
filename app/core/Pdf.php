@@ -50,7 +50,7 @@ class Pdf
         $this->info = $info + [
             'title' => '',
             'author' => '',
-            'creator' => 'Cros Escolar La Granada',
+            'creator' => 'EsportWeb',
         ];
         $this->compress = function_exists('gzcompress');
     }
@@ -436,7 +436,7 @@ class Pdf
             $this->escape($this->encode((string) $this->info['title'])),
             $this->escape($this->encode((string) $this->info['author'])),
             $this->escape($this->encode((string) $this->info['creator'])),
-            $this->escape($this->encode('Cros Escolar La Granada')),
+            $this->escape($this->encode('EsportWeb')),
             date('YmdHis')
         ));
         $catalog = $this->add(sprintf('<< /Type /Catalog /Pages %d 0 R >>', $pagesObject));

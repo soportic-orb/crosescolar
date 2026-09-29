@@ -1,6 +1,6 @@
 <?php
 /** Plantilla de la pàgina «Aviat publicarem el web». */
-$siteName = (string) setting('site_name', 'Cros Escolar La Granada');
+$siteName = (string) site_name();
 $favicon = (string) setting('favicon', '');
 $background = (string) (setting('coming_soon_image', '') ?: setting('hero_image', ''));
 ?>

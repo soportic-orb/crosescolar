@@ -245,6 +245,61 @@ if ($tenantPdo) {
     check('Ni els continguts d\'exemple',
         (int) $tenantPdo->query('SELECT COUNT(*) FROM courses')->fetchColumn() === 3);
 
+    /* Un web nou no neix amb les dades de cap altra cursa ------------------ */
+    echo "\n== Un web acabat de crear no ensenya dades d'altri ==\n";
+
+    $tenantPdo->exec('SET FOREIGN_KEY_CHECKS = 0');
+    foreach ($tenantPdo->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN) as $table) {
+        $tenantPdo->exec('DROP TABLE IF EXISTS `' . $table . '`');
+    }
+    $tenantPdo->exec('SET FOREIGN_KEY_CHECKS = 1');
+    \Cros\Core\Db::setConnection($platform);
+
+    (new \Cros\Core\Installer([
+        'db_host' => $db['host'], 'db_port' => $db['port'], 'db_name' => $tenantDb,
+        'db_user' => $db['user'], 'db_pass' => $db['pass'], 'db_socket' => '',
+        'base_url' => 'https://elsoms.crosescolar.com',
+        'site_name' => 'Cursa dels Homs',
+        'event_date' => '',
+        'town' => 'Alforja',
+        'entity' => 'Club Atlètic Alforja',
+        'admin_name' => 'Pere Vidal',
+        'admin_email' => 'pere@example.cat',
+        'admin_pass' => 'provaprova',
+        'demo' => '',
+    ], [
+        'config_file' => $tenantDir . '/config.php',
+        'storage_dir' => $tenantDir . '/storage',
+    ]))->run();
+
+    $desat = [];
+    foreach ($tenantPdo->query('SELECT k, v FROM settings')->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $desat[(string) $row['k']] = (string) $row['v'];
+    }
+
+    check('Hi consta el nom que ha dit el client', ($desat['site_name'] ?? '') === 'Cursa dels Homs');
+    check('I els correus surten amb aquest nom', ($desat['mail_from_name'] ?? '') === 'Cursa dels Homs');
+    check('Amb el poble del client', ($desat['event_town'] ?? '') === 'Alforja');
+    check('I l\'entitat que hi ha al darrere', ($desat['legal_entity'] ?? '') === 'Club Atlètic Alforja');
+    check('Que també és qui organitza', ($desat['organizer'] ?? '') === 'Club Atlètic Alforja');
+
+    foreach (['coming_soon_text', 'intro_text', 'event_place', 'event_address', 'hero_subtitle',
+              'location_text', 'footer_text', 'meta_description', 'prizes_local_school',
+              'legal_notice', 'privacy_text', 'map_lat', 'map_lng'] as $key) {
+        check('Res escrit a «' . $key . '»', trim($desat[$key] ?? '') === '', $desat[$key] ?? '');
+    }
+    check('Ni continguts d\'exemple', (int) $tenantPdo->query('SELECT COUNT(*) FROM courses')->fetchColumn() === 0);
+
+    // La comprovació que de debò importa: enlloc de la configuració no hi ha
+    // d'aparèixer el nom de la cursa que va estrenar aquest codi.
+    $rastre = [];
+    foreach ($desat as $key => $value) {
+        if (stripos($value, 'La Granada') !== false || stripos($value, 'Penedès') !== false) {
+            $rastre[] = $key;
+        }
+    }
+    check('Enlloc no hi surt cap altra cursa', $rastre === [], implode(', ', $rastre));
+
     @unlink($tenantDir . '/config.php');
     @unlink($tenantDir . '/storage/installed.lock');
     @rmdir($tenantDir . '/storage');
