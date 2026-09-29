@@ -1098,6 +1098,18 @@ $goodSignature = req('POST', $base . '/stripe/webhook', [], [
 ]);
 check('Accepta webhooks signats correctament', $goodSignature['status'] === 200, $goodSignature['body']);
 
+echo "\n== La pantalla d'accés ==\n";
+$acces = req('GET', $base . '/admin/acces', [], ['anon' => true])['body'];
+check('Porta el full d\'estils del panell', str_contains($acces, 'css/admin.css'));
+check('I les tipografies', str_contains($acces, 'css/fonts.css'));
+check('El cos agafa la lletra del panell, no la del navegador',
+    str_contains($acces, 'class="login-page'));
+// La regla que li dona la lletra ha d'incloure la pantalla d'accés: si només
+// parla de «body.admin», el text surt amb la serif del navegador.
+$estils = (string) @file_get_contents(__DIR__ . '/../assets/css/admin.css');
+check('I la regla de la lletra l\'inclou',
+    (bool) preg_match('/body\.admin,\s*body\.login-page\s*\{[^}]*font-family/s', $estils));
+
 echo "\n== Icona d'esport al lloc del logotip ==\n";
 $aparenca = req('GET', $base . '/admin/configuracio/appearance')['body'];
 check('L\'aparença deixa triar què surt al costat del nom', str_contains($aparenca, 'name="brand_mark"'));

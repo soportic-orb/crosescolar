@@ -1455,6 +1455,24 @@ try {
     check('Un domini que no és nostre no s\'edita',
         $inventat['status'] === 200 && str_contains($inventat['body'], 'value="Cros Escolar del Penedès"'));
 
+    echo "\n== La plataforma es diu com es diu ella ==\n";
+    // Als correus automàtics hi ha de sortir la marca de la plataforma, no la
+    // del cros que s'acaba de tocar ni la del domini per on hagi entrat ningú.
+    Settings::scope();
+    Settings::set('site_name', 'Un nom vell que no s\'ha de veure');
+    Settings::load(true);
+    Platform::prime($site);
+    check('Després de tornar de la base de dades d\'un client, mana la seva marca',
+        (string) setting('site_name', '') === 'Cros Escolar del Penedès',
+        (string) setting('site_name', ''));
+    check('I no el que hi ha desat sense domini',
+        (string) setting('site_name', '') !== 'Un nom vell que no s\'ha de veure');
+
+    // La capçalera del correu surt d'aquí mateix.
+    $capcalera = \Cros\Core\View::make('emails/layout', ['subject' => 'Prova', 'content' => '<p>Hola</p>']);
+    check('I és el que es veu a la capçalera del correu',
+        str_contains($capcalera, 'Cros Escolar del Penedès'), mb_substr(strip_tags($capcalera), 0, 80));
+
     echo "\n== La retenció, només a les entitats ==\n";
     // Base 30,00 · IVA 21 % · IRPF 15 %, tal com s'ha configurat més amunt.
     $entitat = Plan::amountsFor(['kind' => 'company']);
@@ -1500,6 +1518,72 @@ try {
         check('I no hi surt cap retenció', !str_contains($textP, 'Retenció'), mb_substr($textP, 0, 120));
         check('Però sí l\'IVA', str_contains($textP, 'IVA'));
     }
+    $pdo->exec('DELETE FROM platform_payments WHERE instance_id = 0');
+
+    echo "\n== L'avís de Stripe a la plataforma ==\n";
+    // És l'única xarxa que hi ha si el navegador no torna del pagament, i ha
+    // d'entendre les dues maneres de pagar: la pàgina de Stripe (una sessió)
+    // i el formulari de la targeta del panell (un PaymentIntent).
+    $secret = 'whsec_de_prova_per_a_la_plataforma';
+    Settings::scope();
+    Settings::set('stripe_mode', 'test');
+    Settings::set('stripe_webhook_test', $secret);
+    Settings::load(true);
+
+    $signa = static function (string $cos) use ($secret): array {
+        $ara = time();
+
+        return ['Content-Type: application/json',
+            'Stripe-Signature: t=' . $ara . ',v1=' . hash_hmac('sha256', $ara . '.' . $cos, $secret)];
+    };
+    $avis = static function (string $cos, array $capçaleres) use ($base, $jar): array {
+        $ch = curl_init($base . '/pagament/avis');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true, CURLOPT_HEADER => true, CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => $cos, CURLOPT_TIMEOUT => 30,
+            CURLOPT_HTTPHEADER => array_merge(['Host: crosescolar.test'], $capçaleres),
+        ]);
+        $r = (string) curl_exec($ch);
+        $estat = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        return ['status' => $estat, 'body' => substr($r, (int) strpos($r, "\r\n\r\n") + 4)];
+    };
+
+    $dolent = json_encode(['id' => 'evt_1', 'type' => 'payment_intent.succeeded',
+        'data' => ['object' => ['id' => 'pi_inventat']]]);
+    check('Una signatura que no quadra es rebutja',
+        $avis($dolent, ['Content-Type: application/json', 'Stripe-Signature: t=' . time() . ',v1=' . str_repeat('0', 64)])['status'] === 400);
+
+    $desconegut = json_encode(['id' => 'evt_2', 'type' => 'payment_intent.succeeded',
+        'data' => ['object' => ['id' => 'pi_que_no_es_de_ningu']]]);
+    check('Un pagament que no és nostre s\'accepta i es deixa córrer',
+        $avis($desconegut, $signa($desconegut))['status'] === 200);
+
+    $altre = json_encode(['id' => 'evt_3', 'type' => 'invoice.paid',
+        'data' => ['object' => ['id' => 'in_1']]]);
+    check('I un avís que no va amb nosaltres, també',
+        $avis($altre, $signa($altre))['status'] === 200);
+
+    // I ara el que importa: que un PaymentIntent nostre s'hi reconegui.
+    $instanciaAvis = Instance::find($instanceId);
+    $instanciaAvis['id'] = 0;
+    $pdo->exec('DELETE FROM platform_payments WHERE instance_id = 0');
+    $cobramentAvis = Charge::forActivation($instanciaAvis, ['name' => 'Prova avís']);
+    Db::update('platform_payments', ['stripe_payment_intent' => 'pi_de_prova_nostre'],
+        'id = :id', ['id' => (int) $cobramentAvis['id']]);
+    check('Es troba el cobrament pel seu PaymentIntent',
+        (int) (Charge::findByIntent('pi_de_prova_nostre')['id'] ?? 0) === (int) $cobramentAvis['id']);
+    $nostre = json_encode(['id' => 'evt_4', 'type' => 'payment_intent.succeeded',
+        'data' => ['object' => ['id' => 'pi_de_prova_nostre']]]);
+    $resposta = $avis($nostre, $signa($nostre));
+    check('I l\'avís del seu PaymentIntent s\'atén', $resposta['status'] === 200, (string) $resposta['status']);
+    // Sense un Stripe de debò no es pot acabar de confirmar, però al registre
+    // hi ha de quedar que s\'hi ha arribat amb aquest cobrament a la mà. Si
+    // l\'avís s\'hagués descartat per no ser una sessió, aquí no hi hauria res.
+    $registre = (string) @file_get_contents($site . '/storage/logs/app-' . date('Y-m') . '.log');
+    check('I es veu que ha arribat al cobrament que toca',
+        str_contains($registre, (string) $cobramentAvis['code']), (string) $cobramentAvis['code']);
     $pdo->exec('DELETE FROM platform_payments WHERE instance_id = 0');
 
     echo "\n== Afegir un domini més endavant ==\n";

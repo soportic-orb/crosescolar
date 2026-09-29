@@ -243,7 +243,11 @@ return [
         'title' => 'Stripe de la plataforma',
         'icon' => 'card',
         'description' => 'Les claus amb què la plataforma cobra als seus clients. '
-            . 'Cada cros té les seves per cobrar als participants: no són aquestes.',
+            . 'Cada client té les seves per cobrar als participants: no són aquestes. '
+            . 'L\'avís de Stripe (webhook) va a «https://<el vostre domini>/pagament/avis» '
+            . 'i ha d\'escoltar «payment_intent.succeeded» i «payment_intent.payment_failed», '
+            . 'que són els del pagament fet des del panell, a més dels de «checkout.session». '
+            . 'Ho teniu explicat a docs/stripe.md.',
         'fields' => [
             'stripe_mode' => ['label' => 'Mode', 'type' => 'select', 'default' => 'test',
                 'options' => ['test' => 'Proves (test)', 'live' => 'Producció (live)']],

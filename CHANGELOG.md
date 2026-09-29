@@ -3,6 +3,30 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.35.1] — 2026-09-29
+
+### Corregit
+- **L'avís de Stripe de la plataforma es descartava si el pagament s'havia fet
+  des del panell.** Només entenia els esdeveniments de `checkout.session`, i el
+  formulari de la targeta en fa servir de `payment_intent`. Era just el cas que
+  el webhook ha de tapar: qui paga i tanca la pestanya abans de tornar. Ara
+  entén els dos i l'adreça del cobrament es troba també pel PaymentIntent.
+- **La pantalla d'accés al panell sortia amb la lletra del navegador.** La
+  tipografia era només a `body.admin` i aquella pantalla no porta la classe;
+  també li faltava treure el marge del navegador, que li deixava barra de
+  desplaçament.
+- Als correus de la plataforma hi sortia el nom del domini que s'hagués servit
+  l'últim. Ara hi surt sempre la marca del domini principal, que és com es diu
+  la plataforma.
+
+### Afegit
+- La pantalla d'accés al panell porta de fons la **imatge de la portada de la
+  plataforma**, amb el vel verd a sobre. Es va a buscar un cop al dia i es desa;
+  si la plataforma no respon, la pantalla es queda amb el degradat de sempre.
+- `docs/stripe.md` explica el **Stripe de la plataforma** a part del de cada
+  client: les claus, el webhook amb els sis esdeveniments que cal escoltar, com
+  provar-ho i una taula de símptomes.
+
 ## [1.35.0] — 2026-09-29
 
 ### Afegit

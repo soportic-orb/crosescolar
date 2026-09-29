@@ -30,7 +30,7 @@ $foot = array_values(array_filter([
           <?php if ($eyebrow !== ''): ?>
             <div style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;opacity:.85"><?= e($eyebrow) ?></div>
           <?php endif; ?>
-          <div style="font-size:20px;font-weight:700"><?= e(setting('site_name', 'Cros Escolar')) ?></div>
+          <div style="font-size:20px;font-weight:700"><?= e(setting('site_name', 'EsportWeb')) ?></div>
         </td>
       </tr>
       <tr><td style="padding:28px 28px 8px;font-size:15px;line-height:1.6"><?= $content ?></td></tr>

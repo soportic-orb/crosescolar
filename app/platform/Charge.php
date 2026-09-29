@@ -42,6 +42,13 @@ class Charge
             : Db::one('SELECT * FROM platform_payments WHERE stripe_session_id = :id', ['id' => $sessionId]);
     }
 
+    /** El cobrament d'un PaymentIntent, que és com es paga des del panell. */
+    public static function findByIntent(string $intentId): ?array
+    {
+        return $intentId === '' ? null
+            : Db::one('SELECT * FROM platform_payments WHERE stripe_payment_intent = :id', ['id' => $intentId]);
+    }
+
     /** @return array<int,array<string,mixed>> */
     public static function forInstance(int $instanceId): array
     {

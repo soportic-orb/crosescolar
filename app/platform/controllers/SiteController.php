@@ -345,13 +345,22 @@ class SiteController extends Controller
 
         $object = $event['data']['object'] ?? [];
         $type = (string) ($event['type'] ?? '');
-        if (!str_starts_with($type, 'checkout.session.')) {
+        // Es paga de dues maneres i cadascuna avisa amb els seus esdeveniments:
+        // a la pàgina de Stripe hi ha una sessió, i al panell —el formulari de
+        // la targeta— hi ha un PaymentIntent. Les dues han d'arribar aquí, que
+        // aquest avís és l'única xarxa que hi ha si el navegador no torna.
+        $session = str_starts_with($type, 'checkout.session.');
+        $intent = str_starts_with($type, 'payment_intent.');
+        if (!$session && !$intent) {
             json_out(['received' => true]);
 
             return;
         }
 
-        $charge = \Cros\Platform\Charge::findBySession((string) ($object['id'] ?? ''));
+        $reference = (string) ($object['id'] ?? '');
+        $charge = $session
+            ? \Cros\Platform\Charge::findBySession($reference)
+            : \Cros\Platform\Charge::findByIntent($reference);
         if (!$charge && !empty($object['metadata']['charge_id'])) {
             $charge = \Cros\Platform\Charge::find((int) $object['metadata']['charge_id']);
         }
@@ -362,7 +371,9 @@ class SiteController extends Controller
         }
 
         try {
-            \Cros\Platform\Charge::confirm($charge, (string) ($object['id'] ?? ''));
+            // Amb un PaymentIntent no hi ha sessió que mirar: confirm() se'n va
+            // a preguntar-li l'estat a Stripe pel seu compte.
+            \Cros\Platform\Charge::confirm($charge, $session ? $reference : '');
         } catch (\Throwable $e) {
             log_line('platform', 'Error atenent l\'avís de Stripe', [
                 'code' => $charge['code'], 'error' => $e->getMessage(),

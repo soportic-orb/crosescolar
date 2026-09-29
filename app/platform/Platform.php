@@ -54,10 +54,16 @@ class Platform
      */
     public static function prime(?string $root = null): void
     {
+        $root = $root ?? self::$root ?? CROS_ROOT;
         // Es torna a posar també l'esquema: si s'ha treballat amb el web d'un
         // client, el que hi havia actiu era el seu.
         Settings::useSchema(require CROS_APP . '/platform/config_schema.php');
-        self::primeSettings(Tenancy::settings($root ?? self::$root ?? CROS_ROOT));
+        // I la plataforma, quan actua pel seu compte —un correu de benvinguda,
+        // un avís de suport—, es diu com es diu ella: la marca del domini
+        // principal, no la del cros que s'acaba de tocar ni la del domini per
+        // on hagi entrat la petició.
+        Site::activate(self::domain($root));
+        self::primeSettings(Tenancy::settings($root));
     }
 
     /**
