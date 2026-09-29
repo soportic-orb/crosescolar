@@ -306,3 +306,23 @@ input[type="color"] { width: 64px; height: 40px; padding: 2px; }
   font-size: .9rem; font-weight: 600; text-decoration: none; }
 .site-tabs__tab:hover { border-color: var(--a-green); color: var(--a-green-dark); }
 .site-tabs__tab.is-active { background: var(--a-green); border-color: var(--a-green); color: #fff; }
+
+/* La pantalla de pagament per publicar el web: el resum i la targeta. */
+.checkout { display: grid; gap: 1.2rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); margin-top: 1.4rem; }
+.checkout__summary, .checkout__card { padding: 1.2rem 1.3rem; border: 1px solid var(--a-line); border-radius: 14px; background: #fff; }
+.checkout__summary { background: var(--a-green-light); border-color: transparent; }
+.checkout__summary h3, .checkout__card h3 { font-size: 1rem; display: flex; align-items: center; gap: .4rem; }
+.checkout table.data th { font-weight: 500; color: var(--a-soft); }
+.checkout table.data tr.is-total th, .checkout table.data tr.is-total td { border-top: 1px solid var(--a-line); padding-top: .6rem; color: var(--a-green-dark); }
+#pagament-camp { min-height: 6rem; }
+
+/* L'avís de dalt de tot quan el web encara no és públic. */
+.publish-bar { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+  padding: .9rem 1.6rem; background: #fdf3e2; border-bottom: 1px solid #efd9ad; color: #6a4a10; }
+.publish-bar__mark { display: inline-flex; align-items: center; justify-content: center;
+  width: 2.1rem; height: 2.1rem; border-radius: 50%; background: #f6e2bd; color: #8a5d12; flex: none; }
+.publish-bar__text { display: grid; gap: .15rem; flex: 1 1 22rem; min-width: 0; }
+.publish-bar__text strong { font-size: .98rem; color: #5c3f0c; }
+.publish-bar__text span { font-size: .87rem; line-height: 1.45; }
+.publish-bar form { margin: 0; }
+@media (max-width: 640px) { .publish-bar { padding: .9rem 1rem; } }

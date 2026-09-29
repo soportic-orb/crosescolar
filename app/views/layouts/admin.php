@@ -9,6 +9,13 @@ $path = $currentPath ?? '/admin';
 $resources = require CROS_APP . '/resources.php';
 $isActive = fn (string $href): bool => $path === $href || ($href !== '/admin' && str_starts_with($path, $href));
 $pending = (int) \Cros\Core\Db::val('SELECT COUNT(*) FROM orders WHERE status = \'pending\'', [], 0);
+
+// L'avís de dalt de tot: mentre el web estigui en preparació, no hi ha res
+// més important a la pantalla. Qui el munta ha de veure sempre que encara no
+// el veu ningú i què li falta per publicar-lo.
+$amagat = Settings::bool('coming_soon');
+$activacio = $amagat ? \Cros\Models\Activation::status() : ['applies' => false, 'paid' => false, 'ready' => false, 'amounts' => ['total' => 0]];
+$calPagar = $amagat && !empty($activacio['applies']) && empty($activacio['paid']);
 ?>
 <!doctype html>
 <html lang="ca">
@@ -107,6 +114,32 @@ $pending = (int) \Cros\Core\Db::val('SELECT COUNT(*) FROM orders WHERE status = 
         <a class="btn btn--ghost btn--sm" href="<?= e(url('/admin/sortir')) ?>"><?= Icons::svg('logout', 'icon', 16) ?> Sortir</a>
       </div>
     </header>
+
+    <?php if ($amagat && !str_starts_with($path, '/admin/activacio')): ?>
+      <div class="publish-bar">
+        <span class="publish-bar__mark"><?= Icons::svg('eye', 'icon', 18) ?></span>
+        <div class="publish-bar__text">
+          <strong>El web encara no està publicat</strong>
+          <span>
+            De moment només el veieu vosaltres: qui hi arribi trobarà l'avís de «<?= e(setting('coming_soon_title', 'Aviat publicarem el web')) ?>».
+            <?php if ($calPagar && !empty($activacio['ready'])): ?>
+              Per obrir-lo al públic hi ha un pagament únic de <strong><?= e(money((int) $activacio['amounts']['total'])) ?></strong>.
+            <?php endif; ?>
+          </span>
+        </div>
+        <?php if ($calPagar): ?>
+          <a class="btn btn--accent btn--sm" href="<?= e(url(!empty($activacio['ready']) ? '/admin/activacio/publicar' : '/admin/activacio')) ?>">
+            <?= Icons::svg('check', 'icon', 16) ?> Publicar web
+          </a>
+        <?php else: ?>
+          <form method="post" action="<?= e(url('/admin/properament')) ?>">
+            <?= csrf_field() ?>
+            <input type="hidden" name="enable" value="0">
+            <button class="btn btn--accent btn--sm" type="submit"><?= Icons::svg('check', 'icon', 16) ?> Publicar web</button>
+          </form>
+        <?php endif; ?>
+      </div>
+    <?php endif; ?>
 
     <main class="content">
       <?php foreach (flash() as $message): ?>

@@ -56,19 +56,13 @@ $currency = (string) setting('payments_currency', 'EUR');
   </div>
 <?php endif; ?>
 
+<?php // Que el web no és públic ja ho diu la barra de dalt de tot; aquí només
+      // es recorda on es canvia el que hi veu qui hi arribi. ?>
 <?php if (\Cros\Core\Settings::bool('coming_soon')): ?>
-  <div class="alert alert--warning mt-2 flex-between">
-    <span>
-      <strong>El web està amagat al públic.</strong>
-      Els visitants veuen l'avís «<?= e(setting('coming_soon_title', 'Aviat publicarem el web')) ?>».
-      <a href="<?= e(url('/admin/configuracio/coming_soon')) ?>">Editar l'avís</a>
-    </span>
-    <form method="post" action="<?= e(url('/admin/properament')) ?>">
-      <?= csrf_field() ?>
-      <input type="hidden" name="enable" value="0">
-      <button class="btn btn--sm" type="submit">Publicar el web ara</button>
-    </form>
-  </div>
+  <p class="text-soft mt-2" style="font-size:.9rem">
+    Podeu canviar el que veuen els visitants mentre no sigui públic a
+    <a href="<?= e(url('/admin/configuracio/coming_soon')) ?>">Web en preparació</a>.
+  </p>
 <?php endif; ?>
 
 <?php if (!$stripeReady): ?>

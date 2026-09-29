@@ -675,6 +675,20 @@ try {
     check('Sense Stripe, no es pot pagar encara',
         str_contains(text($activacio['body']), 'encara no està disponible'));
 
+    // L'avís de dalt de tot, que és el que veu qui entra al panell.
+    $panell = $web('GET', '/admin', [], 'santjordi.crosescolar.test');
+    check('El panell avisa a dalt que el web no és públic',
+        str_contains($panell['body'], 'publish-bar')
+        && str_contains(text($panell['body']), 'El web encara no està publicat'));
+    check('Amb el botó de publicar-lo', str_contains(text($panell['body']), 'Publicar web'));
+    check('Que mena al pagament', str_contains($panell['body'], '/admin/activacio'));
+    check('I sense Stripe no ofereix la pantalla de la targeta',
+        !str_contains($panell['body'], '/admin/activacio/publicar'));
+    $mirall = $web('GET', '/admin/activacio/publicar', [], 'santjordi.crosescolar.test');
+    check('Que tampoc no es pot obrir a mà',
+        $mirall['status'] === 302 && str_contains($mirall['headers'], '/admin/activacio'),
+        'estat ' . $mirall['status']);
+
     $publica = $web('POST', '/admin/properament', [
         '_token' => $token($web('GET', '/admin/configuracio/coming_soon', [], 'santjordi.crosescolar.test')['body']),
         'enable' => '0',
@@ -721,6 +735,8 @@ try {
     ], 'santjordi.crosescolar.test');
     check('Ara sí que el pot publicar',
         $publica['status'] === 302 && !str_contains($publica['headers'], '/admin/activacio'));
+    check('I l\'avís de dalt desapareix',
+        !str_contains($web('GET', '/admin', [], 'santjordi.crosescolar.test')['body'], 'publish-bar'));
 
     $pdf = $web('GET', '/admin/activacio/factura/' . (int) $charge['id'], [], 'santjordi.crosescolar.test');
     check('El client se la pot descarregar',

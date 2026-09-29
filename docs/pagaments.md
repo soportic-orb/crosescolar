@@ -79,7 +79,30 @@ xifres: es fa amb l'identificador del cobrament i el seu codi.
 |---|---|
 | `https://<domini>/pagament/avis` | L'avís de Stripe sobre els pagaments d'activació |
 | `/admin/activacio` (al panell d'un cros) | La pantalla d'activació del client |
+| `/admin/activacio/publicar` | El pagament amb la targeta, sense sortir del panell |
+| `/admin/activacio/tornada` | On torna el navegador quan s'ha pagat |
 | `/pagaments` (al panell de superadministració) | El llistat i la gestió |
+
+### Pagar sense sortir del panell
+
+Qui vol publicar el seu web no ha de marxar enlloc. La barra de dalt de tot del panell
+avisa que el web encara no és públic i el botó **«Publicar web»** porta a
+`/admin/activacio/publicar`, on hi ha el preu desglossat i el formulari de la targeta.
+
+El formulari el dibuixa **Stripe.js** (`js.stripe.com/v3`) dins d'una finestreta seva, a
+partir d'un **PaymentIntent** que crea `Cros\Platform\Charge::intent()`. Ni el número de
+la targeta ni el CVC no passen mai pel nostre servidor: nosaltres només en sabem el
+`client_secret`, que no serveix per cobrar res més que aquell import.
+
+Quan el pagament acaba, Stripe torna el navegador a `/admin/activacio/tornada` i
+`Charge::confirm()` mira com ha quedat el PaymentIntent. Si va bé, s'activa la instància i
+s'emet la factura, exactament igual que si s'hagués pagat a la pàgina de Stripe: les dues
+vies acaben al mateix `markPaid()`, de manera que no hi ha cap camí que activi un web
+sense factura.
+
+Un web que ja s'hagi cobrat no es torna a cobrar: `Charge::forActivation()` reaprofita el
+cobrament pendent que hi hagi i `intent()` reaprofita el PaymentIntent mentre no s'hagi
+gastat i l'import no hagi canviat.
 
 ---
 

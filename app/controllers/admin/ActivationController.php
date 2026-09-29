@@ -37,6 +37,61 @@ class ActivationController extends Controller
         ]);
     }
 
+    /**
+     * La pantalla de pagament, amb el formulari de la targeta aquí mateix.
+     *
+     * Qui publica el web no ha de marxar enlloc: veu el preu, hi posa la
+     * targeta i llestos. El número de la targeta, això sí, va directament de
+     * qui el teclegi a Stripe; pel nostre servidor no hi passa mai.
+     */
+    public function checkout(): void
+    {
+        Auth::requireAdmin();
+        $this->ensureAvailable();
+
+        $status = Activation::status();
+        if (!$status['applies'] || $status['paid']) {
+            redirect('/admin/activacio');
+        }
+        if (!$status['ready']) {
+            flash('error', 'La plataforma encara no té el cobrament a punt. Escriviu-nos i ho mirem.');
+            redirect('/admin/activacio');
+        }
+
+        $slug = Tenancy::slugOf();
+        $payer = $this->payer();
+        $pagament = [];
+        try {
+            $pagament = Bridge::run(static function () use ($slug, $payer): array {
+                $instance = Instance::bySlug($slug);
+                if (!$instance) {
+                    throw new \RuntimeException('Aquest web no consta a la plataforma.');
+                }
+                $charge = Charge::forActivation($instance, $payer);
+
+                return Charge::intent($charge) + ['code' => (string) $charge['code']];
+            }, null, true);
+        } catch (\Throwable $e) {
+            log_line('activation', 'No s\'ha pogut preparar el pagament', ['error' => $e->getMessage()]);
+            flash('error', 'No s\'ha pogut preparar el pagament: ' . $e->getMessage());
+            redirect('/admin/activacio');
+        }
+
+        if (trim((string) ($pagament['client_secret'] ?? '')) === ''
+            || trim((string) ($pagament['publishable'] ?? '')) === ''
+        ) {
+            flash('error', 'No s\'ha pogut preparar el pagament. Torneu-ho a provar d\'aquí una estona.');
+            redirect('/admin/activacio');
+        }
+
+        $this->adminView('activation/checkout', [
+            'title' => 'Publicar el web',
+            'status' => $status,
+            'pagament' => $pagament,
+            'payer' => $payer,
+        ]);
+    }
+
     /** Comença el pagament i se'n va a la pàgina segura de Stripe. */
     public function pay(): void
     {

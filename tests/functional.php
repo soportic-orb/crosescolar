@@ -1054,6 +1054,15 @@ $adminHome = req('GET', $base . '/');
 check('L\'administració continua veient el web', str_contains($adminHome['body'], 'Programa de la jornada'));
 check('L\'administració veu l\'avís de mode amagat', str_contains($adminHome['body'], 'Web en preparació'));
 
+// L'avís de dalt de tot al panell, que és el que no es pot passar per alt.
+$panell = req('GET', $base . '/admin')['body'];
+check('El panell ho diu a dalt de tot', str_contains($panell, 'publish-bar')
+    && str_contains(text($panell), 'El web encara no està publicat'));
+check('Amb el botó de publicar-lo', str_contains($panell, 'Publicar web'));
+check('Que explica què veu qui hi arribi', str_contains(text($panell), 'Aviat publicarem el web'));
+check('I el botó publica de debò quan no hi ha res a pagar',
+    str_contains($panell, '/admin/properament"') && str_contains($panell, 'name="enable" value="0"'));
+
 $soonWebhook = req('POST', $base . '/stripe/webhook', [], [
     'anon' => true, 'raw' => '{}', 'headers' => ['Content-Type: application/json', 'Stripe-Signature: t=1,v1=0'],
 ]);

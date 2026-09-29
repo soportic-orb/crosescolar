@@ -160,6 +160,7 @@ $router->get('/validar/{code}', [ToolsController::class, 'validateLink']);
 
 /* Activació del web: això ho cobra la plataforma, no el cros. */
 $router->get('/admin/activacio', [ActivationController::class, 'index']);
+$router->get('/admin/activacio/publicar', [ActivationController::class, 'checkout']);
 $router->post('/admin/activacio/pagar', [ActivationController::class, 'pay']);
 $router->get('/admin/activacio/tornada', [ActivationController::class, 'returned']);
 $router->get('/admin/activacio/factura/{id:\d+}', [ActivationController::class, 'invoice']);

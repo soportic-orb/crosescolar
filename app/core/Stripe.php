@@ -59,6 +59,18 @@ class Stripe
         return self::request('GET', $path);
     }
 
+    /**
+     * Crea un PaymentIntent.
+     *
+     * És el que fa falta per cobrar sense sortir del web: el formulari de la
+     * targeta el dibuixa Stripe.js dins d'una finestreta seva, de manera que
+     * les dades de la targeta no passen mai pel nostre servidor.
+     */
+    public static function createPaymentIntent(array $params, ?string $idempotencyKey = null): array
+    {
+        return self::request('POST', 'payment_intents', $params, $idempotencyKey);
+    }
+
     /** Recupera un PaymentIntent. */
     public static function retrievePaymentIntent(string $id): array
     {

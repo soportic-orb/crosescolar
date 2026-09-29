@@ -148,7 +148,63 @@ class Charge
     }
 
     /**
-     * Mira com ha acabat la sessió de pagament i ho desa.
+     * Prepara un cobrament per pagar-lo sense sortir del web.
+     *
+     * Torna la clau pública i el secret del PaymentIntent, que és el que
+     * necessita Stripe.js per dibuixar el formulari de la targeta. El número
+     * de la targeta va directament de qui la teclegi a Stripe: aquí no hi
+     * passa mai.
+     *
+     * @return array{client_secret:string,publishable:string,intent:string}
+     */
+    public static function intent(array $charge): array
+    {
+        if (!Stripe::configured()) {
+            throw new RuntimeException('La plataforma no té Stripe configurat.');
+        }
+        $existing = trim((string) ($charge['stripe_payment_intent'] ?? ''));
+        $intent = [];
+        if ($existing !== '') {
+            try {
+                $intent = Stripe::retrievePaymentIntent($existing);
+            } catch (\Throwable $e) {
+                $intent = [];
+            }
+            // Un que ja s'hagi cobrat o s'hagi cancel·lat no es pot reaprofitar.
+            if (in_array((string) ($intent['status'] ?? ''), ['succeeded', 'canceled', ''], true)
+                || (int) ($intent['amount'] ?? 0) !== (int) $charge['total_cents']
+            ) {
+                $intent = [];
+            }
+        }
+        if ($intent === []) {
+            $intent = Stripe::createPaymentIntent([
+                'amount' => (int) $charge['total_cents'],
+                'currency' => strtolower((string) $charge['currency']),
+                'description' => mb_substr((string) $charge['description'], 0, 120),
+                'receipt_email' => (string) $charge['payer_email'],
+                'automatic_payment_methods' => ['enabled' => 'true'],
+                'metadata' => ['charge_id' => (string) $charge['id'], 'charge_code' => (string) $charge['code']],
+            ], 'plat-pi-' . $charge['id'] . '-' . substr((string) $charge['token'], 0, 8));
+            Db::update('platform_payments', [
+                'stripe_payment_intent' => (string) ($intent['id'] ?? '') ?: null,
+                'updated_at' => date('Y-m-d H:i:s'),
+            ], 'id = :id', ['id' => $charge['id']]);
+        }
+
+        return [
+            'client_secret' => (string) ($intent['client_secret'] ?? ''),
+            'publishable' => Stripe::publishableKey(),
+            'intent' => (string) ($intent['id'] ?? ''),
+        ];
+    }
+
+    /**
+     * Mira com ha acabat el pagament i ho desa.
+     *
+     * Serveix tant si s'ha pagat a la pàgina de Stripe (una sessió) com si
+     * s'ha pagat aquí mateix amb el formulari de la targeta (un PaymentIntent).
+     *
      * @return array{status:string,charge:array<string,mixed>}
      */
     public static function confirm(array $charge, string $sessionId = ''): array
@@ -158,7 +214,7 @@ class Charge
         }
         $sessionId = $sessionId !== '' ? $sessionId : (string) ($charge['stripe_session_id'] ?? '');
         if ($sessionId === '') {
-            return ['status' => 'pending', 'charge' => $charge];
+            return self::confirmIntent($charge);
         }
         try {
             $session = Stripe::retrieveSession($sessionId);
@@ -180,6 +236,42 @@ class Charge
             Db::update('platform_payments', [
                 'status' => 'failed',
                 'detail' => 'La sessió de pagament ha caducat.',
+                'updated_at' => date('Y-m-d H:i:s'),
+            ], 'id = :id AND status = :s', ['id' => $charge['id'], 's' => 'pending']);
+
+            return ['status' => 'failed', 'charge' => self::find((int) $charge['id']) ?? $charge];
+        }
+
+        return ['status' => 'pending', 'charge' => $charge];
+    }
+
+    /**
+     * El mateix, però mirant el PaymentIntent del pagament de dins del web.
+     * @return array{status:string,charge:array<string,mixed>}
+     */
+    private static function confirmIntent(array $charge): array
+    {
+        $id = trim((string) ($charge['stripe_payment_intent'] ?? ''));
+        if ($id === '') {
+            return ['status' => 'pending', 'charge' => $charge];
+        }
+        try {
+            $intent = Stripe::retrievePaymentIntent($id);
+        } catch (\Throwable $e) {
+            log_line('platform', 'No s\'ha pogut comprovar el pagament', [
+                'code' => $charge['code'], 'error' => $e->getMessage(),
+            ]);
+
+            return ['status' => 'pending', 'charge' => $charge];
+        }
+        $status = (string) ($intent['status'] ?? '');
+        if ($status === 'succeeded') {
+            return ['status' => 'paid', 'charge' => self::markPaid($charge, $id)];
+        }
+        if ($status === 'canceled') {
+            Db::update('platform_payments', [
+                'status' => 'failed',
+                'detail' => 'El pagament s\'ha cancel·lat.',
                 'updated_at' => date('Y-m-d H:i:s'),
             ], 'id = :id AND status = :s', ['id' => $charge['id'], 's' => 'pending']);
 

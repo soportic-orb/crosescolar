@@ -65,11 +65,12 @@ $hidden = \Cros\Core\Settings::bool('coming_soon');
       </div>
 
       <?php if ($status['ready']): ?>
-        <form method="post" action="<?= e(url('/admin/activacio/pagar')) ?>">
-          <?= csrf_field() ?>
-          <button class="btn" type="submit"><?= Icons::svg('card', 'icon', 18) ?> Pagar i activar el web</button>
-          <span class="text-soft" style="margin-left:.6rem">El pagament es fa a la pàgina segura de Stripe.</span>
-        </form>
+        <div class="flex" style="align-items:center;gap:.8rem">
+          <a class="btn" href="<?= e(url('/admin/activacio/publicar')) ?>">
+            <?= Icons::svg('card', 'icon', 18) ?> Publicar el web
+          </a>
+          <span class="text-soft">Hi poseu la targeta sense sortir d'aquí.</span>
+        </div>
       <?php else: ?>
         <div class="alert alert--info">
           El pagament en línia encara no està disponible. Escriviu-nos des de
