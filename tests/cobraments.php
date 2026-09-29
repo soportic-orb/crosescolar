@@ -146,14 +146,17 @@ file_put_contents($fitxer, $pdf);
 $text = trim((string) @shell_exec('pdftotext ' . escapeshellarg($fitxer) . ' - 2>/dev/null'));
 @unlink($fitxer);
 if ($text === '') {
-    echo "  (sense pdftotext: no es pot llegir el text del document)\n";
-    $text = $pdf;
-}
-check('Hi surt l\'entitat organitzadora', str_contains($text, 'AFA Escola Sant Jordi'));
-check('I el seu NIF', str_contains($text, 'G12345678'));
-check('I a nom de qui va', str_contains($text, 'Anna Duran'));
-foreach ($plataforma as $dada) {
-    check('No hi surt cap dada de la plataforma (' . $dada . ')', !str_contains($text, $dada));
+    // Sense pdftotext no es pot mirar què hi diu: el text d'un PDF va
+    // comprimit i buscar-hi cadenes a pèl donaria resultats falsos, que és
+    // pitjor que no mirar-ho. S'omet i es diu.
+    echo "  (sense pdftotext: les comprovacions del contingut del document s'ometen)\n";
+} else {
+    check('Hi surt l\'entitat organitzadora', str_contains($text, 'AFA Escola Sant Jordi'));
+    check('I el seu NIF', str_contains($text, 'G12345678'));
+    check('I a nom de qui va', str_contains($text, 'Anna Duran'));
+    foreach ($plataforma as $dada) {
+        check('No hi surt cap dada de la plataforma (' . $dada . ')', !str_contains($text, $dada));
+    }
 }
 check('El fitxer es diu com el document',
     Billing::filename($abans) === 'factura-' . strtolower((string) $abans['full_number']) . '.pdf',
