@@ -837,9 +837,16 @@ try {
     check('L\'ordre per renovar-lo porta tots els noms',
         str_contains($ordre, '-d admin.crosescolar.test') && str_contains($ordre, '-d santjordi.crosescolar.test'),
         $ordre);
-    check('I la del comodí és la de sempre',
-        str_contains(Certificate::command($site, true), "-d '*.crosescolar.test'"),
-        Certificate::command($site, true));
+    // La del comodí ha de portar TOTS els dominis de la plataforma: amb la
+    // meitat dels noms, el dia que es renovés deixaria l'altre sense cobrir.
+    $comodi = Certificate::command($site, true);
+    check('La del comodí porta tots els dominis',
+        str_contains($comodi, "-d crosescolar.test -d '*.crosescolar.test'")
+        && str_contains($comodi, "-d crosescolar.example -d '*.crosescolar.example'")
+        && str_contains($comodi, "-d esportweb.test -d '*.esportweb.test'"),
+        $comodi);
+    check('I demana el nom del certificat, que no s\'endevina',
+        str_contains($comodi, '--cert-name EL-NOM-DEL-CERTIFICAT'), $comodi);
 
     // Un servidor TLS de mentida per llegir-ne el certificat de debò.
     $certDir = $site . '/storage/tmp';

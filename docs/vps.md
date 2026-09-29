@@ -974,15 +974,25 @@ Per provar-lo ara mateix:
 cat /var/www/crosescolar/storage/certificat.json
 ```
 
-I per veure com ho veu el panell, sense esperar la vigilància:
+I per veure com ho veu el panell, sense esperar la vigilància (fixeu-vos que
+cal ser a l'arrel del projecte: la ruta és relativa):
 
 ```bash
 cd /var/www/crosescolar
 sudo -u www-data php tools/platform.php certificat
 ```
 
-Ha de dir que cobreix els quatre noms i **no** ha de sortir cap línia
-«ATENCIÓ, no cobreix».
+Ha de dir que cobreix els quatre noms, **no** ha de sortir cap línia «ATENCIÓ,
+no cobreix», i ha d'acabar dient que **es renova sol**. Si en comptes d'això us
+ensenya una ordre de `certbot` per executar a mà, és que la renovació
+automàtica encara no ha passat mai o va fallar: mireu-ne el motiu, que us el
+diu a sobre.
+
+> Si mai heu de refer el certificat a mà, no us deixeu cap domini: un certificat
+> amb la meitat dels noms deixa l'altre domini sense cobrir el dia que es
+> renovi. I poseu-hi sempre el `--cert-name` del que ja teniu (`certbot
+> certificates` us el diu): sense això, certbot en crea un de nou en una
+> carpeta a part i l'nginx continua servint el vell.
 
 ## 7. El contingut del web nou
 

@@ -204,8 +204,32 @@ switch ($command) {
         if ($cert['uncovered']) {
             echo "  ATENCIÓ, no cobreix: " . implode(', ', $cert['uncovered']) . "\n";
         }
-        echo "\nPer renovar-lo, com a root:\n  "
+        // Si el cron de root ja el renova sol, no s'ha de tocar res: dir-li
+        // que executi una ordre manual seria fer-lo tornar enrere.
+        $renovacio = Certificate::renewal($root);
+        if ($renovacio['resultat'] === 'ok') {
+            echo "\nEs renova sol. L'última comprovació, "
+                . $renovacio['quan'] . ", va anar bé.\n";
+            echo "Per mirar-ho a fons, com a root:  certbot renew --dry-run\n";
+            break;
+        }
+        if ($renovacio['resultat'] === 'error') {
+            echo "\nATENCIÓ: l'última renovació automàtica (" . $renovacio['quan'] . ") va fallar.\n";
+            echo trim($renovacio['detall']) . "\n";
+        } elseif ($renovacio['resultat'] === 'sense-certbot') {
+            echo "\nAquest servidor no té certbot: el certificat no es pot renovar sol.\n";
+        } elseif ($renovacio['quan'] === '') {
+            echo "\nEncara no s'ha engegat mai la renovació automàtica.\n";
+            echo "Hauria de ser al cron de root:\n";
+            echo "  17 4 * * *   " . $root . "/tools/renovar-certificat.sh " . $root . "\n";
+        }
+        echo "\nPer renovar-lo o ampliar-lo a mà, com a root:\n  "
             . Certificate::command($root, Certificate::looksWildcard($cert['names'])) . "\n";
+        if (Certificate::looksWildcard($cert['names'])) {
+            echo "\nEl nom del certificat el dona «certbot certificates»: és el de la\n";
+            echo "carpeta de /etc/letsencrypt/live/ on apunta l'nginx. Cal posar-l'hi\n";
+            echo "perquè substitueixi el que ja hi ha i no en creï un al costat.\n";
+        }
         break;
 
     case 'copies':

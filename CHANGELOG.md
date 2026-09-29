@@ -3,6 +3,19 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.34.2] — 2026-09-29
+
+### Corregit
+- **L'ordre per renovar el certificat comodí deixava dominis fora.** Amb més
+  d'un domini a la plataforma, només hi posava el principal: seguir-la hauria
+  deixat l'altre domini sense cobrir. Ara hi van tots, amb el seu comodí, i
+  demana el `--cert-name` en comptes d'endevinar-lo —encertar-lo malament
+  crearia un certificat nou al costat del bo i l'nginx continuaria servint el
+  vell.
+- **`tools/platform.php certificat` ja no diu de renovar a mà un certificat que
+  es renova sol.** Mira com va anar l'última renovació automàtica i només
+  ensenya l'ordre manual si de debò cal.
+
 ## [1.34.1] — 2026-09-29
 
 ### Corregit

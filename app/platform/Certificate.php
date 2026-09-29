@@ -210,14 +210,28 @@ class Certificate
     /**
      * L'ordre que cal executar al servidor per renovar o ampliar el
      * certificat, a punt de copiar.
+     *
+     * Hi van **tots** els dominis de la plataforma, no només el principal:
+     * demanar-ne un de nou amb la meitat dels noms deixaria l'altre domini
+     * sense cobrir el dia que es renovés.
+     *
+     * El `--cert-name` no se sap des d'aquí —és el nom de la carpeta de
+     * /etc/letsencrypt/live/, que el va posar qui el va demanar i no té per
+     * què ser el domini principal—, de manera que s'hi deixa un buit ben
+     * visible en comptes d'endevinar-lo: encertar-lo malament crearia un
+     * certificat nou al costat del bo i l'nginx continuaria servint el vell.
      */
     public static function command(?string $root = null, bool $wildcard = false): string
     {
         $root = $root ?? CROS_ROOT;
-        $principal = Platform::domain($root);
         if ($wildcard) {
+            $noms = '';
+            foreach (Tenancy::domains($root) as $domain) {
+                $noms .= ' -d ' . $domain . " -d '*." . $domain . "'";
+            }
+
             return 'certbot certonly --manual --preferred-challenges dns --agree-tos'
-                . ' -d ' . $principal . " -d '*." . $principal . "'";
+                . ' --cert-name EL-NOM-DEL-CERTIFICAT' . $noms;
         }
         $noms = '';
         foreach (self::hosts($root) as $host) {
