@@ -319,12 +319,18 @@ $list = req('GET', $base . '/admin/contingut/patrocinadors');
 check('Apareix al llistat', str_contains($list['body'], 'Celler de Prova SL'));
 check('Apareix a la portada', str_contains(req('GET', $base . '/')['body'], 'Celler de Prova SL'));
 
+// Les dates de les proves es compten des d'avui: amb una de fixa, el dia que
+// passava, la cursa quedava enrere, les inscripcions i la venda sortien
+// tancades i mitja bateria es posava vermella sense que ningú hagués tocat res.
+$diaCursa = date('Y-m-d', strtotime('+30 days'));
+$diaTancament = date('Y-m-d', strtotime('+28 days'));
+
 $settingsForm = req('GET', $base . '/admin/configuracio/general');
 $saved = req('POST', $base . '/admin/configuracio/general', [
     '_token' => token($settingsForm['body']),
     'site_name' => 'Cros Escolar La Granada',
     'site_tagline' => 'Corrent entre vinyes',
-    'event_date' => '2026-10-04',
+    'event_date' => $diaCursa,
     'event_time' => '09:30',
     'pretty_urls' => '1',
 ]);
@@ -557,7 +563,7 @@ req('POST', $base . '/admin/configuracio/tickets', [
     'tickets_public_mode' => 'sale',
     'tickets_enabled' => '1',
     'tickets_title' => 'Tiquets del punt de recàrrega',
-    'tickets_deadline' => '2026-10-02',
+    'tickets_deadline' => $diaTancament,
     'tickets_max_per_order' => '20',
 ]);
 $shopForm = req('GET', $base . '/punt-de-recarrega');
@@ -580,7 +586,7 @@ req('POST', $base . '/admin/configuracio/tickets', [
     // Sense «tickets_enabled»: la venda queda tancada tot i ser en mode botiga.
     'tickets_public_mode' => 'sale',
     'tickets_title' => 'Tiquets del punt de recàrrega',
-    'tickets_deadline' => '2026-10-02',
+    'tickets_deadline' => $diaTancament,
     'tickets_max_per_order' => '20',
 ]);
 $closedShop = req('GET', $base . '/punt-de-recarrega');
@@ -594,7 +600,7 @@ req('POST', $base . '/admin/configuracio/tickets', [
     'tickets_public_mode' => 'info',
     'tickets_enabled' => '1',
     'tickets_title' => 'Tiquets del punt de recàrrega',
-    'tickets_deadline' => '2026-10-02',
+    'tickets_deadline' => $diaTancament,
     'tickets_max_per_order' => '20',
 ]);
 check('El web torna al mode informatiu', !str_contains(req('GET', $base . '/punt-de-recarrega', [], ['anon' => true])['body'], 'name="qty['));
@@ -980,7 +986,7 @@ check('La portada porta dades estructurades', str_contains($seoHome['body'], 'ap
 preg_match('#<script type="application/ld\+json">(.*?)</script>#s', $seoHome['body'], $ld);
 $dades = json_decode(str_replace('\u003C', '<', $ld[1] ?? '{}'), true) ?: [];
 check('Diuen que això és una cursa', ($dades['@type'] ?? '') === 'SportsEvent', (string) ($dades['@type'] ?? 'res'));
-check('Amb el dia i l\'hora', str_starts_with((string) ($dades['startDate'] ?? ''), '2026-10-04T09:30'), (string) ($dades['startDate'] ?? 'res'));
+check('Amb el dia i l\'hora', str_starts_with((string) ($dades['startDate'] ?? ''), $diaCursa . 'T09:30'), (string) ($dades['startDate'] ?? 'res'));
 check('El lloc de sortida', ($dades['location']['name'] ?? '') !== '');
 check('Amb les coordenades', abs((float) ($dades['location']['geo']['latitude'] ?? 0) - 41.376699) < 0.001);
 check('I qui l\'organitza', str_contains((string) ($dades['organizer']['name'] ?? ''), 'AFA'));

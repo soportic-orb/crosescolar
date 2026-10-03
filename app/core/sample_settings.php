@@ -7,13 +7,20 @@
  * de crear no ha d'ensenyar les dades d'una altra cursa: neix buit i cadascú
  * hi posa les seves. Això només s'escriu a les instal·lacions de demostració
  * i a les proves.
+ *
+ * Les dates són relatives al dia que es monta la demostració: amb una data
+ * fixa, al cap de poc el cros d'exemple ja havia passat, les inscripcions
+ * sortien tancades i no es podia ensenyar res del que fa el web.
  */
 declare(strict_types=1);
+
+$cursa = date('Y-m-d', strtotime('+21 days'));
+$tancament = date('Y-m-d', strtotime('+19 days'));
 
 return array (
   'site_name' => 'Cros Escolar La Granada',
   'site_tagline' => 'Córrer entre vinyes a l\'Alt Penedès',
-  'event_date' => '2026-10-04',
+  'event_date' => $cursa,
   'event_place' => 'Zona esportiva de La Granada',
   'event_address' => 'Carrer de Vilafranca, s/n — 08792 La Granada (Alt Penedès)',
   'event_town' => 'La Granada, Alt Penedès',
@@ -43,7 +50,7 @@ return array (
   'vine_pattern' => '1',
   'hero_badge' => 'X Cros Escolar',
   'intro_title' => 'La cursa del poble',
-  'tickets_deadline' => '2026-10-02',
-  'registrations_close_at' => '2026-10-02',
+  'tickets_deadline' => $tancament,
+  'registrations_close_at' => $tancament,
   'payments_descriptor' => 'CROS ESCOLAR',
 );

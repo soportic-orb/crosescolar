@@ -268,12 +268,17 @@ return [
         'icon' => 'trophy',
         'description' => 'Publicació dels resultats de la cursa al web.',
         'fields' => [
-            'results_published' => ['label' => 'Publicar els resultats al web', 'type' => 'bool', 'default' => '0', 'help' => 'Mentre no estigui activat, els resultats només es veuen des del panell.'],
+            'results_published' => ['label' => 'Publicar els resultats al web', 'type' => 'bool', 'default' => '0',
+                'help' => 'Mentre no estigui activat, els visitants no hi tenen pàgina. Vós sí: amb la sessió '
+                    . 'iniciada podeu obrir-la des de Resultats → Vista prèvia i comprovar com quedarà.'],
             'results_title' => ['label' => 'Títol de la pàgina', 'type' => 'text', 'default' => 'Resultats de la cursa'],
             'results_intro' => ['label' => 'Introducció', 'type' => 'html', 'rows' => 4, 'default' => ''],
             'results_note' => ['label' => 'Nota final', 'type' => 'html', 'rows' => 3, 'default' => '<p>Si detecteu cap errada a la classificació, escriviu-nos i la corregirem.</p>'],
             'results_show_bib' => ['label' => 'Mostrar el número de dorsal', 'type' => 'bool', 'default' => '1'],
             'results_public_pdf' => ['label' => 'Permetre descarregar els resultats en PDF', 'type' => 'bool', 'default' => '1'],
+            'results_pdf_sponsors' => ['label' => 'Posar els logotips dels patrocinadors al peu del PDF', 'type' => 'bool', 'default' => '0',
+                'help' => 'Hi surten tots els patrocinadors actius que tinguin logotip, en una sola línia i tots '
+                    . 'a la mateixa alçada. Els fitxers han de ser PNG o JPEG.'],
         ],
     ],
 

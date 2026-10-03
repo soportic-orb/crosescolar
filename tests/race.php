@@ -661,5 +661,36 @@ check('Descàrrega pública dels resultats', $publicPdf['status'] === 200 && isP
 req('POST', $base . '/admin/resultats/publicar', ['_token' => token(req('GET', $base . '/admin/resultats')['body']), 'enable' => '0']);
 check('Es poden tornar a amagar els resultats', req('GET', $base . '/resultats', [], ['anon' => true])['status'] === 404);
 
+echo "\n== Vista prèvia abans de publicar ==\n";
+// Els resultats estan amagats: el visitant no hi té pàgina, però qui té la
+// sessió oberta l'ha de poder veure per comprovar que surt bé.
+$previa = req('GET', $base . '/resultats');
+check('Qui té sessió sí que la pot obrir', $previa['status'] === 200, 'estat ' . $previa['status']);
+check('Amb l\'avís que encara no és de ningú', str_contains($previa['body'], 'Resultats sense publicar'));
+check('I el botó per publicar-los des d\'allà mateix',
+    str_contains($previa['body'], 'Publicar els resultats ara')
+    && str_contains($previa['body'], '/admin/resultats/publicar'));
+check('Sense deixar que ningú l\'indexi', str_contains($previa['body'], 'noindex, nofollow'));
+check('Però hi surten els resultats de debò', str_contains($previa['body'], 'Jordi' . $unique));
+
+$previaPdf = req('GET', $base . '/resultats/pdf');
+check('La descàrrega pública també es pot provar', $previaPdf['status'] === 200 && isPdf($previaPdf['body']),
+    'estat ' . $previaPdf['status']);
+check('I el visitant continua sense tenir-la',
+    req('GET', $base . '/resultats/pdf', [], ['anon' => true])['status'] === 404);
+
+// El botó de la franja publica de debò.
+req('POST', $base . '/admin/resultats/publicar', ['_token' => token($previa['body']), 'enable' => '1']);
+$publicada = req('GET', $base . '/resultats', [], ['anon' => true]);
+check('El botó de la franja publica els resultats', $publicada['status'] === 200);
+check('I la franja desapareix', !str_contains(req('GET', $base . '/resultats')['body'], 'Resultats sense publicar'));
+
+// Es deixa com estava.
+req('POST', $base . '/admin/resultats/publicar', ['_token' => token(req('GET', $base . '/admin/resultats')['body']), 'enable' => '0']);
+
+// Al panell hi ha el botó que hi porta.
+check('El panell ofereix la vista prèvia',
+    str_contains(req('GET', $base . '/admin/resultats')['body'], 'Vista prèvia'));
+
 echo "\n== Resultat ==\n  $passed proves correctes, $failed errors\n\n";
 exit($failed === 0 ? 0 : 1);

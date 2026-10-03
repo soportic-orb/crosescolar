@@ -9,11 +9,13 @@ declare(strict_types=1);
 
 require __DIR__ . '/env.php';
 
+use Cros\Core\Db;
 use Cros\Core\Pdf;
 use Cros\Core\PdfImport;
 use Cros\Core\Settings;
 use Cros\Models\Bib;
 use Cros\Models\Content;
+use Cros\Models\RaceResult;
 
 $passed = 0;
 $failed = 0;
@@ -496,6 +498,123 @@ check('Sense maqueta també es pot fer apaïsat', pdf_page_size(Bib::sample()) =
     implode('×', pdf_page_size(Bib::sample())));
 Settings::set('bib_orientation', 'auto');
 check('Sense maqueta i en automàtic, la mida configurada', pdf_page_size(Bib::sample()) === [148.0, 210.0]);
+
+/* Logotips dels patrocinadors al peu de les classificacions --------------- */
+echo "\n== Logotips al peu del PDF dels resultats ==\n";
+
+if (!function_exists('imagecreatetruecolor')) {
+    echo "  (omès: aquest PHP no porta GD i no es poden fer els logotips de prova)\n";
+} else {
+    $logoDir = CROS_UPLOADS . '/proves-logotips';
+    @mkdir($logoDir, 0775, true);
+    $fitxers = [];
+    // Proporcions ben diferents: així es veu si s'igualen per alçada o no.
+    foreach ([[300, 100], [120, 120], [400, 80]] as $i => [$w, $h]) {
+        $image = imagecreatetruecolor($w, $h);
+        imagefill($image, 0, 0, imagecolorallocate($image, 30 + $i * 60, 90, 60));
+        imagepng($image, $logoDir . '/logo' . $i . '.png');
+        imagedestroy($image);
+        $fitxers[] = 'proves-logotips/logo' . $i . '.png';
+    }
+
+    $previs = Db::all('SELECT id FROM sponsors');
+    Db::q('UPDATE sponsors SET active = 0');
+    foreach ($fitxers as $i => $fitxer) {
+        Db::insert('sponsors', ['name' => 'Patrocinador de prova ' . $i, 'logo' => $fitxer,
+            'tier' => 'principal', 'sort_order' => $i, 'active' => 1, 'created_at' => date('Y-m-d H:i:s')]);
+    }
+
+    // Prou arribades perquè el llistat ocupi més d'un full: els logotips han de
+    // sortir a tots, no només al primer.
+    $categoria = (int) Db::val('SELECT id FROM categories ORDER BY id LIMIT 1', [], 0);
+    $afegides = [];
+    for ($i = 1; $i <= 90; $i++) {
+        Db::insert('registrations', [
+            'code' => 'PDFLOGO' . $i, 'first_name' => 'Participant', 'last_name' => 'de prova ' . $i,
+            'birth_year' => 2012, 'category_id' => $categoria ?: null, 'bib_number' => 7000 + $i,
+            'tutor_name' => 'Proves', 'tutor_email' => 'logotips@example.test',
+            'status' => 'confirmed', 'created_at' => date('Y-m-d H:i:s'),
+        ]);
+        $registration = (int) Db::connection()->lastInsertId();
+        $afegides[] = $registration;
+        Db::insert('results', ['registration_id' => $registration, 'category_id' => $categoria ?: null,
+            'position' => $i, 'arrival_seq' => $i, 'status' => 'finished', 'created_at' => date('Y-m-d H:i:s')]);
+    }
+
+    Settings::set('results_pdf_sponsors', '0');
+    $sense = RaceResult::pdf(null, true);
+    check('Sense l\'opció, el PDF no porta cap imatge', substr_count($sense, '/Subtype /Image') === 0);
+
+    Settings::set('results_pdf_sponsors', '1');
+    $amb = RaceResult::pdf(null, true);
+    check('Amb l\'opció, hi són tots tres', substr_count($amb, '/Subtype /Image') === 3,
+        substr_count($amb, '/Subtype /Image') . ' imatges');
+    // El llistat diu el mateix: els logotips no en treuen cap participant.
+    $noms = static function (?string $text): int {
+        return $text === null ? -1 : substr_count($text, 'Participant');
+    };
+    check('I no se\'n perd cap participant', $noms(pdf_text($sense)) === $noms(pdf_text($amb)),
+        $noms(pdf_text($sense)) . ' vs ' . $noms(pdf_text($amb)));
+
+    // Es dibuixen a tots els fulls, però s'incrusten un sol cop: cada pàgina
+    // els té als seus recursos i el fitxer no en duu còpies.
+    $pagines = substr_count($amb, '/Type /Page ');
+    preg_match_all('/\/XObject <<([^>]*)>>/', $amb, $recursos);
+    $ambLogotips = 0;
+    foreach ($recursos[1] as $llista) {
+        if (substr_count($llista, ' 0 R') === 3) {
+            $ambLogotips++;
+        }
+    }
+    check('Hi són a tots els fulls', $pagines > 1 && $ambLogotips === $pagines,
+        $ambLogotips . ' de ' . $pagines . ' pàgines');
+    check('Però el fitxer no en duu còpies', substr_count($amb, '/Subtype /Image') === 3);
+
+    // La col·locació, mesurada directament: tots a la mateixa alçada, cadascun
+    // amb l'amplada de la seva proporció i tots en una sola línia.
+    $line = new ReflectionMethod(RaceResult::class, 'pdfLogoLine');
+    $line->setAccessible(true);
+    $caixes = $line->invoke(null, [['ratio' => 3.0], ['ratio' => 1.0], ['ratio' => 5.0]]);
+    check('Una alçada per a tots', $caixes['height'] > 0 && $caixes['height'] <= 11.0, (string) $caixes['height']);
+    $proporcionals = true;
+    foreach ([3.0, 1.0, 5.0] as $i => $ratio) {
+        if (abs($caixes['boxes'][$i]['width'] - $caixes['height'] * $ratio) > 0.001) {
+            $proporcionals = false;
+        }
+    }
+    check('I l\'amplada que li toca a cadascun', $proporcionals);
+    check('Van un darrere l\'altre, sense trepitjar-se',
+        $caixes['boxes'][0]['x'] + $caixes['boxes'][0]['width'] <= $caixes['boxes'][1]['x']
+        && $caixes['boxes'][1]['x'] + $caixes['boxes'][1]['width'] <= $caixes['boxes'][2]['x']);
+    $dreta = $caixes['boxes'][2]['x'] + $caixes['boxes'][2]['width'];
+    check('Centrats i dins del full', abs($caixes['boxes'][0]['x'] - (210.0 - $dreta)) < 0.001
+        && $caixes['boxes'][0]['x'] >= 15.0 && $dreta <= 195.0,
+        $caixes['boxes'][0]['x'] . ' … ' . $dreta);
+
+    // Amb molts logotips s'empetiteixen tots alhora, però la línia continua
+    // sent una de sola i continua cabent-hi.
+    $molts = $line->invoke(null, array_fill(0, 12, ['ratio' => 4.0]));
+    $ultim = end($molts['boxes']);
+    check('Amb dotze, s\'empetiteixen però hi caben',
+        $molts['height'] < $caixes['height'] && $molts['boxes'][0]['x'] >= 15.0
+        && $ultim['x'] + $ultim['width'] <= 195.0,
+        'alçada ' . round($molts['height'], 2) . ' mm');
+
+    // Es deixen les coses com estaven.
+    Settings::set('results_pdf_sponsors', '0');
+    foreach ($afegides as $registration) {
+        Db::q('DELETE FROM results WHERE registration_id = :id', ['id' => $registration]);
+        Db::q('DELETE FROM registrations WHERE id = :id', ['id' => $registration]);
+    }
+    Db::q('DELETE FROM sponsors WHERE name LIKE :nom', ['nom' => 'Patrocinador de prova %']);
+    if ($previs) {
+        Db::q('UPDATE sponsors SET active = 1');
+    }
+    foreach ($fitxers as $fitxer) {
+        @unlink(CROS_UPLOADS . '/' . $fitxer);
+    }
+    @rmdir($logoDir);
+}
 
 echo "\n== Resultat ==\n  $passed proves correctes, $failed errors\n\n";
 exit($failed === 0 ? 0 : 1);

@@ -19,12 +19,16 @@ $localLabel = RaceResult::localPrizeLabel();
   <div class="kpi">
     <div class="kpi__label"><?= Icons::svg('eye', 'icon', 16) ?> Publicats al web</div>
     <div class="kpi__value" style="font-size:1.2rem"><?= $published ? 'Sí' : 'No' ?></div>
-    <div class="kpi__foot">
+    <div class="kpi__foot flex" style="gap:.4rem;flex-wrap:wrap">
       <form method="post" action="<?= e(url('/admin/resultats/publicar')) ?>">
         <?= csrf_field() ?>
         <input type="hidden" name="enable" value="<?= $published ? '0' : '1' ?>">
         <button class="btn btn--ghost btn--sm" type="submit"><?= $published ? 'Deixar de publicar' : 'Publicar al web' ?></button>
       </form>
+      <?php // Encara que no estiguin publicats, es pot veure com quedarà la pàgina. ?>
+      <a class="btn btn--ghost btn--sm" href="<?= e(url('/resultats')) ?>" target="_blank" rel="noopener">
+        <?= Icons::svg('eye', 'icon', 14) ?> <?= $published ? 'Veure la pàgina' : 'Vista prèvia' ?>
+      </a>
     </div>
   </div>
 </div>

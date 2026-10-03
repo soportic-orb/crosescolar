@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Cros\Controllers;
 
+use Cros\Core\Auth;
 use Cros\Core\Controller;
 use Cros\Core\Csrf;
 use Cros\Core\Mailer;
@@ -64,10 +65,17 @@ class PageController extends Controller
         ]);
     }
 
-    /** Classificació de la cursa. */
+    /**
+     * Classificació de la cursa.
+     *
+     * Mentre no s'ha publicat, qui té la sessió oberta la pot veure igualment:
+     * és l'única manera de comprovar que el llistat surt bé abans d'ensenyar-lo
+     * a tothom. Als visitants, com sempre, no hi ha pàgina.
+     */
     public function results(): void
     {
-        if (!Settings::bool('results_published')) {
+        $published = Settings::bool('results_published');
+        if (!$published && !Auth::check()) {
             abort(404, 'Els resultats encara no s\'han publicat.');
         }
         $this->view('public/results', [
@@ -75,13 +83,19 @@ class PageController extends Controller
             'description' => excerpt(strip_tags((string) setting('results_intro', '')), 160),
             'groups' => RaceResult::byCategory(),
             'total' => RaceResult::stats()['total'],
+            'preview' => !$published,
+            // Una pàgina que encara no és de ningú no l'ha d'indexar ningú.
+            'noindex' => !$published,
         ]);
     }
 
     /** Classificació en PDF (si l'organització ho permet). */
     public function resultsPdf(): void
     {
-        if (!Settings::bool('results_published') || !Settings::bool('results_public_pdf')) {
+        // Igual que la pàgina: en vista prèvia, la descàrrega també s'ha de
+        // poder provar, que és la meitat del que es vol comprovar.
+        if (!Settings::bool('results_public_pdf')
+            || (!Settings::bool('results_published') && !Auth::check())) {
             abort(404, 'La descàrrega dels resultats no està disponible.');
         }
         $categoryId = (int) input('categoria', 0);

@@ -6,6 +6,7 @@ namespace Cros\Models;
 use Cros\Core\Auth;
 use Cros\Core\Db;
 use Cros\Core\Pdf;
+use Cros\Core\Settings;
 
 /** Resultats de la cursa: arribades a meta i classificacions. */
 class RaceResult
@@ -321,7 +322,12 @@ class RaceResult
 
     private static function pdfSection(Pdf $pdf, string $title, string $category, array $rows, bool $arrivalOrder): void
     {
+        $logos = self::pdfLogos();
+        // Amb logotips al peu, el llistat ha d'acabar més amunt per deixar-los lloc.
+        $bottom = $logos ? 275.0 - self::LOGO_BAND : 275.0;
+
         $pdf->addPage('a4');
+        self::pdfFooter($pdf, $logos);
         $y = self::pdfHeader($pdf, $title, count($rows), $category);
 
         $columns = $arrivalOrder
@@ -331,8 +337,9 @@ class RaceResult
         $y = self::pdfTableHeader($pdf, $columns, $y);
         $line = 0;
         foreach ($rows as $row) {
-            if ($y > 275) {
+            if ($y > $bottom) {
                 $pdf->addPage('a4');
+                self::pdfFooter($pdf, $logos);
                 $y = self::pdfHeader($pdf, $title . ' (continuació)', count($rows), $category);
                 $y = self::pdfTableHeader($pdf, $columns, $y);
                 $line = 0;
@@ -373,8 +380,9 @@ class RaceResult
                 if ((int) ($row['local_prize'] ?? 0) !== 1) {
                     continue;
                 }
-                if ($y > 272) {
+                if ($y > $bottom - 3) {
                     $pdf->addPage('a4');
+                    self::pdfFooter($pdf, $logos);
                     $y = self::pdfHeader($pdf, $title . ' (continuació)', count($rows), $category);
                 }
                 $pdf->setFont('helvetica-bold', 10);
@@ -384,6 +392,104 @@ class RaceResult
                 break;
             }
         }
+    }
+
+    /** Alçada que es reserva al peu de pàgina per als logotips, en mil·límetres. */
+    private const LOGO_BAND = 20.0;
+
+    /** Alçada màxima d'un logotip al peu, en mil·límetres. */
+    private const LOGO_HEIGHT = 11.0;
+
+    /** Espai entre logotips, en mil·límetres. */
+    private const LOGO_GAP = 6.0;
+
+    /**
+     * Logotips dels patrocinadors per al peu del PDF, amb les seves mides.
+     *
+     * Només si s'ha demanat. Es llegeixen les proporcions de cada fitxer perquè
+     * després es puguin posar tots a la mateixa alçada sense deformar-ne cap.
+     *
+     * @return array<int,array{file:string,ratio:float}>
+     */
+    private static function pdfLogos(): array
+    {
+        if (!Settings::bool('results_pdf_sponsors')) {
+            return [];
+        }
+        $logos = [];
+        foreach (Content::sponsors() as $sponsor) {
+            $logo = trim((string) ($sponsor['logo'] ?? ''));
+            if ($logo === '') {
+                continue;
+            }
+            $file = upload_path($logo);
+            // Només JPEG i PNG: són els que el motor de PDF sap incrustar.
+            $size = is_file($file) ? @getimagesize($file) : false;
+            if (!$size || !in_array($size[2], [IMAGETYPE_JPEG, IMAGETYPE_PNG], true)) {
+                continue;
+            }
+            [$width, $height] = $size;
+            if ((int) $width < 1 || (int) $height < 1) {
+                continue;
+            }
+            $logos[] = ['file' => $file, 'ratio' => (float) $width / (float) $height];
+        }
+
+        return $logos;
+    }
+
+    /**
+     * Posa els logotips al peu del full, tots a la mateixa alçada i en una
+     * sola línia.
+     *
+     * L'alçada surt de l'amplada disponible: si n'hi ha molts, s'empetiteixen
+     * tots alhora; mai no en passa cap a la línia de sota ni se'n deforma cap,
+     * perquè l'amplada de cadascun la mana la seva pròpia proporció.
+     *
+     * @param array<int,array{file:string,ratio:float}> $logos
+     */
+    private static function pdfFooter(Pdf $pdf, array $logos): void
+    {
+        if (!$logos) {
+            return;
+        }
+        $line = self::pdfLogoLine($logos);
+
+        $pdf->setColorHex('#dbe6d6');
+        $pdf->rect(15, $line['top'] - 6, 180, 0.3, 'F');
+
+        foreach ($logos as $index => $logo) {
+            $pdf->image($logo['file'], $line['boxes'][$index]['x'], $line['top'],
+                $line['boxes'][$index]['width'], $line['height']);
+        }
+    }
+
+    /**
+     * On va cada logotip, en mil·límetres.
+     *
+     * L'alçada és la mateixa per a tots i surt de l'amplada que queda: amb
+     * l'amplada de cadascun manada per la seva pròpia proporció, la línia hi
+     * cap sempre sense deformar-ne cap ni haver de passar-ne cap a sota.
+     *
+     * @param array<int,array{ratio:float}> $logos
+     * @return array{top:float,height:float,boxes:array<int,array{x:float,width:float}>}
+     */
+    private static function pdfLogoLine(array $logos): array
+    {
+        $gaps = self::LOGO_GAP * (count($logos) - 1);
+        $ratios = array_sum(array_column($logos, 'ratio'));
+        $height = min(self::LOGO_HEIGHT, (180.0 - $gaps) / max(0.01, $ratios));
+
+        $widths = array_map(static fn (array $logo): float => $height * $logo['ratio'], $logos);
+        $x = (210.0 - (array_sum($widths) + $gaps)) / 2.0;
+
+        $boxes = [];
+        foreach ($widths as $width) {
+            $boxes[] = ['x' => $x, 'width' => $width];
+            $x += $width + self::LOGO_GAP;
+        }
+
+        return ['top' => 297.0 - 12.0 - $height, 'height' => $height, 'boxes' => $boxes];
     }
 
     private static function pdfHeader(Pdf $pdf, string $title, int $total, string $category = ''): float

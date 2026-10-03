@@ -344,6 +344,14 @@ o un mòbil):
 Quan els resultats siguin definitius, premeu **«Publicar al web»**: apareixeran a
 `/resultats`, ordenats per categoria, i al menú del web.
 
+**Mirar-ho abans de publicar-ho.** Al costat d'aquell botó n'hi ha un altre, **«Vista
+prèvia»**, que obre la pàgina pública tal com quedarà: les classificacions, les medalles,
+els PDF, tot. Només la veieu vós, perquè teniu la sessió iniciada; els visitants, mentre
+no la publiqueu, continuen sense tenir-hi pàgina i els cercadors no la indexen. A dalt
+de tot hi surt una franja que us ho recorda, amb un botó per publicar-la des d'allà
+mateix quan ja us agradi. Serveix per provar el sistema de cap a cap sense ensenyar res
+a ningú.
+
 Les medalles es decideixen **a cada categoria**, no en general: a **Categories →
 editar** hi ha l'interruptor **«Marcar els guanyadors amb medalla»** i, si l'activeu, el
 camp **«Participants premiats»** (els tres primers, els quatre primers…). Així podeu
@@ -373,6 +381,13 @@ o totes. El PDF s'obre en una pestanya nova i porta la categoria **ben visible a
 a la franja verda i com a títol gran, amb els anys de naixement i el gènere si la
 categoria en té («Aleví femení (2016–2017)»), i just a sota quanta gent hi ha
 classificada. El nom del fitxer també ho diu, per no confondre'ls a l'hora d'imprimir.
+
+**Els logotips dels patrocinadors al peu.** A **Configuració → Resultats** hi ha la
+casella **«Posar els logotips dels patrocinadors al peu del PDF»**. Amb l'opció activada,
+tots els patrocinadors actius que tinguin logotip surten al peu de cada full, en una sola
+línia i tots a la mateixa alçada: l'amplada de cadascun la mana la seva pròpia proporció,
+de manera que no se'n deforma cap. Si n'hi ha molts, s'empetiteixen tots alhora perquè la
+línia hi càpiga. Els fitxers han de ser PNG o JPEG; els d'altres formats no s'hi posen.
 
 **Exportacions** (botons de la mateixa pantalla):
 

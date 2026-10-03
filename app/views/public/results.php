@@ -10,6 +10,14 @@ $publicPdf = setting('results_public_pdf', '1') === '1';
 // Cada categoria decideix si en mostra i a quants participants.
 $medals = ['#c9a227', '#9aa6ad', '#b06a3b'];
 ?>
+<?php if (!empty($preview)): ?>
+  <?= \Cros\Core\View::partial('partials/preview-bar', [
+      'text' => '<strong>Resultats sense publicar:</strong> aquesta pàgina només la veieu vós, '
+          . 'perquè teniu la sessió iniciada. Als visitants, de moment, no hi és.',
+      'action' => url('/admin/resultats/publicar'),
+      'button' => 'Publicar els resultats ara',
+  ]) ?>
+<?php endif; ?>
 <?= \Cros\Core\View::partial('partials/page-header', [
     'title' => setting('results_title', 'Resultats de la cursa'),
     'subtitle' => setting('event_date', '') ? ucfirst(ca_date(setting('event_date'), true)) . ' · ' . $total . ' participants classificats' : '',

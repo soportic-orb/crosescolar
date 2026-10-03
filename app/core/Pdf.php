@@ -45,6 +45,20 @@ class Pdf
     private array $info;
     private bool $compress = true;
 
+    /**
+     * Imatges ja incrustades, per si la mateixa torna a sortir.
+     *
+     * Un peu de pàgina amb els logotips dels patrocinadors els repeteix a cada
+     * full: sense això, un llistat de vint pàgines duria vint còpies de cada
+     * logotip a dins del fitxer.
+     *
+     * Les que no s'han pogut llegir hi queden com a null, per no tornar-ho a
+     * intentar a cada full.
+     *
+     * @var array<string,array{object:int,width:int,height:int}|null>
+     */
+    private array $images = [];
+
     public function __construct(array $info = [])
     {
         $this->info = $info + [
@@ -599,16 +613,21 @@ class Pdf
         return sprintf('%.3F %.3F %.3F', $color[0] / 255, $color[1] / 255, $color[2] / 255);
     }
 
-    /** Crea l'objecte d'una imatge JPEG o PNG. */
+    /** Crea l'objecte d'una imatge JPEG o PNG, o en recupera un de ja fet. */
     private function parseImage(string $data): ?array
     {
+        $key = md5($data);
+        if (array_key_exists($key, $this->images)) {
+            return $this->images[$key];
+        }
+        $image = null;
         if (str_starts_with($data, "\xFF\xD8")) {
-            return $this->parseJpeg($data);
+            $image = $this->parseJpeg($data);
+        } elseif (str_starts_with($data, "\x89PNG\r\n\x1a\n")) {
+            $image = $this->parsePng($data);
         }
-        if (str_starts_with($data, "\x89PNG\r\n\x1a\n")) {
-            return $this->parsePng($data);
-        }
-        return null;
+
+        return $this->images[$key] = $image;
     }
 
     private function parseJpeg(string $data): ?array

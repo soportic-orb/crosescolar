@@ -3,6 +3,29 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.37.0] — 2026-10-03
+
+### Afegit
+- **Vista prèvia dels resultats.** Qui té la sessió iniciada pot obrir la pàgina
+  pública de resultats abans de publicar-la, i també descarregar-ne els PDF, per
+  provar el sistema de cap a cap. Als visitants la pàgina continua sense existir
+  i els cercadors no la indexen. A sobre hi surt una franja que ho recorda, amb
+  un botó per publicar-la des d'allà mateix, i al panell hi ha el botó **Vista
+  prèvia** al costat de **Publicar al web**.
+- **Logotips dels patrocinadors al peu del PDF dels resultats**, amb una casella
+  a Configuració → Resultats. Hi surten tots els patrocinadors actius que tinguin
+  logotip, al peu de cada full, en una sola línia i tots a la mateixa alçada:
+  l'amplada de cadascun la mana la seva proporció, de manera que no se'n deforma
+  cap, i si n'hi ha molts s'empetiteixen tots alhora perquè la línia hi càpiga.
+
+### Corregit
+- El motor de PDF incrustava una còpia de la mateixa imatge cada vegada que es
+  dibuixava. Amb un peu de pàgina repetit a vint fulls, el fitxer duia vint
+  còpies de cada logotip. Ara cada imatge hi va un sol cop.
+- Les dates del cros d'exemple eren fixes i, en passar el dia, les inscripcions i
+  la venda de tiquets quedaven tancades en una instal·lació de demostració
+  acabada de fer. Ara es compten des del dia que es munta.
+
 ## [1.36.0] — 2026-09-29
 
 ### Corregit
