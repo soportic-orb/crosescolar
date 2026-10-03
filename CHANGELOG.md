@@ -3,6 +3,23 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.38.0] — 2026-10-03
+
+### Afegit
+- **Avís emergent amb icona**, a Configuració → Avisos. Una finestra de fons
+  blanc amb una icona dins d'un cercle gris clar i el text que s'hi escrigui.
+  Es tanca com el cartell de la portada —amb la creu, clicant a fora o amb la
+  tecla d'escapada— i, a diferència d'aquell, surt a qualsevol pàgina del web i
+  no demana cap imatge.
+- Sis icones per triar: **alerta, informació, perill, important, calendari i
+  bandera**, amb el color del dibuix a gust de cadascú. Al panell es trien d'un
+  mosaic on es veuen dibuixades, no d'una llista de noms.
+
+### Canviat
+- Les finestres emergents del web van **en cua**: si hi ha el cartell i l'avís
+  alhora, se'n veu una de sola i la següent s'obre en tancar-se l'anterior. Dos
+  diàlegs oberts al mateix temps s'amagaven l'un a l'altre.
+
 ## [1.37.0] — 2026-10-03
 
 ### Afegit

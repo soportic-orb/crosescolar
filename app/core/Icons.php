@@ -51,6 +51,8 @@ class Icons
         'upload' => '<path d="M12 19V8M8 12l4-4 4 4M4 20h16"/>',
         'eye' => '<path d="M2.5 12S6 6 12 6s9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"/><circle cx="12" cy="12" r="2.5"/>',
         'alert' => '<path d="M12 4 2.5 20h19z"/><path d="M12 10v4M12 17v.5"/>',
+        // El senyal d'aturada: per a un avís que no es pot passar per alt.
+        'danger' => '<path d="M8.6 3.5h6.8l4.1 4.1v6.8l-4.1 4.1H8.6l-4.1-4.1V7.6z"/><path d="M12 8v4.5M12 15.5v.5"/>',
         'gift' => '<rect x="3.5" y="8" width="17" height="12" rx="2"/><path d="M3.5 12.5h17M12 8v12"/><path d="M12 8S10.5 4 8.5 4a2 2 0 0 0 0 4M12 8s1.5-4 3.5-4a2 2 0 0 1 0 4"/>',
         'flag' => '<path d="M6 21V4M6 4h11l-2 3.5L17 11H6"/>',
         'vine' => '<path d="M12 3v7"/><circle cx="9" cy="12" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="12" cy="16" r="2"/><circle cx="12" cy="20" r="1.5"/><path d="M12 5c2 0 3-1 3-2"/>',

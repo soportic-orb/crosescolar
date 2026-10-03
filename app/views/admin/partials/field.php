@@ -240,6 +240,24 @@ $required = str_contains((string) ($field['rules'] ?? ''), 'required');
         </div>
       <?php break; ?>
 
+      <?php case 'icon_choice': ?>
+        <?php
+        // Com el mosaic de les icones d'esport, però amb les que digui el camp:
+        // triar una icona per nom, sense veure-la, és triar a cegues.
+        $opcions = (array) ($field['options'] ?? []);
+        $triada = isset($opcions[(string) $value]) ? (string) $value : (string) array_key_first($opcions);
+        ?>
+        <div class="icon-picker">
+          <?php foreach ($opcions as $clau => $nom): ?>
+            <label class="icon-picker__option<?= $triada === (string) $clau ? ' is-chosen' : '' ?>" title="<?= e($nom) ?>">
+              <input type="radio" name="<?= e($name) ?>" value="<?= e((string) $clau) ?>" <?= $triada === (string) $clau ? 'checked' : '' ?>>
+              <?= \Cros\Core\Icons::svg((string) $clau, 'icon', 26) ?>
+              <span><?= e($nom) ?></span>
+            </label>
+          <?php endforeach; ?>
+        </div>
+      <?php break; ?>
+
       <?php default: ?>
         <input type="<?= e(in_array($type, ['email', 'url', 'tel', 'number', 'date', 'time'], true) ? $type : 'text') ?>"
                id="<?= e($id) ?>" name="<?= e($name) ?>" value="<?= e((string) $value) ?>"

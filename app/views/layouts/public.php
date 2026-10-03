@@ -97,6 +97,7 @@ $navItems = \Cros\Models\Menu::visible();
 <a class="visually-hidden" href="#contingut">Salta al contingut principal</a>
 
 <?= \Cros\Core\View::partial('partials/topbar') ?>
+<?= \Cros\Core\View::partial('partials/alert') ?>
 
 <?php if (\Cros\Core\Settings::bool('coming_soon') && \Cros\Core\Auth::check()): ?>
   <div class="preview-bar">

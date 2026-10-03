@@ -33,16 +33,23 @@
     }
   }
 
-  /* Cartell emergent de la portada ------------------------------------ */
-  var popup = document.querySelector('[data-popup]');
-  if (popup && typeof popup.showModal === 'function') {
+  /* Finestres emergents: el cartell de la portada i l'avís amb icona ---- */
+  // Poden coincidir a la mateixa pàgina, i dos diàlegs oberts alhora s'amaguen
+  // l'un a l'altre. Per això van en cua: el següent s'obre quan es tanca
+  // l'anterior.
+  var popups = [].slice.call(document.querySelectorAll('[data-popup]'));
+  var obrirSeguent = function () {
+    var popup = popups.shift();
+    if (!popup || typeof popup.showModal !== 'function') { return; }
     var popupKey = 'cros_popup_' + popup.getAttribute('data-notice');
     var seen = false;
     try { seen = popup.getAttribute('data-once') === '1' && sessionStorage.getItem(popupKey) === '1'; } catch (e) {}
-    if (!seen) {
-      popup.showModal();
-      try { sessionStorage.setItem(popupKey, '1'); } catch (e) {}
-    }
+    if (seen) { obrirSeguent(); return; }
+
+    popup.showModal();
+    try { sessionStorage.setItem(popupKey, '1'); } catch (e) {}
+    popup.addEventListener('close', obrirSeguent);
+
     var closePopup = function () { popup.close(); };
     var popupClose = popup.querySelector('[data-popup-close]');
     if (popupClose) { popupClose.addEventListener('click', closePopup); }
@@ -50,10 +57,11 @@
     popup.addEventListener('click', function (event) {
       if (event.target === popup) { closePopup(); }
     });
-    // Si la imatge porta enllaç, en obrir-lo el cartell es tanca.
+    // Si porta enllaç, en obrir-lo la finestra es tanca.
     var popupLink = popup.querySelector('[data-popup-link]');
     if (popupLink) { popupLink.addEventListener('click', closePopup); }
-  }
+  };
+  obrirSeguent();
 
   /* Avís abans de descarregar el dorsal ------------------------------- */
   var bibNotice = document.getElementById('bib-notice');

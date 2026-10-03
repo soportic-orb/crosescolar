@@ -69,7 +69,10 @@ class SettingsForm
             if ($type === 'html') {
                 $value = Html::clean($value);
             }
-            if ($type === 'select' && isset($field['options']) && !array_key_exists($value, $field['options'])) {
+            // Una tria tancada només pot valer el que ofereix: si arriba una
+            // altra cosa, és que algú ha tocat el formulari i es deixa com era.
+            if (in_array($type, ['select', 'icon_choice'], true)
+                && isset($field['options']) && !array_key_exists($value, $field['options'])) {
                 continue;
             }
             if ($type === 'coord') {

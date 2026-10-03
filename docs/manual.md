@@ -84,11 +84,11 @@ Al mateix apartat hi ha els colors del web i el text del peu.
 - Botons principals i compte enrere.
 - Textos de cada secció: introducció, recorreguts, programa, galeria, ubicació i patrocinadors.
 
-### 3.1. Avisos: la barra de dalt i el cartell emergent
+### 3.1. Avisos: la barra de dalt, el cartell i l'avís emergent
 **Configuració → Avisos**
 
-Dues maneres d'anunciar una cosa puntual —un canvi d'horari, l'últim dia per
-inscriure-s'hi, el cartell de l'edició— sense tocar la resta del web. Totes dues venen
+Tres maneres d'anunciar una cosa puntual —un canvi d'horari, l'últim dia per
+inscriure-s'hi, el cartell de l'edició— sense tocar la resta del web. Totes venen
 apagades i es poden engegar i apagar quan convingui.
 
 **La barra d'avís** surt a dalt de tot, sobre el menú, a **totes les pàgines**:
@@ -114,6 +114,26 @@ apagades i es poden engegar i apagar quan convingui.
   mateixa visita no se'l torni a trobar. Si el desactiveu, surt cada vegada.
 
 El cartell es tanca amb la creu, clicant-hi fora o amb la tecla Esc.
+
+**L'avís emergent amb icona** és una finestra blanca amb una icona dins d'un cercle gris
+i el text que hi escriviu. A diferència del cartell, no demana cap imatge i surt **a
+qualsevol pàgina** del web, no només a la portada: va bé per a un avís que s'ha de llegir
+tant si s'entra per la portada com si s'arriba de Google a la pàgina d'inscripció.
+
+- *Icona*: n'hi ha sis per triar —**alerta**, **informació**, **perill**, **important**,
+  **calendari** i **bandera**— i les veieu dibuixades al panell, no cal endevinar-les pel
+  nom.
+- *Color de la icona*: el que vulgueu. El cercle de darrere sempre és gris clar, de manera
+  que qualsevol color fosc s'hi llegeix bé.
+- *Títol* (opcional) i *text*: el text s'escriu amb l'editor visual, igual que la resta de
+  textos del web. **Sense títol ni text, l'avís no surt** encara que estigui activat.
+- *Enllaç* i *text del botó* (opcionals): un botó que porta on digueu. Una adreça d'aquest
+  web s'obre a la mateixa pestanya; una de fora, en una de nova.
+- *Ensenyar-lo un sol cop per visita*: recomanat. Si no, surt a cada pàgina que s'obri.
+
+Es tanca igual que el cartell: amb la creu, clicant-hi fora o amb la tecla Esc. Si en
+teniu dos de posats alhora —el cartell i l'avís—, no se superposen: surt primer l'avís i,
+en tancar-lo, el cartell.
 
 ### 4. Recorreguts amb Wikiloc
 **Recorreguts → Afegir**

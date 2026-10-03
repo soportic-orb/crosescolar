@@ -5,6 +5,12 @@
  */
 declare(strict_types=1);
 
+// Les proves parlen amb el servidor per HTTP i prou. Aquestes dues classes són
+// l'excepció: no toquen ni base de dades ni configuració, i serveixen per
+// comparar amb el dibuix i els noms de debò de les icones, no amb una còpia.
+require_once __DIR__ . '/../app/core/Icons.php';
+require_once __DIR__ . '/../app/models/Notice.php';
+
 $base = getenv('CROS_TEST_URL') ?: 'http://127.0.0.1:8123';
 $jar = sys_get_temp_dir() . '/cros-test-cookies.txt';
 $adminJar = $jar;
@@ -379,12 +385,12 @@ check('Sense coordenades, cerca l\'adreça de la cursa',
 check('I no incrusta cap mapa', !str_contains($home, 'export/embed.html'));
 $mapPost(['map_lat' => '41.376699', 'map_lng' => '1.713535']);
 
-echo "\n== Avisos: barra de dalt i cartell de la portada ==\n";
+echo "\n== Avisos: barra de dalt, cartell i avís emergent ==\n";
 $anon = ['anon' => true];
-saveSettings($base, 'notices', ['topbar_enabled' => '0', 'popup_enabled' => '0']);
+saveSettings($base, 'notices', ['topbar_enabled' => '0', 'popup_enabled' => '0', 'alert_enabled' => '0']);
 $home = req('GET', $base . '/', [], $anon);
 check('Sense configurar res, no hi ha barra d\'avís', !str_contains($home['body'], 'id="topbar"'));
-check('Ni cap cartell emergent', !str_contains($home['body'], 'data-popup'));
+check('Ni cap cartell emergent', !str_contains($home['body'], 'modal--popup'));
 
 // Una barra sense missatge no és cap avís.
 saveSettings($base, 'notices', ['topbar_enabled' => '1', 'topbar_text' => '']);
@@ -426,7 +432,7 @@ saveSettings($base, 'notices', [
     'popup_enabled' => '1', 'popup_url' => '', 'popup_alt' => '', 'popup_image_remove' => '1',
 ]);
 check('Un cartell sense imatge no surt',
-    !str_contains(req('GET', $base . '/', [], $anon)['body'], 'data-popup'));
+    !str_contains(req('GET', $base . '/', [], $anon)['body'], 'modal--popup'));
 
 $poster = sys_get_temp_dir() . '/cros-cartell-' . $unique . '.jpg';
 $image = imagecreatetruecolor(600, 800);
@@ -441,7 +447,7 @@ check('S\'hi puja la imatge del cartell', $uploaded['status'] === 302, 'estat ' 
 @unlink($poster);
 
 $home = req('GET', $base . '/', [], $anon);
-check('El cartell surt a la portada', str_contains($home['body'], 'data-popup'));
+check('El cartell surt a la portada', str_contains($home['body'], 'modal--popup'));
 check('Amb la imatge pujada', preg_match('#<img src="[^"]*uploads/[^"]+" alt="Cartell ' . $unique . '">#', $home['body']) === 1,
     'no s\'hi ha trobat la imatge');
 check('En clicar-la s\'obre en una finestra nova',
@@ -449,19 +455,68 @@ check('En clicar-la s\'obre en una finestra nova',
 check('I es pot tancar', str_contains($home['body'], 'data-popup-close'));
 check('Només es veu un cop per visita', str_contains($home['body'], 'data-once="1"'));
 check('El cartell només és a la portada',
-    !str_contains(req('GET', $base . '/recorreguts', [], $anon)['body'], 'data-popup'));
+    !str_contains(req('GET', $base . '/recorreguts', [], $anon)['body'], 'modal--popup'));
 
 saveSettings($base, 'notices', ['popup_once' => '0']);
 check('Es pot demanar que surti sempre', str_contains(req('GET', $base . '/', [], $anon)['body'], 'data-once="0"'));
 
 saveSettings($base, 'notices', ['popup_enabled' => '0']);
 check('Desactivat, la portada torna a la normalitat',
-    !str_contains(req('GET', $base . '/', [], $anon)['body'], 'data-popup'));
+    !str_contains(req('GET', $base . '/', [], $anon)['body'], 'modal--popup'));
 
-// I al panell hi ha l'apartat amb els dos blocs.
+// L'avís emergent amb icona.
+saveSettings($base, 'notices', ['alert_enabled' => '1', 'alert_title' => '', 'alert_text' => '']);
+check('Un avís sense res escrit no surt',
+    !str_contains(req('GET', $base . '/', [], $anon)['body'], 'modal--avis'));
+
+saveSettings($base, 'notices', [
+    'alert_enabled' => '1', 'alert_icon' => 'danger', 'alert_icon_color' => '#8a1c1c',
+    'alert_title' => 'Avís important ' . $unique,
+    'alert_text' => '<p>La cursa s\'ajorna al <strong>diumenge vinent</strong>.</p>',
+    'alert_url' => '/inscripcio', 'alert_link_label' => 'Mira-t\'ho', 'alert_once' => '1',
+]);
+$home = req('GET', $base . '/', [], $anon);
+check('L\'avís emergent surt al web', str_contains($home['body'], 'modal--avis'));
+check('Amb el títol i el text que s\'hi han escrit',
+    str_contains($home['body'], 'Avís important ' . $unique)
+    && str_contains($home['body'], 'ajorna al <strong>diumenge vinent</strong>'));
+check('La icona triada va dins del cercle',
+    preg_match('~<span class="avis__icona" style="color:#8a1c1c">\s*<svg~', $home['body']) === 1);
+check('I és la de perill, no una altra',
+    str_contains($home['body'], \Cros\Core\Icons::svg('danger', 'icon', 30)));
+check('Porta el botó de l\'enllaç',
+    preg_match('~<a class="btn" href="[^"]*/inscripcio" data-popup-link~', $home['body']) === 1);
+check('Es pot tancar, com el cartell', str_contains($home['body'], 'data-popup-close'));
+check('I es veu un sol cop per visita',
+    preg_match('~modal--avis[^>]*data-once="1"~s', $home['body']) === 1);
+check('Surt a qualsevol pàgina, no només a la portada',
+    str_contains(req('GET', $base . '/recorreguts', [], $anon)['body'], 'modal--avis'));
+
+// Una icona que no és de la llista no es desa: es queda la que hi havia.
+saveSettings($base, 'notices', ['alert_icon' => 'inventada']);
+check('Una icona inventada no passa',
+    str_contains(req('GET', $base . '/', [], $anon)['body'], \Cros\Core\Icons::svg('danger', 'icon', 30)));
+
+saveSettings($base, 'notices', ['alert_url' => 'javascript:alert(1)']);
+$home = req('GET', $base . '/', [], $anon);
+check('I una adreça perillosa tampoc',
+    !str_contains($home['body'], 'javascript:alert') && !str_contains($home['body'], 'data-popup-link'));
+
+saveSettings($base, 'notices', ['alert_enabled' => '0']);
+check('Desactivat, desapareix',
+    !str_contains(req('GET', $base . '/', [], $anon)['body'], 'modal--avis'));
+
+// I al panell hi ha l'apartat amb els tres blocs.
 $noticesForm = req('GET', $base . '/admin/configuracio/notices')['body'];
 check('El panell té l\'apartat d\'avisos', str_contains(text($noticesForm), 'Barra d\'avís, a dalt de tot')
-    && str_contains(text($noticesForm), 'Cartell emergent de la portada'));
+    && str_contains(text($noticesForm), 'Cartell emergent de la portada')
+    && str_contains(text($noticesForm), 'Avís emergent amb icona'));
+check('Amb les sis icones per triar, dibuixades i amb el seu nom',
+    count(array_filter(\Cros\Models\Notice::ICONS, static fn (string $nom, string $clau): bool =>
+        str_contains($noticesForm, 'value="' . $clau . '"')
+        && str_contains($noticesForm, \Cros\Core\Icons::svg($clau, 'icon', 26))
+        && str_contains($noticesForm, '>' . $nom . '</span>'), ARRAY_FILTER_USE_BOTH)) === 6,
+    implode(', ', array_keys(\Cros\Models\Notice::ICONS)));
 
 echo "\n== Editor visual dels textos ==\n";
 $homeForm = req('GET', $base . '/admin/configuracio/home')['body'];

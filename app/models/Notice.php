@@ -7,8 +7,9 @@ use Cros\Core\Html;
 use Cros\Core\Settings;
 
 /**
- * Avisos puntuals del web: la barra de dalt de tot i la finestra emergent de
- * la portada. Tots dos es configuren a Configuració → Avisos.
+ * Avisos puntuals del web: la barra de dalt de tot, la finestra emergent de la
+ * portada i l'avís emergent amb icona. Tots es configuren a Configuració →
+ * Avisos.
  *
  * Cada avís porta una clau curta calculada a partir del seu contingut: quan
  * l'organització canvia el missatge o la imatge, la clau canvia i l'avís torna
@@ -65,6 +66,61 @@ class Notice
             'once' => Settings::bool('popup_once', true),
             'key' => self::key([$image, $url]),
         ];
+    }
+
+    /**
+     * Icones que es poden triar per a l'avís emergent.
+     *
+     * Són poques i a posta: qui escriu l'avís ha de poder dir de què va amb un
+     * cop d'ull a la llista, no triar entre dues-centes icones que es
+     * confonen.
+     *
+     * @var array<string,string>
+     */
+    public const ICONS = [
+        'alert' => 'Alerta',
+        'info' => 'Informació',
+        'danger' => 'Perill',
+        'star' => 'Important',
+        'calendar' => 'Calendari',
+        'flag' => 'Bandera',
+    ];
+
+    /**
+     * Avís emergent amb icona, o null si no n'hi ha cap per ensenyar.
+     * @return array{icon:string,color:string,title:string,text:string,url:string,label:string,once:bool,key:string}|null
+     */
+    public static function alert(): ?array
+    {
+        if (!Settings::bool('alert_enabled')) {
+            return null;
+        }
+        $text = trim((string) setting('alert_text', ''));
+        $title = trim((string) setting('alert_title', ''));
+        if ($text === '' && $title === '') {
+            return null; // Un avís sense res escrit no és cap avís.
+        }
+        $url = self::url((string) setting('alert_url', ''));
+        $label = trim((string) setting('alert_link_label', ''));
+
+        return [
+            'icon' => self::icon((string) setting('alert_icon', 'alert')),
+            'color' => self::color((string) setting('alert_icon_color', '#c8552b'), '#c8552b'),
+            'title' => $title,
+            'text' => $text,
+            'url' => $url,
+            'label' => $url !== '' ? ($label !== '' ? $label : 'Més informació') : '',
+            'once' => Settings::bool('alert_once', true),
+            'key' => self::key([$title, $text, $url]),
+        ];
+    }
+
+    /** Una de les icones que es poden triar; si no ho és, la d'alerta. */
+    private static function icon(string $name): string
+    {
+        $name = trim($name);
+
+        return isset(self::ICONS[$name]) ? $name : 'alert';
     }
 
     /** Adreça que es pot posar en un enllaç, o '' si no ho és. */

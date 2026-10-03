@@ -84,7 +84,7 @@ return [
     'notices' => [
         'title' => 'Avisos',
         'icon' => 'info',
-        'description' => 'La barra d\'avís de dalt de tot i la finestra emergent de la portada. Serveixen per a coses puntuals: un canvi d\'horari, un cartell, l\'últim dia per inscriure-s\'hi…',
+        'description' => 'La barra de dalt de tot, el cartell de la portada i l\'avís emergent amb icona. Serveixen per a coses puntuals: un canvi d\'horari, un cartell, l\'últim dia per inscriure-s\'hi…',
         'fields' => [
             'topbar_enabled' => ['label' => 'Mostrar la barra d\'avís', 'type' => 'bool', 'default' => '0', 'section' => 'Barra d\'avís, a dalt de tot',
                 'help' => 'Surt a dalt de tot, sobre el menú, a totes les pàgines del web.'],
@@ -113,6 +113,25 @@ return [
                 'help' => 'Opcional. S\'obre en una finestra nova. Sense enllaç, la imatge només es mostra.'],
             'popup_once' => ['label' => 'Ensenyar-lo un sol cop per visita', 'type' => 'bool', 'default' => '1', 'show_if' => 'popup_enabled',
                 'help' => 'Recomanat: així qui torni a la portada durant la mateixa visita no se\'l torna a trobar.'],
+
+            'alert_enabled' => ['label' => 'Mostrar l\'avís emergent', 'type' => 'bool', 'default' => '0', 'section' => 'Avís emergent amb icona',
+                'help' => 'Una finestra blanca amb una icona i el vostre text, que surt damunt de qualsevol pàgina del web. '
+                    . 'Es tanca amb la creu, clicant a fora o amb la tecla d\'escapada.'],
+            'alert_icon' => ['label' => 'Icona', 'type' => 'icon_choice', 'default' => 'alert', 'show_if' => 'alert_enabled',
+                'options' => \Cros\Models\Notice::ICONS],
+            'alert_icon_color' => ['label' => 'Color de la icona', 'type' => 'color', 'default' => '#c8552b', 'show_if' => 'alert_enabled',
+                'help' => 'El cercle de darrere sempre és gris clar; el color és el del dibuix.'],
+            'alert_title' => ['label' => 'Títol de l\'avís', 'type' => 'text', 'default' => '', 'show_if' => 'alert_enabled',
+                'placeholder' => 'La cursa s\'ajorna',
+                'help' => 'Opcional, però ajuda a entendre de què va abans de llegir-ho tot.'],
+            'alert_text' => ['label' => 'Text de l\'avís', 'type' => 'html', 'rows' => 4, 'default' => '', 'show_if' => 'alert_enabled',
+                'help' => 'Sense títol ni text, l\'avís no surt encara que estigui activat.'],
+            'alert_url' => ['label' => 'Enllaç de l\'avís', 'type' => 'text', 'default' => '', 'show_if' => 'alert_enabled',
+                'placeholder' => '/inscripcio',
+                'help' => 'Opcional. Una adreça d\'aquest web (/inscripcio) o de fora (https://…), que s\'obre en una finestra nova.'],
+            'alert_link_label' => ['label' => 'Text del botó', 'type' => 'text', 'default' => 'Més informació', 'show_if' => 'alert_enabled'],
+            'alert_once' => ['label' => 'Ensenyar-lo un sol cop per visita', 'type' => 'bool', 'default' => '1', 'show_if' => 'alert_enabled',
+                'help' => 'Recomanat: si no, surt a cada pàgina que s\'obri.'],
         ],
     ],
 
