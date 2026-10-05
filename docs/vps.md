@@ -584,6 +584,49 @@ arriba. Poseu-hi el secret del webhook a *Configuració → Stripe de la platafo
 > A un rebut d'un cros no hi surt mai cap dada nostra, i a una factura nostra no hi surt
 > mai cap dada d'un participant. Hi ha proves automàtiques que ho comproven.
 
+## Que trobin les webs públiques: Google, Bing i els assistents d'IA
+
+Les webs públiques de la plataforma (`esportweb.cat`, `crosescolar.cat`…) ja
+surten preparades per als cercadors i per als assistents d'IA. Cada domini té:
+
+- **Dades estructurades** a cada pàgina: qui hi ha al darrere (organització, amb
+  el correu i la pàgina de contacte), el web, el servei i el que fa, les curses
+  del llistat com a esdeveniments esportius (amb data, poble i adreça real) i les
+  preguntes freqüents.
+- **`/robots.txt`** amb un grup per als assistents que busquen per respondre
+  (ChatGPT, Claude, Perplexity…) i un altre per als que llegeixen per aprendre
+  (GPTBot, ClaudeBot, Google-Extended…), i el mapa del web.
+- **`/llms.txt`**: un resum de tot el web en text pla —què és, què fa, les
+  preguntes freqüents, les curses publicades i on escriure— que és el que
+  llegeixen els assistents d'una tirada (format de llmstxt.org).
+- **`/sitemap.xml`**, la imatge del banner per quan es comparteix l'enllaç i
+  fragments sencers per citar-lo.
+
+Tot surt del que ja hi ha escrit a la configuració de cada domini; no cal
+escriure res a part. A **Configuració → SEO i cercadors** es tria quins
+assistents hi poden entrar (tots, només els que busquen, o cap).
+
+El que sí que heu de fer un cop, per a cada domini:
+
+1. **Google Search Console** (`search.google.com/search-console`): afegiu la
+   propietat `https://esportweb.cat`, trieu la verificació per *etiqueta HTML* i
+   enganxeu el codi a **Configuració → SEO i cercadors → Verificació de Google**.
+   Després, a *Sitemaps*, envieu `https://esportweb.cat/sitemap.xml`.
+2. **Bing Webmaster Tools** (`bing.com/webmasters`): és l'índex on busca ChatGPT
+   quan navega. El més ràpid és *Importar des de Google Search Console*; si no,
+   verifiqueu-lo amb l'*etiqueta meta* i enganxeu el codi al camp de Bing.
+3. Repetiu-ho per a `crosescolar.cat`, que és un web diferent amb el seu text.
+
+Per comprovar que tot hi és:
+
+```bash
+curl -s https://esportweb.cat/robots.txt
+curl -s https://esportweb.cat/llms.txt
+```
+
+I les dades estructurades, amb la prova de resultats enriquits de Google
+(`search.google.com/test/rich-results`).
+
 ## El formulari de contacte de les webs públiques
 
 Cada web pública de la plataforma (`esportweb.cat`, `crosescolar.cat`…) té una

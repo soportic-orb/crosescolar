@@ -118,5 +118,6 @@ $router->post('/pagament/avis', [SiteController::class, 'stripeWebhook']);
 $router->get('/{page:condicions|privadesa|galetes}', [SiteController::class, 'legal']);
 $router->get('/sitemap.xml', [SiteController::class, 'sitemap']);
 $router->get('/robots.txt', [SiteController::class, 'robots']);
+$router->get('/llms.txt', [SiteController::class, 'llms']);
 
 return $router;

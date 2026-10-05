@@ -12,6 +12,7 @@ use Cros\Platform\Contact;
 use Cros\Platform\Instance;
 use Cros\Platform\Platform;
 use Cros\Platform\Request;
+use Cros\Platform\Seo;
 use Cros\Platform\Signup;
 use Cros\Platform\Site;
 
@@ -28,12 +29,16 @@ class SiteController extends Controller
             $description = trim((string) setting('platform_tagline', ''))
                 ?: 'Inscripcions, dorsals i resultats per al cros escolar de la vostra escola, AFA o club.';
         }
+        $instances = Instance::directory();
         $this->page('platform/home', [
             'title' => (string) setting('site_name', 'EsportWeb') . ' · ' . setting('platform_tagline', ''),
             'description' => $description,
             'noindex' => \Cros\Core\Settings::bool('platform_noindex'),
-            'instances' => Instance::directory(),
+            'instances' => $instances,
             'errors' => [],
+            // Què és el servei i quines curses hi ha, perquè ho entenguin
+            // els cercadors i els assistents sense haver d'endevinar-ho.
+            'jsonLd' => [Seo::software(), Seo::events($instances)],
         ]);
     }
 
@@ -249,6 +254,7 @@ class SiteController extends Controller
             'intro' => (string) setting('features_intro', ''),
             'closing' => (string) setting('features_closing', ''),
             'features' => $rows,
+            'jsonLd' => [Seo::software()],
         ]);
     }
 
@@ -395,15 +401,23 @@ class SiteController extends Controller
     public function robots(): void
     {
         header('Content-Type: text/plain; charset=utf-8');
-        echo "User-agent: *\n";
-        if (\Cros\Core\Settings::bool('platform_noindex')) {
-            echo "Disallow: /\n";
-            exit;
+        echo Seo::robots();
+        exit;
+    }
+
+    /**
+     * El resum del web per als assistents d'IA (llmstxt.org).
+     *
+     * Si la portada no vol sortir enlloc, o no vol saber res d'assistents, no
+     * hi ha resum: seria contradir el que diu el robots.txt.
+     */
+    public function llms(): void
+    {
+        if (Seo::hidden() || Seo::aiMode() === 'none') {
+            abort(404, 'Aquesta pàgina no existeix.');
         }
-        echo "Disallow: /sollicitud/\n";
-        echo "Allow: /assets/\n";
-        echo "\n";
-        echo 'Sitemap: https://' . Site::current() . "/sitemap.xml\n";
+        header('Content-Type: text/markdown; charset=utf-8');
+        echo Seo::llms(Instance::directory());
         exit;
     }
 
@@ -563,6 +577,7 @@ class SiteController extends Controller
             'errors' => $errors,
             'captchaImage' => Captcha::isImage(self::CAPTCHA),
             'captchaQuestion' => Captcha::question(self::CAPTCHA),
+            'jsonLd' => [Seo::contactPage()],
         ]);
     }
 

@@ -153,12 +153,21 @@ return [
         'title' => 'SEO i cercadors',
         'icon' => 'globe',
         'per_site' => true,
-        'description' => 'Com es veu la portada de la plataforma a Google.',
+        'description' => 'Com es veu la web pública de la plataforma a Google, a Bing i als assistents d\'IA com ChatGPT o Claude.',
         'fields' => [
             'platform_meta_description' => ['label' => 'Descripció per a cercadors', 'type' => 'textarea', 'rows' => 2, 'default' => '',
                 'help' => 'Les dues línies que Google ensenya sota el títol. Si es deixa buit, es fa servir la frase de la portada.'],
             'google_verification' => ['label' => 'Verificació de Google Search Console', 'type' => 'text', 'default' => '',
                 'help' => 'A Search Console, trieu «Etiqueta HTML» i enganxeu aquí només el codi de dins de content="…".'],
+            'bing_verification' => ['label' => 'Verificació de Bing Webmaster Tools', 'type' => 'text', 'default' => '',
+                'help' => 'Bing és l\'índex on busca ChatGPT quan navega. A Bing Webmaster Tools, trieu «Etiqueta meta» i enganxeu el codi de dins de content="…".'],
+            'platform_ai_crawlers' => ['label' => 'Assistents d\'IA', 'type' => 'select', 'default' => 'all', 'options' => [
+                'all' => 'Que hi entrin tots: per respondre i per aprendre',
+                'search' => 'Només els que busquen per respondre, no els que aprenen',
+                'none' => 'Cap',
+            ], 'help' => 'Per sortir a les respostes de ChatGPT, Claude o Perplexity calen els que busquen (OAI-SearchBot, Claude-SearchBot, PerplexityBot…). '
+                . 'Els que aprenen (GPTBot, ClaudeBot, Google-Extended…) fan que els models coneguin el servei encara que no busquin. '
+                . 'Es diu al robots.txt; a més, el web publica un resum per a ells a /llms.txt.'],
             'platform_noindex' => ['label' => 'Demanar als cercadors que no indexin la portada', 'type' => 'bool', 'default' => '0',
                 'help' => 'Els webs dels clients no en depenen: cadascun ho decideix al seu panell.'],
         ],

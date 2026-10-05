@@ -1286,7 +1286,9 @@ try {
     Db::update('instances', ['status' => 'active', 'published' => 1, 'listed' => 1], 'id = :id', ['id' => $boscId]);
     $quadre = static function (string $html, string $slug): string {
         // El quadre d'una cursa: des del seu «<a class="cros-card"» fins al següent.
-        $trossos = explode('<a class="cros-card', $html);
+        // El primer tros és tot el que hi ha abans del primer quadre, dades
+        // estructurades incloses, i allà també hi surten les adreces.
+        $trossos = array_slice(explode('<a class="cros-card', $html), 1);
         foreach ($trossos as $tros) {
             if (str_contains($tros, '//' . $slug . '.')) {
                 return $tros;
@@ -1538,6 +1540,112 @@ try {
     check('I esborrar', Contact::find($id) === null);
     check('Els textos de la pàgina es configuren per domini',
         str_contains($web('GET', '/configuracio/contact')['body'], 'name="contact_intro"'));
+
+    echo "\n== Les webs públiques, per a cercadors i assistents d'IA ==\n";
+    $ld = static function (string $html): array {
+        // Tots els nodes de totes les dades estructurades de la pàgina.
+        preg_match_all('#<script type="application/ld\+json">(.*?)</script>#s', $html, $m);
+        $nodes = [];
+        foreach ($m[1] as $json) {
+            $data = json_decode(str_replace('<', '<', $json), true) ?: [];
+            foreach ((array) ($data['@graph'] ?? [$data]) as $node) {
+                $nodes[] = $node;
+            }
+        }
+
+        return $nodes;
+    };
+    $tipus = static fn (array $nodes): array => array_map(static fn ($n): string => (string) ($n['@type'] ?? ''), $nodes);
+    $setSite = static function (string $domain, string $key, string $value): void {
+        Db::q('INSERT INTO settings (k, v) VALUES (:k, :v) ON DUPLICATE KEY UPDATE v = VALUES(v)',
+            ['k' => 'site:' . $domain . ':' . $key, 'v' => $value]);
+    };
+    // El Bosc, amb data i poble, perquè surti com a esdeveniment esportiu.
+    Db::update('instances', ['event_date' => date('Y-m-d', strtotime('+40 days')), 'town' => 'Reus'],
+        'id = :id', ['id' => $boscId]);
+
+    $portada = $web('GET', '/', [], 'crosescolar.test');
+    $nodes = $ld($portada['body']);
+    check('La portada diu qui hi ha al darrere i quin web és',
+        in_array('Organization', $tipus($nodes), true) && in_array('WebSite', $tipus($nodes), true),
+        implode(', ', $tipus($nodes)));
+    check('I què és el servei, amb el que fa',
+        in_array('SoftwareApplication', $tipus($nodes), true));
+    $llista = array_values(array_filter($nodes, static fn ($n): bool => ($n['@type'] ?? '') === 'ItemList'))[0] ?? [];
+    $cursa = null;
+    foreach ((array) ($llista['itemListElement'] ?? []) as $element) {
+        if (str_contains((string) ($element['item']['url'] ?? ''), 'elbosc.')) {
+            $cursa = $element['item'];
+        }
+    }
+    check('Les curses del llistat hi van com a esdeveniments esportius',
+        ($cursa['@type'] ?? '') === 'SportsEvent' && ($cursa['location']['address']['addressLocality'] ?? '') === 'Reus'
+        && !empty($cursa['startDate']), json_encode($cursa));
+    check('Amb l\'adreça real de cada web', ($cursa['url'] ?? '') === 'https://elbosc.crosescolar.example');
+    check('Els fragments poden ser sencers', str_contains($portada['body'], 'max-snippet:-1'));
+
+    $contacte = $ld($web('GET', '/contacte', [], 'crosescolar.test')['body']);
+    check('La pàgina de contacte es presenta com a tal', in_array('ContactPage', $tipus($contacte), true));
+    $org = array_values(array_filter($contacte, static fn ($n): bool => ($n['@type'] ?? '') === 'Organization'))[0] ?? [];
+    check('I diu on escriure', ($org['contactPoint']['url'] ?? '') === 'https://crosescolar.test/contacte');
+
+    // El robots.txt fa entrar els assistents d'IA, cadascun amb el seu grup.
+    $robots = $web('GET', '/robots.txt', [], 'crosescolar.test')['body'];
+    check('El robots.txt dona pas als assistents que busquen',
+        str_contains($robots, 'User-agent: OAI-SearchBot') && str_contains($robots, 'User-agent: Claude-SearchBot')
+        && str_contains($robots, 'User-agent: PerplexityBot'));
+    check('I als que aprenen', str_contains($robots, 'User-agent: GPTBot') && str_contains($robots, 'User-agent: ClaudeBot'));
+    check('Cada grup amaga també els formularis', substr_count($robots, 'Disallow: /registre') === 3);
+    check('I diu on és el resum per a ells', str_contains($robots, 'https://crosescolar.test/llms.txt'));
+
+    $llms = $web('GET', '/llms.txt', [], 'crosescolar.test');
+    check('Hi ha el /llms.txt', $llms['status'] === 200 && str_contains(strtolower($llms['headers']), 'text/markdown'),
+        'estat ' . $llms['status']);
+    check('Amb el nom del servei i què és', preg_match('/^# .+\n\n> .+/u', $llms['body']) === 1,
+        mb_substr($llms['body'], 0, 120));
+    check('Les pàgines principals, enllaçades', str_contains($llms['body'], '](https://crosescolar.test/funcionalitats)')
+        && str_contains($llms['body'], '](https://crosescolar.test/contacte)'));
+    check('Les curses que hi ha, amb la seva adreça', str_contains($llms['body'], '](https://elbosc.crosescolar.example)'));
+    check('I on escriure', str_contains($llms['body'], '## Contacte'));
+    check('Cada domini té el seu', str_contains($web('GET', '/llms.txt', [], 'esportweb.test')['body'], '](https://esportweb.test/'));
+
+    // Només els que busquen: els que aprenen es queden a fora.
+    $setSite('crosescolar.test', 'platform_ai_crawlers', 'search');
+    $robots = $web('GET', '/robots.txt', [], 'crosescolar.test')['body'];
+    // El grup dels que aprenen és l'últim i, ara, només diu «Disallow: /».
+    $grupGpt = substr($robots, (int) strpos($robots, 'User-agent: GPTBot'));
+    $grupGpt = substr($grupGpt, 0, (int) strpos($grupGpt, "\n\n"));
+    check('Es pot deixar fora els que aprenen',
+        str_contains($grupGpt, "Disallow: /\n") === false && str_ends_with($grupGpt, 'Disallow: /')
+        && !str_contains($grupGpt, 'Allow: /'), $grupGpt);
+    check('Sense tancar la porta als que busquen',
+        preg_match('/User-agent: OAI-SearchBot.*?Allow: \//s', $robots) === 1);
+    // Cap assistent: ni grup obert ni resum.
+    $setSite('crosescolar.test', 'platform_ai_crawlers', 'none');
+    $robots = $web('GET', '/robots.txt', [], 'crosescolar.test')['body'];
+    check('O no deixar-hi entrar cap assistent',
+        preg_match('/User-agent: OAI-SearchBot.*?Disallow: \/\n/s', $robots) === 1 && !str_contains($robots, 'llms.txt'));
+    check('I llavors no hi ha resum', $web('GET', '/llms.txt', [], 'crosescolar.test')['status'] === 404);
+    $setSite('crosescolar.test', 'platform_ai_crawlers', 'all');
+
+    // En compartir l'enllaç, la imatge gran del banner.
+    check('Sense banner, la targeta és la petita',
+        str_contains($web('GET', '/', [], 'crosescolar.test')['body'], '<meta name="twitter:card" content="summary">'));
+    $setSite('crosescolar.test', 'platform_hero_image', 'plataforma/banner.jpg');
+    $ambBanner = $web('GET', '/', [], 'crosescolar.test')['body'];
+    check('Amb banner, la imatge gran per compartir',
+        str_contains($ambBanner, 'property="og:image" content="') && str_contains($ambBanner, 'uploads/plataforma/banner.jpg"')
+        && str_contains($ambBanner, '<meta name="twitter:card" content="summary_large_image">'));
+    $setSite('crosescolar.test', 'platform_hero_image', '');
+
+    // La verificació de Bing, que és on busca ChatGPT.
+    $setSite('crosescolar.test', 'bing_verification', 'codi-de-bing-123');
+    check('Hi ha la verificació de Bing quan s\'hi posa',
+        str_contains($web('GET', '/', [], 'crosescolar.test')['body'], '<meta name="msvalidate.01" content="codi-de-bing-123">'));
+    $setSite('crosescolar.test', 'bing_verification', '');
+    check('I la configuració del SEO ho explica',
+        str_contains($web('GET', '/configuracio/seo')['body'], 'name="platform_ai_crawlers"')
+        && str_contains($web('GET', '/configuracio/seo')['body'], 'name="bing_verification"'));
 
     echo "\n== Desestimar una sol·licitud ==\n";
     $home = $web('GET', '/', [], 'crosescolar.test');

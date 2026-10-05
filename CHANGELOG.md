@@ -3,6 +3,30 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.42.0] — 2026-10-05
+
+### Afegit
+- **Les webs públiques de la plataforma, preparades per als cercadors i per als
+  assistents d'IA** (ChatGPT, Claude, Perplexity…), a cada domini:
+  - Dades estructurades a cada pàgina: l'organització, amb el correu i la pàgina
+    de contacte; el web; el servei i el que fa; les curses del llistat com a
+    esdeveniments esportius, amb data, poble i l'adreça real de cada web; i la
+    pàgina de contacte com a tal.
+  - **`/llms.txt`**: un resum de tot el web en text pla —què és, què fa, les
+    preguntes freqüents, les curses publicades i on escriure—, en el format de
+    llmstxt.org, que és el que llegeixen els assistents d'una tirada.
+  - El `robots.txt` dona pas explícitament als assistents que busquen per
+    respondre i als que llegeixen per aprendre, cadascun amb el seu grup, i diu
+    on és el resum.
+- A Configuració → SEO i cercadors: quins assistents hi poden entrar (tots,
+  només els que busquen, o cap) i la **verificació de Bing Webmaster Tools**,
+  que és l'índex on busca ChatGPT quan navega.
+
+### Canviat
+- En compartir l'enllaç, la targeta porta la imatge gran del banner en comptes
+  del logotip, si n'hi ha.
+- Els cercadors poden fer servir fragments sencers de les pàgines per citar-les.
+
 ## [1.41.0] — 2026-10-05
 
 ### Afegit

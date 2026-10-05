@@ -19,24 +19,43 @@ $llistat = (string) setting('platform_nav_directory', 'Curses');
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e(($title ?? $name) . ' · ' . $domain) ?></title>
 <?php if (!empty($description)): ?><meta name="description" content="<?= e($description) ?>"><?php endif; ?>
-<meta name="robots" content="<?= !empty($noindex) ? 'noindex, nofollow' : 'index, follow, max-image-preview:large' ?>">
+<?php // Fragments sencers: és el que fan servir els cercadors i els assistents per citar la pàgina. ?>
+<meta name="robots" content="<?= !empty($noindex) ? 'noindex, nofollow' : 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1' ?>">
 <?php
 // Adreça canònica: la d'aquest domini. Cada pàgina pública és un web seu,
 // amb el seu text, i no competeix amb la de l'altre domini.
 $canonical = 'https://' . $domain . rtrim((string) ($currentPath ?? '/'), '/');
+if ($canonical === 'https://' . $domain) {
+    $canonical .= '/';
+}
 $platformLogo = (string) setting('platform_logo', '');
+// La imatge que surt en compartir l'enllaç o al costat d'una resposta: la del
+// banner de la portada, que és gran; si no n'hi ha, el logotip.
+$shareImage = trim((string) setting('platform_hero_image', '')) ?: $platformLogo;
+$bigImage = trim((string) setting('platform_hero_image', '')) !== '';
 ?>
-<link rel="canonical" href="<?= e($canonical === 'https://' . $domain ? $canonical . '/' : $canonical) ?>">
+<link rel="canonical" href="<?= e($canonical) ?>">
 <meta property="og:type" content="website">
 <meta property="og:title" content="<?= e($title ?? $name) ?>">
 <meta property="og:site_name" content="<?= e($name) ?>">
 <meta property="og:locale" content="ca_ES">
 <meta property="og:url" content="<?= e($canonical) ?>">
 <?php if (!empty($description)): ?><meta property="og:description" content="<?= e($description) ?>"><?php endif; ?>
-<?php if ($platformLogo !== ''): ?><meta property="og:image" content="<?= e(upload_url($platformLogo)) ?>"><?php endif; ?>
-<meta name="twitter:card" content="summary">
+<?php if ($shareImage !== ''): ?>
+<meta property="og:image" content="<?= e(upload_url($shareImage)) ?>">
+<meta property="og:image:alt" content="<?= e($name) ?>">
+<?php endif; ?>
+<meta name="twitter:card" content="<?= $bigImage ? 'summary_large_image' : 'summary' ?>">
+<meta name="twitter:title" content="<?= e($title ?? $name) ?>">
+<?php if (!empty($description)): ?><meta name="twitter:description" content="<?= e($description) ?>"><?php endif; ?>
 <?php if (trim((string) setting('google_verification', '')) !== ''): ?>
 <meta name="google-site-verification" content="<?= e(trim((string) setting('google_verification', ''))) ?>">
+<?php endif; ?>
+<?php if (trim((string) setting('bing_verification', '')) !== ''): ?>
+<meta name="msvalidate.01" content="<?= e(trim((string) setting('bing_verification', ''))) ?>">
+<?php endif; ?>
+<?php if (empty($noindex)): ?>
+<?= \Cros\Platform\Seo::jsonLd((array) ($jsonLd ?? [])) ?>
 <?php endif; ?>
 <link rel="stylesheet" href="<?= e(asset('css/fonts.css')) ?>">
 <link rel="stylesheet" href="<?= e(asset('css/site.css')) ?>">
