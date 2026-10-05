@@ -111,7 +111,7 @@ $router->get('/sollicitud/{code}', [SiteController::class, 'sent']);
 $router->get('/funcionalitats', [SiteController::class, 'features']);
 $router->get('/contacte', [SiteController::class, 'contact']);
 $router->post('/contacte', [SiteController::class, 'contactSend']);
-$router->get('/contacte/captcha.png', [SiteController::class, 'captcha']);
+$router->get('/contacte/captcha', [SiteController::class, 'captcha']);
 // L'avís de Stripe sobre els pagaments de la plataforma. Va al web públic
 // perquè no hi ha sessió: qui truca és el servidor de Stripe.
 $router->post('/pagament/avis', [SiteController::class, 'stripeWebhook']);

@@ -34,7 +34,7 @@ final class Seo
     ];
 
     /** Adreces que no diuen res a ningú de fora: formularis i passos d'un tràmit. */
-    private const PRIVATE_PATHS = ['/registre', '/benvinguda', '/sollicitud/', '/pagament/', '/contacte/captcha.png'];
+    private const PRIVATE_PATHS = ['/registre', '/benvinguda', '/sollicitud/', '/pagament/', '/contacte/captcha'];
 
     /** L'adreça d'un camí en aquest domini. */
     public static function url(string $path = '/'): string

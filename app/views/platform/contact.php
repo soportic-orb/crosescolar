@@ -66,7 +66,7 @@ $errorClass = static fn (string $field): string => isset($errors[$field]) ? ' fi
         <?php if ($captchaImage): ?>
           <label for="captcha">Escriviu els caràcters de la imatge *</label>
           <div class="captcha">
-            <img class="captcha__image" src="<?= e(url('/contacte/captcha.png')) ?>?<?= e(bin2hex(random_bytes(4))) ?>"
+            <img class="captcha__image" src="<?= e(url('/contacte/captcha')) ?>?<?= e(bin2hex(random_bytes(4))) ?>"
                  width="190" height="64" alt="Codi de seguretat: cinc lletres i xifres">
             <input type="text" id="captcha" name="captcha" required autocomplete="off" autocapitalize="characters"
                    spellcheck="false" maxlength="10" inputmode="text">
@@ -112,7 +112,7 @@ $errorClass = static fn (string $field): string => isset($errors[$field]) ? ' fi
       var image = document.querySelector('.captcha__image');
       if (!image) { return; }
       event.preventDefault();
-      image.src = '<?= e(url('/contacte/captcha.png')) ?>?nou=' + Date.now();
+      image.src = '<?= e(url('/contacte/captcha')) ?>?nou=' + Date.now();
       var field = document.getElementById('captcha');
       if (field) { field.value = ''; field.focus(); }
     });

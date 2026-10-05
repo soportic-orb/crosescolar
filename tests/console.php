@@ -1407,13 +1407,16 @@ try {
     }
     check('Amb tots els camps: nom, entitat, correu, telèfon, missatge, privadesa i captcha', $tots);
     check('El captcha és una imatge feta aquí mateix',
-        str_contains($pagina['body'], '/contacte/captcha.png') && !preg_match('#google|recaptcha|hcaptcha#i', $pagina['body']));
+        preg_match('#<img class="captcha__image" src="[^"]*/contacte/captcha\?#', $pagina['body']) === 1
+        && !preg_match('#google|recaptcha|hcaptcha#i', $pagina['body']));
     check('La casella de privadesa porta a la política',
         str_contains($pagina['body'], 'href="' . 'http://crosescolar.test/privadesa"')
         || str_contains($pagina['body'], '/privadesa" target="_blank"'));
     check('El menú i el peu hi porten', substr_count($pagina['body'], '/contacte"') >= 2);
 
-    $imatge = $web('GET', '/contacte/captcha.png', [], 'crosescolar.test');
+    // Sense extensió a l'adreça: el servidor integrat de PHP 8.2 pren per
+    // fitxer tot el que acaba en «.png» i no ho passa a l'aplicació.
+    $imatge = $web('GET', '/contacte/captcha', [], 'crosescolar.test');
     check('La imatge del captcha es dibuixa',
         $imatge['status'] === 200 && str_starts_with($imatge['body'], "\x89PNG")
         && str_contains(strtolower($imatge['headers']), 'image/png'), 'estat ' . $imatge['status']);
