@@ -56,15 +56,23 @@ $heroOverlay = max(0, min(95, (int) setting('platform_hero_overlay', '72'))) / 1
       <div class="cros-grid">
         <?php foreach ($instances as $cros): ?>
           <?php
-          $crosDomain = \Cros\Platform\Platform::validDomain((string) ($cros['domain'] ?? ''));
-          $url = 'https://' . $cros['slug'] . '.' . $crosDomain;
+          // L'adreça on viu de debò cada web, amb el seu domini, i la imatge
+          // de la seva portada, que la serveix el mateix web.
+          $url = \Cros\Platform\Instance::url($cros);
+          $host = \Cros\Platform\Instance::host($cros);
+          $hero = \Cros\Platform\Instance::heroUrl($cros);
           $date = (string) ($cros['event_date'] ?? '');
           $days = $date !== '' ? (int) floor((strtotime($date) - strtotime('today')) / 86400) : null;
           $state = $days === null ? 'Data per confirmar'
               : ($days < 0 ? 'Cursa passada' : ($days === 0 ? 'És avui!' : ($days <= 30 ? 'Falten ' . $days . ' dies' : 'Inscripcions obertes')));
           ?>
           <a class="cros-card" href="<?= e($url) ?>">
-            <span class="cros-card__top"><span class="cros-card__state"><?= e($state) ?></span></span>
+            <span class="cros-card__top<?= $hero !== '' ? ' cros-card__top--image' : '' ?>">
+              <?php if ($hero !== ''): ?>
+                <img class="cros-card__image" src="<?= e($hero) ?>" alt="" loading="lazy" decoding="async">
+              <?php endif; ?>
+              <span class="cros-card__state"><?= e($state) ?></span>
+            </span>
             <span class="cros-card__body">
               <span class="cros-card__name"><?= e($cros['site_name']) ?></span>
               <?php if (!empty($cros['town'])): ?><span class="cros-card__town"><?= e($cros['town']) ?></span><?php endif; ?>
@@ -72,7 +80,7 @@ $heroOverlay = max(0, min(95, (int) setting('platform_hero_overlay', '72'))) / 1
                 <?= Icons::svg('calendar', 'icon', 15) ?>
                 <?= $date !== '' ? e(ca_date($date, true)) : 'data per confirmar' ?>
               </span>
-              <span class="cros-card__url"><?= e($cros['slug'] . '.' . $crosDomain) ?></span>
+              <span class="cros-card__url"><?= e($host) ?></span>
             </span>
           </a>
         <?php endforeach; ?>

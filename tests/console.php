@@ -1274,6 +1274,95 @@ try {
     check('I no deixa rastrejar les sol·licituds enviades',
         str_contains($robotsPlataforma['body'], 'Disallow: /sollicitud/'));
 
+    echo "\n== El llistat de curses de la plataforma ==\n";
+    // El Bosc torna a l'altre domini i se'l fa sortir al llistat: el seu quadre
+    // ha de portar al seu web de debò, no al domini principal.
+    $boscId = (int) $bosc['id'];
+    $detail = $web('GET', '/instancies/' . $boscId);
+    $web('POST', '/instancies/' . $boscId . '/accio', [
+        '_token' => $token($detail['body']), 'action' => 'domain', 'domain' => 'crosescolar.example',
+    ]);
+    Db::update('instances', ['status' => 'active', 'published' => 1, 'listed' => 1], 'id = :id', ['id' => $boscId]);
+    $quadre = static function (string $html, string $slug): string {
+        // El quadre d'una cursa: des del seu «<a class="cros-card"» fins al següent.
+        $trossos = explode('<a class="cros-card', $html);
+        foreach ($trossos as $tros) {
+            if (str_contains($tros, '//' . $slug . '.')) {
+                return $tros;
+            }
+        }
+
+        return '';
+    };
+    $llistat = $web('GET', '/', [], 'crosescolar.test');
+    $delBosc = $quadre($llistat['body'], 'elbosc');
+    check('El Bosc surt al llistat', $delBosc !== '');
+    check('I el quadre porta al seu web de debò',
+        str_contains($delBosc, 'href="https://elbosc.crosescolar.example"'), mb_substr(strip_tags($delBosc), 0, 120));
+    check('Amb l\'adreça que s\'hi llegeix, també la seva',
+        str_contains($delBosc, '>elbosc.crosescolar.example<')
+        && !str_contains($delBosc, 'elbosc.crosescolar.test'));
+
+    // Una instància d'abans dels dos dominis no té el domini a la fitxa: el
+    // treu de la configuració del seu web en repassar-la.
+    Db::update('instances', ['domain' => null], 'id = :id', ['id' => $boscId]);
+    Instance::sync($boscId, $site);
+    check('A les d\'abans, el domini surt de la configuració del seu web',
+        (string) Instance::find($boscId)['domain'] === 'crosescolar.example',
+        (string) Instance::find($boscId)['domain']);
+
+    // La imatge de fons de la portada de cada web, al seu quadre.
+    $boscConfig = require $site . '/tenants/elbosc/config.php';
+    $boscPdo = Db::connect((array) $boscConfig['db'] + ['charset' => 'utf8mb4']);
+    @mkdir($site . '/tenants/elbosc/uploads/portada', 0775, true);
+    file_put_contents($site . '/tenants/elbosc/uploads/portada/el bosc.jpg', 'una foto de mentida');
+    $boscPdo->prepare("INSERT INTO settings (k, v) VALUES ('hero_image', ?)
+        ON DUPLICATE KEY UPDATE v = VALUES(v)")->execute(['portada/el bosc.jpg']);
+    // Ha de ser un web publicat de debò: en repassar-lo, la plataforma ho mira.
+    $boscPdo->exec("INSERT INTO settings (k, v) VALUES ('coming_soon', '0')
+        ON DUPLICATE KEY UPDATE v = VALUES(v)");
+    $llistat = $web('GET', '/', [], 'crosescolar.test');
+    check('Sense repassar el web, encara no la coneix',
+        !str_contains($quadre($llistat['body'], 'elbosc'), 'cros-card__image'));
+    Instance::sync($boscId, $site);
+    $delBosc = $quadre($web('GET', '/', [], 'crosescolar.test')['body'], 'elbosc');
+    check('En repassar-lo, el quadre porta la imatge de la seva portada',
+        str_contains($delBosc,
+            '<img class="cros-card__image" src="https://elbosc.crosescolar.example/uploads/portada/el%20bosc.jpg"'),
+        mb_substr($delBosc, 0, 300));
+    check('Amb l\'ombra perquè l\'etiqueta es llegeixi a sobre', str_contains($delBosc, 'cros-card__top--image'));
+
+    unlink($site . '/tenants/elbosc/uploads/portada/el bosc.jpg');
+    Instance::sync($boscId, $site);
+    check('Una imatge que ja no hi és no deixa un forat al llistat',
+        !str_contains($quadre($web('GET', '/', [], 'crosescolar.test')['body'], 'elbosc'), 'cros-card__image'));
+    check('Ni s\'accepta un camí que surti de la carpeta',
+        Instance::heroImage($site . '/tenants/elbosc', '../config.php') === null
+        && Instance::heroImage($site . '/tenants/elbosc', 'https://altra.example/foto.jpg') === null);
+    $boscPdo = null;
+
+    // Quan el client la canvia des del seu panell, la plataforma ho sap de
+    // seguida, sense esperar el repàs de la nit.
+    $web('GET', '/admin/sortir', [], 'lagranada.crosescolar.test');
+    $acces = $web('GET', '/admin/acces', [], 'lagranada.crosescolar.test');
+    $web('POST', '/admin/acces', [
+        '_token' => $token($acces['body']), 'email' => 'laia@example.cat', 'password' => 'unaAltraClauLlarga1',
+    ], 'lagranada.crosescolar.test');
+    $foto = sys_get_temp_dir() . '/cros-portada-' . bin2hex(random_bytes(3)) . '.jpg';
+    $imatge = imagecreatetruecolor(320, 180);
+    imagefilledrectangle($imatge, 0, 0, 320, 180, imagecolorallocate($imatge, 40, 110, 60));
+    imagejpeg($imatge, $foto, 80);
+    imagedestroy($imatge);
+    $portada = $web('GET', '/admin/configuracio/home', [], 'lagranada.crosescolar.test');
+    $desada = $web('POST', '/admin/configuracio/home', array_merge(formData($portada['body']), [
+        'hero_image' => new CURLFile($foto, 'image/jpeg', 'portada.jpg'),
+    ]), 'lagranada.crosescolar.test');
+    @unlink($foto);
+    $granadaImatge = (string) Db::val("SELECT hero_image FROM instances WHERE slug = 'lagranada'", [], '');
+    check('El client desa una imatge nova al seu panell', $desada['status'] === 302, 'estat ' . $desada['status']);
+    check('I la plataforma la té al moment', $granadaImatge !== '' && is_file($site . '/tenants/lagranada/uploads/' . $granadaImatge),
+        $granadaImatge !== '' ? $granadaImatge : 'cap');
+
     echo "\n== Desestimar una sol·licitud ==\n";
     $home = $web('GET', '/', [], 'crosescolar.test');
     $web('POST', '/sollicitud', [

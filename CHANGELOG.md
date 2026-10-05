@@ -3,6 +3,27 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.40.0] — 2026-10-05
+
+### Corregit
+- **Al llistat de curses de la plataforma, tots els quadres portaven al domini
+  principal.** La consulta del llistat no llegia el domini de cada web, de manera
+  que una cursa de `crosescolar.cat` s'hi anunciava com a `esportweb.cat`, tant a
+  l'enllaç com a l'adreça que s'hi llegeix. Ara cada quadre porta a l'adreça real
+  del seu web.
+- Les instàncies d'abans que la plataforma tingués més d'un domini no en tenien
+  cap d'apuntat a la fitxa. En repassar-les, el domini s'agafa ara de la
+  configuració del mateix web, que és qui ho sap de cert.
+
+### Afegit
+- **La imatge de fons de la portada de cada cursa, al seu quadre del llistat.**
+  La serveix el web del client, retallada perquè ompli el quadre sense
+  deformar-se i amb una ombra perquè l'etiqueta es llegeixi a sobre. Sense
+  imatge, o si ja no hi és, hi queda el verd de sempre. Tots els quadres fan la
+  mateixa alçada, en tinguin o no.
+- Quan el client canvia la imatge de la portada des del seu panell, la
+  plataforma ho sap al moment; no cal esperar el repàs de la nit.
+
 ## [1.39.0] — 2026-10-05
 
 ### Afegit

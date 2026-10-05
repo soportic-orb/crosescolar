@@ -135,7 +135,7 @@ class Instance
     public static function directory(): array
     {
         return Db::all(
-            "SELECT slug, site_name, town, event_date, language, registrations
+            "SELECT slug, domain, site_name, town, event_date, language, registrations, hero_image
              FROM instances
              WHERE status = 'active' AND published = 1 AND listed = 1
              ORDER BY (event_date IS NULL OR event_date < :today), event_date ASC, site_name ASC",
@@ -144,6 +144,62 @@ class Instance
     }
 
     /**
+     * Adreça de la imatge de portada d'una instància, per al llistat de curses,
+     * o '' si no en té.
+     *
+     * La imatge la serveix el web del client, no la plataforma: és allà on
+     * viu, i així no cal copiar-la enlloc.
+     *
+     * @param array<string,mixed> $instance
+     */
+    public static function heroUrl(array $instance, ?string $root = null): string
+    {
+        $image = trim((string) ($instance['hero_image'] ?? ''));
+        if ($image === '') {
+            return '';
+        }
+        $path = implode('/', array_map('rawurlencode', explode('/', $image)));
+
+        return rtrim(self::url($instance, $root), '/') . '/uploads/' . $path;
+    }
+
+    /**
+     * La imatge de portada que es pot ensenyar fora del web del client, o null.
+     *
+     * Només un camí de dins de la seva carpeta de fitxers que hi sigui de debò:
+     * una imatge que ja no hi és faria un forat al llistat, i un camí que en
+     * volgués sortir no s'ha d'acabar mai dins d'una adreça.
+     */
+    public static function heroImage(string $dir, string $image): ?string
+    {
+        $image = ltrim(trim($image), '/');
+        if ($image === '' || str_contains($image, '..') || preg_match('#^[a-z]+://#i', $image) === 1) {
+            return null;
+        }
+        if ($dir !== '' && !is_file($dir . '/uploads/' . $image)) {
+            return null;
+        }
+
+        return mb_substr($image, 0, 255);
+    }
+
+    /**
+     * Desa la imatge de portada d'una instància pel seu subdomini.
+     *
+     * La crida el panell del client quan la canvia: així surt al llistat de
+     * seguida, sense esperar que la plataforma repassi els webs a la nit.
+     */
+    public static function setHeroImage(string $slug, ?string $image): void
+    {
+        Db::q('UPDATE instances SET hero_image = :image, updated_at = :now WHERE slug = :slug', [
+            'image' => $image,
+            'now' => date('Y-m-d H:i:s'),
+            'slug' => mb_strtolower(trim($slug)),
+        ]);
+    }
+
+    /**
+     * Un subdomini es pot donar? Torna '' si sí, o el motiu si no.    /**
      * Un subdomini es pot donar? Torna '' si sí, o el motiu si no.
      * Mira alhora el que diu el codi (noms reservats i forma del nom) i el que
      * ja hi ha a la plataforma, perquè no se'n pugui repetir cap.
@@ -526,6 +582,7 @@ class Instance
                 'registrations' => (int) Db::val("SELECT COUNT(*) FROM registrations WHERE status <> 'cancelled'", [], 0),
                 // Un web «en preparació» encara no és públic.
                 'published' => (string) ($settings['coming_soon'] ?? '0') === '1' ? 0 : 1,
+                'hero_image' => self::heroImage($dir, (string) ($settings['hero_image'] ?? '')),
                 'synced_at' => date('Y-m-d H:i:s'),
             ];
             // Una instància deixa d'estar «sense estrenar» quan el client
@@ -540,8 +597,38 @@ class Instance
             return false;
         }
         Db::setConnection($platform);
+        $real = self::realDomain($instance, (string) ($config['base_url'] ?? ''), $root);
+        if ($real !== '') {
+            $fields['domain'] = $real;
+        }
         self::update($id, $fields);
 
         return true;
+    }
+
+    /**
+     * El domini on viu de debò una instància que no el té apuntat a la fitxa.
+     *
+     * Les instàncies d'abans que la plataforma tingués més d'un domini no en
+     * tenen cap de desat, i llavors totes semblaven del domini principal: el
+     * llistat de curses les enviava a una adreça que no era la seva. Qui ho
+     * sap de cert és el mateix web, a la seva configuració. Si la fitxa ja en
+     * té un, mana el de la fitxa: és el que es canvia des del panell.
+     *
+     * @param array<string,mixed> $instance
+     */
+    private static function realDomain(array $instance, string $baseUrl, ?string $root = null): string
+    {
+        if (trim((string) ($instance['domain'] ?? '')) !== '') {
+            return '';
+        }
+        $host = strtolower((string) (parse_url($baseUrl, PHP_URL_HOST) ?: ''));
+        $prefix = strtolower((string) $instance['slug']) . '.';
+        if (!str_starts_with($host, $prefix)) {
+            return '';
+        }
+        $domain = substr($host, strlen($prefix));
+
+        return in_array($domain, Platform::domains($root), true) ? $domain : '';
     }
 }

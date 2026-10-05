@@ -7,7 +7,10 @@ use Cros\Core\Auth;
 use Cros\Core\Controller;
 use Cros\Core\Settings;
 use Cros\Core\SettingsForm;
+use Cros\Core\Tenancy;
 use Cros\Models\Activation;
+use Cros\Platform\Bridge;
+use Cros\Platform\Instance;
 
 /** Edició dels textos i les opcions del web. */
 class SettingsController extends Controller
@@ -92,6 +95,9 @@ class SettingsController extends Controller
         }
 
         $errors = SettingsForm::save($group['fields']);
+        if (array_key_exists('hero_image', $group['fields'])) {
+            $this->shareHeroImage();
+        }
 
         Auth::logActivity('settings_update', 'settings', 0, ['group' => $key]);
         if ($errors) {
@@ -102,4 +108,28 @@ class SettingsController extends Controller
         redirect('/admin/configuracio/' . $key);
     }
 
+    /**
+     * Diu a la plataforma quina imatge té ara la portada, perquè el llistat de
+     * curses l'ensenyi de seguida i no l'endemà, quan repassa tots els webs.
+     *
+     * Si no va bé no passa res: el desat ja està fet i el repàs de la nit ho
+     * deixarà igual. Per això no s'atura res ni se n'avisa qui ha desat.
+     */
+    private function shareHeroImage(): void
+    {
+        $slug = Tenancy::slugOf();
+        if ($slug === '' || !Bridge::available()) {
+            return; // Un web tot sol, sense plataforma: no hi ha llistat.
+        }
+        $image = trim((string) Settings::get('hero_image', ''));
+        $image = $image !== '' && is_file(upload_path($image)) ? Instance::heroImage('', $image) : null;
+        try {
+            Bridge::run(static function () use ($slug, $image): void {
+                Instance::setHeroImage($slug, $image);
+            });
+        } catch (\Throwable $e) {
+            log_line('platform', 'No s\'ha pogut passar la imatge de portada a la plataforma',
+                ['slug' => $slug, 'error' => $e->getMessage()]);
+        }
+    }
 }
