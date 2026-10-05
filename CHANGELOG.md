@@ -3,6 +3,27 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.39.0] — 2026-10-05
+
+### Afegit
+- **Tornar a donar d'alta una instància donada de baixa**, amb un botó a la
+  seva fitxa del panell de superadministració. Donar de baixa un web no
+  n'esborra les dades fins al cap de 90 dies: mentre hi siguin, es pot desfer i
+  el web es torna a servir tal com estava, amb les inscripcions i els resultats
+  que tenia. Passats els 90 dies ja no hi ha res a recuperar i el botó no surt.
+- **Importar les dades d'un altre web a sobre d'una instància que ja existeix.**
+  És el mateix paquet que serveix per donar d'alta un web a partir d'un que ja
+  hi era, però ara es pot buidar en una instància feta: el web es queda amb la
+  seva adreça, la seva base de dades i la seva configuració, i les dades passen
+  a ser les del paquet. Els enllaços que apuntaven a l'adreça d'origen es
+  canvien per la d'aquest web.
+  - Cal escriure l'adreça de la instància per confirmar-ho, com en donar de
+    baixa: el que hi havia es perd.
+  - **Abans de tocar res se'n fa una còpia de seguretat.** Si la còpia falla, no
+    s'importa res.
+  - Qui consta com a administrador de la instància hi continua constant encara
+    que el paquet no el porti, de manera que no es queda ningú fora de casa.
+
 ## [1.38.0] — 2026-10-03
 
 ### Afegit

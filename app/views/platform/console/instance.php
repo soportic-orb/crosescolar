@@ -191,13 +191,26 @@ $status = (string) $instance['status'];
           del seu web. Sortiu-ne quan acabeu.
         </span>
       <?php endif; ?>
-      <?php if ($status === 'suspended'): ?>
+      <?php if ($status === 'cancelled'): ?>
+        <form method="post" action="<?= e(url('/instancies/' . (int) $instance['id'] . '/accio')) ?>">
+          <?= csrf_field() ?>
+          <input type="hidden" name="action" value="reactivate">
+          <button class="btn" type="submit">Tornar a donar d'alta el web</button>
+        </form>
+        <span class="hint" style="flex-basis:100%">
+          Les dades encara hi són: el web es torna a servir tal com estava, amb les
+          inscripcions i els resultats que tenia.
+          <?php if (!empty($instance['purge_at'])): ?>
+            Es podrà fer fins al <?= e(ca_date((string) $instance['purge_at'])) ?>, que és quan s'esborren.
+          <?php endif; ?>
+        </span>
+      <?php elseif ($status === 'suspended'): ?>
         <form method="post" action="<?= e(url('/instancies/' . (int) $instance['id'] . '/accio')) ?>">
           <?= csrf_field() ?>
           <input type="hidden" name="action" value="resume">
           <button class="btn btn--ghost" type="submit">Tornar a engegar el web</button>
         </form>
-      <?php elseif ($status !== 'cancelled'): ?>
+      <?php elseif ($status !== 'purged'): ?>
         <form method="post" action="<?= e(url('/instancies/' . (int) $instance['id'] . '/accio')) ?>">
           <?= csrf_field() ?>
           <input type="hidden" name="action" value="suspend">
@@ -207,6 +220,50 @@ $status = (string) $instance['status'];
     </div>
   </div>
 </div>
+
+<?php if (!in_array($status, ['cancelled', 'purged'], true)): ?>
+  <div class="panel mt-2">
+    <div class="panel__head"><h2>Importar les dades d'un altre web</h2></div>
+    <div class="panel__body">
+      <p class="text-soft">
+        El ZIP que dona «Les meves dades» del panell d'un cros. S'escriu <strong>a sobre</strong>
+        d'aquest web: les inscripcions, els resultats, els textos, la configuració i els fitxers
+        passen a ser els del paquet, i el que hi hagi ara es perd. El web d'on surt el paquet no
+        es toca, i aquest es queda amb la seva adreça i la seva base de dades; els enllaços que
+        apuntaven a l'adreça antiga es canvien per aquesta.
+      </p>
+      <p class="text-soft">
+        Abans de tocar res se'n fa una <strong>còpia de seguretat</strong>: si el paquet no era
+        el que voleu, les dades d'ara encara hi seran. Si la còpia falla, no s'importa res.
+      </p>
+      <form method="post" action="<?= e(url('/instancies/' . (int) $instance['id'] . '/accio')) ?>"
+            class="form-grid" enctype="multipart/form-data">
+        <?= csrf_field() ?>
+        <input type="hidden" name="action" value="import">
+        <div class="field">
+          <label for="migration">Paquet del cros (ZIP)</label>
+          <input type="file" id="migration" name="migration" accept=".zip">
+        </div>
+        <div class="field">
+          <label for="migration_file">…o el nom d'un fitxer que ja sigui al servidor</label>
+          <input type="text" id="migration_file" name="migration_file"
+                 placeholder="cros-escolar-la-granada-2026-09-24.zip" autocomplete="off">
+          <p class="hint">
+            Per als paquets grossos, que no passen pel navegador: deixeu el ZIP a
+            <code>storage/imports/</code> del servidor i escriviu-ne aquí el nom.
+          </p>
+        </div>
+        <div class="field">
+          <label for="import-confirm">Escriviu «<?= e($instance['slug']) ?>» per confirmar</label>
+          <input type="text" id="import-confirm" name="confirm" autocomplete="off" style="max-width:280px">
+        </div>
+        <div class="form-actions">
+          <button class="btn btn--danger" type="submit">Importar i escriure a sobre</button>
+        </div>
+      </form>
+    </div>
+  </div>
+<?php endif; ?>
 
 <?php if ($status !== 'cancelled'): ?>
   <div class="panel mt-2">

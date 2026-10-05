@@ -722,6 +722,35 @@ mou el DNS.
    a la nova adreça, i aviseu les famílies. El web antic es pot apagar quan
    vulgueu; mentrestant no molesta.
 
+### Portar-lo a una instància que ja existeix
+
+Si la instància ja està feta —perquè el client es va donar d'alta ell mateix i
+després us passa les dades del web vell, o perquè una importació no va ser la
+que tocava— no cal crear-ne cap de nova. A la **fitxa de la instància** hi ha
+**Importar les dades d'un altre web**: s'hi puja el mateix ZIP i s'escriu a
+sobre del que hi hagi.
+
+- El web es queda amb **la seva adreça, la seva base de dades i la seva
+  configuració**; el que canvia són les dades: inscripcions, resultats, textos i
+  fitxers. Els enllaços que apuntaven a l'adreça del paquet es canvien per la
+  d'aquest web.
+- Cal escriure l'adreça de la instància a la casella de confirmació: és una
+  operació que **esborra** el que hi havia.
+- Abans de tocar res se'n fa una **còpia de seguretat**, que queda a la llista
+  de còpies de la mateixa fitxa. Si la còpia falla, no s'importa res.
+- Qui consta com a administrador de la instància hi continua constant encara que
+  el paquet no el porti, de manera que no es queda ningú a fora. Si el seu compte
+  no era al web vell, se li ha d'enviar l'enllaç per entrar-hi («Enviar-los un
+  enllaç per entrar»), perquè no en tindrà contrasenya.
+
+### Tornar a donar d'alta un web donat de baixa
+
+Donar de baixa una instància **no esborra res de seguida**: les dades es guarden
+90 dies. Mentre hi siguin, a la fitxa hi ha el botó **Tornar a donar d'alta el
+web**, que torna a servir-lo tal com estava, amb les inscripcions i els resultats
+que tenia, i treu la data d'esborrat. Passats els 90 dies, o si s'ha esborrat a
+mà amb `tools/platform.php`, ja no hi ha res a recuperar i el botó no hi surt.
+
 ## 10. Comprovacions finals
 
 ```bash

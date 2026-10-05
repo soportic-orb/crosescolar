@@ -248,6 +248,28 @@ class Instance
     }
 
     /**
+     * Torna a donar d'alta una instància donada de baixa.
+     *
+     * Mentre no s'hagin esborrat les dades —i no s'esborren fins al cap dels
+     * dies que diu PURGE_DAYS— donar de baixa un web es pot desfer: hi ha qui
+     * ho demana i al cap d'un mes torna, i refer-ho tot de nou seria perdre
+     * les inscripcions i els resultats que ja hi havia.
+     */
+    public static function reactivate(int $id, ?string $root = null): bool
+    {
+        $instance = self::find($id);
+        if (!$instance || (string) $instance['status'] !== 'cancelled') {
+            return false;
+        }
+        if (!self::resume($id, $root)) {
+            return false;
+        }
+        self::update($id, ['cancelled_at' => null, 'purge_at' => null]);
+
+        return true;
+    }
+
+    /**
      * Dona de baixa una instància. El web deixa de servir-se i les dades es
      * guarden els dies que diu PURGE_DAYS abans d'esborrar-se.
      */
@@ -360,6 +382,105 @@ class Instance
         }
 
         return ['ok' => $error === '', 'applied' => $applied, 'error' => $error];
+    }
+
+    /**
+     * Escriu a sobre d'una instància les dades del paquet d'un altre web.
+     *
+     * És el mateix paquet que es fa servir per donar d'alta un web a partir
+     * d'un que ja existia, però aquí la instància ja hi és: se li canvien les
+     * dades i els fitxers i es queda amb la seva adreça, la seva base de dades
+     * i la seva configuració. El que hi havia abans es perd, i per això qui ho
+     * crida n'ha de fer una còpia primer.
+     *
+     * @return array{ok:bool,report:array{tables:int,rows:int,files:int},links:int,error:string}
+     */
+    public static function importData(int $id, string $file, ?string $root = null): array
+    {
+        $root = $root ?? CROS_ROOT;
+        $buit = ['tables' => 0, 'rows' => 0, 'files' => 0];
+        $instance = self::find($id);
+        if (!$instance || in_array((string) $instance['status'], ['cancelled', 'purged'], true)) {
+            return ['ok' => false, 'report' => $buit, 'links' => 0, 'error' => 'La instància no està en marxa.'];
+        }
+        $dir = Tenancy::dir($root, (string) $instance['slug']);
+        if ($dir === '' || !is_file($dir . '/config.php')) {
+            return ['ok' => false, 'report' => $buit, 'links' => 0, 'error' => 'No hi ha la carpeta de la instància.'];
+        }
+        $config = require $dir . '/config.php';
+        $db = (array) ($config['db'] ?? []);
+        if (($db['name'] ?? '') === '') {
+            return ['ok' => false, 'report' => $buit, 'links' => 0, 'error' => 'La instància no diu quina base de dades té.'];
+        }
+
+        $platform = Db::connection();
+        $report = $buit;
+        $links = 0;
+        $error = '';
+        try {
+            $manifest = Importer::inspect($file);
+            $report = Importer::into($file, $db, $dir . '/uploads');
+
+            Db::setConnection(Db::connect($db + ['charset' => 'utf8mb4', 'timeout' => 60]));
+            // El que s'hi escriu és la configuració d'un cros, no la de la plataforma.
+            Settings::useSchema(null);
+            // Els textos del web vell parlen de l'adreça del web vell.
+            $url = (string) ($config['base_url'] ?? self::url($instance, $root));
+            $links = Importer::rewriteUrls((string) ($manifest['base_url'] ?? ''), $url);
+            self::keepAdmin($instance);
+        } catch (\Throwable $e) {
+            $error = $e->getMessage();
+            log_line('platform', 'No s\'ha pogut importar a la instància',
+                ['slug' => $instance['slug'], 'error' => $error]);
+        } finally {
+            Db::setConnection($platform);
+            Settings::forget();
+            Platform::prime($root);
+        }
+        if ($error === '') {
+            // El paquet pot venir d'una versió anterior; Importer::into ja hi ha
+            // aplicat les migracions que li faltaven.
+            self::update($id, ['version' => app_version()]);
+            self::sync($id, $root);
+        }
+
+        return ['ok' => $error === '', 'report' => $report, 'links' => $links, 'error' => $error];
+    }
+
+    /**
+     * Que qui gestiona el web hi pugui continuar entrant després d'una
+     * importació.
+     *
+     * Les persones usuàries que hi havia són les del paquet: si el web vell no
+     * tenia el mateix compte, qui el porta es quedaria a fora de casa seva. La
+     * contrasenya no la sap ningú —s'hi entra amb l'enllaç d'un sol ús— i per
+     * això n'hi posem una a l'atzar.
+     *
+     * S'ha de cridar amb la connexió posada a la base de dades de la instància.
+     *
+     * @param array<string,mixed> $instance
+     */
+    private static function keepAdmin(array $instance): void
+    {
+        $email = mb_strtolower(trim((string) ($instance['admin_email'] ?? '')));
+        if ($email === '') {
+            return;
+        }
+        $user = Db::one('SELECT * FROM users WHERE email = :email', ['email' => $email]);
+        if ($user) {
+            // Hi era, però el paquet el pot portar desactivat o sense permisos.
+            Db::update('users', ['role' => 'admin', 'active' => 1], 'id = :id', ['id' => $user['id']]);
+
+            return;
+        }
+        Db::insert('users', [
+            'name' => (string) ($instance['site_name'] ?? 'Administració'),
+            'email' => $email,
+            'password_hash' => password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT),
+            'role' => 'admin',
+            'active' => 1,
+            'created_at' => date('Y-m-d H:i:s'),
+        ]);
     }
 
     /**

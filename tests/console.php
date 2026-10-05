@@ -1128,6 +1128,66 @@ try {
 
     @unlink($fake);
 
+    echo "\n== Importar dades a sobre d'una instància que ja hi és ==\n";
+    // El cros antic canvia, se'n fa un paquet nou i s'escriu a sobre del web
+    // que ja existeix: el que hi havia es perd i hi queda el del paquet.
+    $santPdo = Db::connect((array) $tenant['db'] + ['charset' => 'utf8mb4']);
+    $santPdo->prepare("INSERT INTO settings (k, v) VALUES ('site_name', ?)
+        ON DUPLICATE KEY UPDATE v = VALUES(v)")->execute(['Cros de la reimportació']);
+    $santPdo->prepare("INSERT INTO settings (k, v) VALUES ('results_intro', ?)
+        ON DUPLICATE KEY UPDATE v = VALUES(v)")->execute(['<p>Text que ha de viatjar.</p>']);
+    $santPdo = null;
+    $segon = Backup::create($instanceId, $site);
+    check('Se\'n fa un paquet nou', $segon['ok'], $segon['error']);
+
+    $granadaId = (int) $granada['id'];
+    $fitxa = $web('GET', '/instancies/' . $granadaId);
+    check('La fitxa ofereix importar-hi dades',
+        str_contains($fitxa['body'], 'value="import"')
+        && str_contains($fitxa['body'], 'name="migration"')
+        && str_contains(text($fitxa['body']), 'Importar les dades d\'un altre web'));
+
+    // Sense escriure el nom, no es toca res.
+    $web('POST', '/instancies/' . $granadaId . '/accio', [
+        '_token' => $token($fitxa['body']), 'action' => 'import', 'confirm' => 'una-altra-cosa',
+        'migration' => new CURLFile($segon['file'], 'application/zip', basename($segon['file'])),
+    ]);
+    $abans = Db::connect((array) (require $site . '/tenants/lagranada/config.php')['db'] + ['charset' => 'utf8mb4']);
+    check('Sense confirmar, no s\'escriu res a sobre',
+        (string) $abans->query("SELECT v FROM settings WHERE k = 'site_name'")->fetchColumn()
+        !== 'Cros de la reimportació');
+    $abans = null;
+
+    $copiesAbans = count(Backup::all('lagranada', $site));
+    $fitxa = $web('GET', '/instancies/' . $granadaId);
+    $fet = $web('POST', '/instancies/' . $granadaId . '/accio', [
+        '_token' => $token($fitxa['body']), 'action' => 'import', 'confirm' => 'lagranada',
+        'migration' => new CURLFile($segon['file'], 'application/zip', basename($segon['file'])),
+    ]);
+    check('Confirmant-ho, s\'importa', $fet['status'] === 302, 'estat ' . $fet['status']);
+
+    $granadaPdo = Db::connect((array) (require $site . '/tenants/lagranada/config.php')['db'] + ['charset' => 'utf8mb4']);
+    $valor = static fn (string $key): string => (string) $granadaPdo->query(
+        "SELECT v FROM settings WHERE k = " . $granadaPdo->quote($key)
+    )->fetchColumn();
+    check('Les dades són les del paquet', $valor('site_name') === 'Cros de la reimportació', $valor('site_name'));
+    check('Amb els textos que portava', $valor('results_intro') === '<p>Text que ha de viatjar.</p>');
+    check('I els enllaços apunten a aquest web',
+        str_contains($valor('home_intro'), '://lagranada.crosescolar.test/categories-i-premis')
+        && !str_contains($valor('home_intro'), 'santjordi.crosescolar.test'),
+        $valor('home_intro'));
+    check('Qui el gestionava hi continua constant',
+        (int) $granadaPdo->query("SELECT COUNT(*) FROM users WHERE email = 'marta@example.cat'
+            AND role = 'admin' AND active = 1")->fetchColumn() === 1);
+    $granadaPdo = null;
+
+    check('Abans de tocar res se n\'ha fet una còpia', count(Backup::all('lagranada', $site)) > $copiesAbans,
+        $copiesAbans . ' → ' . count(Backup::all('lagranada', $site)));
+    check('La plataforma es posa al dia tota sola',
+        (string) Instance::find($granadaId)['site_name'] === 'Cros de la reimportació');
+    check('El web d\'on venia el paquet no s\'ha tocat',
+        $web('GET', '/', [], 'santjordi.crosescolar.test')['status'] === 200);
+
     echo "\n== D'una sol·licitud a una instància ==\n";
     $home = $web('GET', '/', [], 'crosescolar.test');
     $web('POST', '/sollicitud', [
@@ -1250,6 +1310,30 @@ try {
         (string) $instance['purge_at'] === date('Y-m-d', strtotime('+' . Instance::PURGE_DAYS . ' days')));
     check('El web ja no es serveix',
         $web('GET', '/', [], 'santjordi.crosescolar.test')['status'] === 503);
+
+    // Mentre les dades hi siguin, donar-la de baixa es pot desfer.
+    $detail = $web('GET', '/instancies/' . $instanceId);
+    check('La fitxa ofereix tornar-la a donar d\'alta',
+        str_contains($detail['body'], 'value="reactivate"')
+        && str_contains(text($detail['body']), 'Tornar a donar d\'alta el web'));
+    $web('POST', '/instancies/' . $instanceId . '/accio', [
+        '_token' => $token($detail['body']), 'action' => 'reactivate',
+    ]);
+    $instance = Instance::find($instanceId);
+    check('I torna a estar d\'alta', (string) $instance['status'] === 'active', (string) $instance['status']);
+    check('Sense data d\'esborrat', $instance['purge_at'] === null && $instance['cancelled_at'] === null);
+    $tornat = $web('GET', '/', [], 'santjordi.crosescolar.test');
+    check('El web es torna a servir', $tornat['status'] === 200, 'estat ' . $tornat['status']);
+    check('I amb les seves dades de sempre',
+        str_contains($tornat['body'], 'Cros de la reimportació'));
+
+    // I es torna a donar de baixa per continuar amb l'esborrat.
+    $detail = $web('GET', '/instancies/' . $instanceId);
+    $web('POST', '/instancies/' . $instanceId . '/accio', [
+        '_token' => $token($detail['body']), 'action' => 'cancel', 'confirm' => 'santjordi',
+    ]);
+    check('Es pot tornar a donar de baixa',
+        (string) Instance::find($instanceId)['status'] === 'cancelled');
 
     check('Una instància activa no s\'esborra', !Provisioner::purge((int) $bosc['id'], $site));
     check('Una de donada de baixa, sí', Provisioner::purge($instanceId, $site));

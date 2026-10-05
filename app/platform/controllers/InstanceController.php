@@ -181,10 +181,74 @@ class InstanceController extends Controller
     }
 
     /**
+     * Escriu a sobre d'una instància les dades d'un paquet d'un altre web.
+     *
+     * Primer se'n fa una còpia de seguretat, perquè el que hi hagi ara es perd:
+     * si el paquet no era el que es volia, les dades d'abans encara hi són.
+     *
+     * @param array<string,mixed> $instance
+     */
+    private function importInto(array $instance): void
+    {
+        $id = (int) $instance['id'];
+        $back = '/instancies/' . $id;
+        $file = $this->migrationFile($back);
+        if ($file === '') {
+            flash('error', 'No heu triat cap paquet per importar.');
+
+            return;
+        }
+        // Buidar un paquet sencer a una base de dades pot trigar.
+        @set_time_limit(600);
+
+        $copy = Backup::create($id);
+        if (!$copy['ok']) {
+            $this->discard($file);
+            flash('error', 'No s\'ha pogut fer la còpia de seguretat prèvia (' . $copy['error']
+                . '), i sense còpia no s\'escriu a sobre de res. No s\'ha tocat el web.');
+
+            return;
+        }
+
+        $result = Instance::importData($id, $file);
+        $this->discard($file);
+        Console::log('instance_import', 'instance', $id, [
+            'slug' => $instance['slug'],
+            'ok' => $result['ok'],
+            'copia' => basename((string) $copy['file']),
+        ]);
+        if (!$result['ok']) {
+            flash('error', 'No s\'ha pogut importar: ' . $result['error']
+                . ' La còpia d\'abans és a ' . basename((string) $copy['file']) . '.');
+
+            return;
+        }
+        flash('success', sprintf(
+            'Dades importades: %d taules, %s registres i %d fitxers%s. '
+            . 'La còpia d\'abans de fer-ho és a %s.',
+            $result['report']['tables'],
+            number_format($result['report']['rows'], 0, ',', '.'),
+            $result['report']['files'],
+            $result['links'] > 0 ? ', amb ' . $result['links'] . ' enllaços actualitzats' : '',
+            basename((string) $copy['file'])
+        ));
+    }
+
+    /** Esborra el paquet pujat, si l'hem desat nosaltres. */
+    private function discard(string $file): void
+    {
+        if ($file !== '' && str_starts_with(basename($file), 'migracio-')) {
+            @unlink($file);
+        }
+    }
+
+    /**
      * El paquet de migració que s'hagi pujat, desat en un lloc segur.
      * Torna '' si no n'hi ha cap; si n'hi ha un de dolent, s'atura aquí.
+     *
+     * @param string $back on tornar si el fitxer no serveix
      */
-    private function migrationFile(): string
+    private function migrationFile(string $back = '/instancies/nova'): string
     {
         // Un paquet gros no passa pel navegador: es deixa a storage/imports/
         // del servidor i aquí només se'n diu el nom.
@@ -194,10 +258,10 @@ class InstanceController extends Controller
             if (!is_file($path)) {
                 set_old($_POST);
                 flash('error', 'No hi ha cap fitxer «' . basename($name) . '» a storage/imports/ del servidor.');
-                redirect('/instancies/nova');
+                redirect($back);
             }
 
-            return $this->checked($path, false);
+            return $this->checked($path, false, $back);
         }
 
         $file = $_FILES['migration'] ?? null;
@@ -209,32 +273,32 @@ class InstanceController extends Controller
             set_old($_POST);
             flash('error', 'El fitxer és massa gran per a aquest servidor. Pugeu «upload_max_filesize» '
                 . 'i «post_max_size» del PHP, o deixeu el paquet al servidor i importeu-lo per consola.');
-            redirect('/instancies/nova');
+            redirect($back);
         }
         if ($error !== UPLOAD_ERR_OK || !is_uploaded_file((string) $file['tmp_name'])) {
             set_old($_POST);
             flash('error', 'La pujada del fitxer ha fallat. Torneu-ho a provar.');
-            redirect('/instancies/nova');
+            redirect($back);
         }
         $target = storage_path('imports');
         if (!is_dir($target) && !@mkdir($target, 0775, true) && !is_dir($target)) {
             flash('error', 'No s\'ha pogut desar el fitxer al servidor.');
-            redirect('/instancies/nova');
+            redirect($back);
         }
         $path = $target . '/migracio-' . bin2hex(random_bytes(6)) . '.zip';
         if (!@move_uploaded_file((string) $file['tmp_name'], $path)) {
             flash('error', 'No s\'ha pogut desar el fitxer al servidor.');
-            redirect('/instancies/nova');
+            redirect($back);
         }
 
-        return $this->checked($path, true);
+        return $this->checked($path, true, $back);
     }
 
     /**
      * Comprova que el paquet sigui bo abans de tocar res.
      * @param bool $own si el fitxer l'hem desat nosaltres (i per tant el podem esborrar)
      */
-    private function checked(string $path, bool $own): string
+    private function checked(string $path, bool $own, string $back = '/instancies/nova'): string
     {
         try {
             Importer::inspect($path);
@@ -244,7 +308,7 @@ class InstanceController extends Controller
             }
             set_old($_POST);
             flash('error', $e->getMessage());
-            redirect('/instancies/nova');
+            redirect($back);
         }
 
         return $path;
@@ -344,6 +408,24 @@ class InstanceController extends Controller
                 Instance::resume($id);
                 Console::log('instance_resume', 'instance', $id, ['slug' => $instance['slug']]);
                 flash('success', 'El web torna a estar en marxa.');
+                break;
+            case 'reactivate':
+                $back = Instance::reactivate($id);
+                Console::log('instance_reactivate', 'instance', $id, ['slug' => $instance['slug'], 'ok' => $back]);
+                flash(
+                    $back ? 'success' : 'error',
+                    $back
+                        ? 'La instància torna a estar d\'alta i el web es torna a servir.'
+                        : 'Aquesta instància no està donada de baixa, o ja se n\'han esborrat les dades.'
+                );
+                break;
+            case 'import':
+                if (mb_strtolower(trim((string) ($_POST['confirm'] ?? ''))) !== mb_strtolower((string) $instance['slug'])) {
+                    flash('error', 'Per escriure a sobre d\'aquest web cal escriure'
+                        . ' «' . $instance['slug'] . '» a la casella de confirmació.');
+                    break;
+                }
+                $this->importInto($instance);
                 break;
             case 'cancel':
                 if (mb_strtolower(trim((string) ($_POST['confirm'] ?? ''))) !== mb_strtolower((string) $instance['slug'])) {
