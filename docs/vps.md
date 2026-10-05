@@ -584,6 +584,37 @@ arriba. Poseu-hi el secret del webhook a *Configuració → Stripe de la platafo
 > A un rebut d'un cros no hi surt mai cap dada nostra, i a una factura nostra no hi surt
 > mai cap dada d'un participant. Hi ha proves automàtiques que ho comproven.
 
+## El formulari de contacte de les webs públiques
+
+Cada web pública de la plataforma (`esportweb.cat`, `crosescolar.cat`…) té una
+pàgina **`/contacte`** amb un formulari: nom i cognoms, entitat, correu,
+telèfon, missatge, l'acceptació de la política de privadesa i, si es vol, la de
+rebre novetats. Són obligatoris el nom, el correu, el missatge i la privadesa.
+
+Els missatges arriben al **Panell de Superadministració → Contacte**, amb la
+xifra dels que queden per llegir al menú. Cadascun diu de quin domini ha vingut.
+S'hi poden marcar com a responsos, arxivar, cercar i esborrar, i des de la fitxa
+es respon per correu amb un clic. Si l'adreça d'avisos del correu està posada,
+també hi arriba un correu per cada missatge; responent-lo, la resposta va
+directament a qui ha escrit.
+
+Per frenar el correu brossa hi ha quatre filtres, i cap no depèn de serveis de
+fora:
+
+- Un **captcha propi**: una imatge amb cinc caràcters que el mateix servidor
+  dibuixa amb GD i que serveix un sol cop. Sense GD, passa a ser una suma
+  escrita (`Quant fa 4 + 7?`).
+- Un camp ocult que només omplen els robots.
+- Que no s'enviï en menys de tres segons des que s'ha obert.
+- Un màxim de cinc missatges per hora des de la mateixa adreça IP.
+
+No s'envia cap còpia del missatge a qui l'ha escrit: el formulari passaria a
+ser una manera d'enviar correus a qualsevol adreça en nom de la plataforma.
+
+Els textos de la pàgina (títol, entradeta i el «gràcies») es canvien per a cada
+domini a **Configuració → Contacte**, on també es pot desactivar la pàgina en un
+domini concret.
+
 ## Escriure als clients: enviaments i llistes
 
 **Enviaments** és el mateix mecanisme que fan servir els cros per escriure a les

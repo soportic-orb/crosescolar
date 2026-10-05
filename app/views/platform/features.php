@@ -37,7 +37,11 @@ use Cros\Platform\Platform;
 
     <div class="feature-cta">
       <a class="btn btn--accent" href="<?= e(url('/')) ?>#formulari"><?= e(setting('platform_cta_label', 'Crea el web de la teva cursa')) ?></a>
-      <a class="btn btn--ghost" href="mailto:<?= e(Platform::notifyEmail()) ?>">Pregunta'ns el que et calgui</a>
+      <?php if (\Cros\Core\Settings::bool('contact_enabled', true)): ?>
+        <a class="btn btn--ghost" href="<?= e(url('/contacte')) ?>">Pregunta'ns el que et calgui</a>
+      <?php else: ?>
+        <a class="btn btn--ghost" href="mailto:<?= e(Platform::notifyEmail()) ?>">Pregunta'ns el que et calgui</a>
+      <?php endif; ?>
     </div>
   </div>
 </section>

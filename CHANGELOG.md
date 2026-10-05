@@ -3,6 +3,30 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.41.0] — 2026-10-05
+
+### Afegit
+- **Pàgina de Contacte a les webs públiques de la plataforma**, a `/contacte`
+  de cada domini. Formulari amb nom i cognoms, entitat, correu, telèfon,
+  missatge, l'acceptació de la privadesa i, a part, la de rebre novetats. El
+  menú i el peu hi porten, i també hi va al mapa del web.
+- **Captcha propi**, sense cap servei de fora: una imatge amb cinc caràcters
+  que dibuixa el mateix servidor i que serveix un sol cop, amb un enllaç per
+  demanar-ne un altre. Al costat, un camp parany per als robots, un temps mínim
+  per omplir el formulari i un màxim de cinc missatges per hora per adreça.
+- **Apartat «Contacte» al Panell de Superadministració**, amb la xifra dels
+  missatges per llegir al menú. Cada missatge diu de quin domini ve i es pot
+  marcar com a respost, arxivar, cercar, esborrar i respondre per correu. Per
+  cada missatge nou arriba també un avís a l'adreça d'avisos de la plataforma.
+- Els textos de la pàgina es configuren per a cada domini, a Configuració →
+  Contacte, on també es pot desactivar en un domini concret.
+
+### Canviat
+- El botó «Pregunta'ns el que et calgui» de la pàgina de funcionalitats porta
+  ara a la pàgina de contacte, en comptes d'obrir el programa de correu.
+- El text de privadesa de sèrie explica què es fa amb les dades del formulari
+  de contacte.
+
 ## [1.40.0] — 2026-10-05
 
 ### Corregit

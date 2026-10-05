@@ -3,10 +3,12 @@ declare(strict_types=1);
 
 namespace Cros\Platform\Controllers;
 
+use Cros\Core\Captcha;
 use Cros\Core\Controller;
 use Cros\Core\Mailer;
 use Cros\Core\Tenancy;
 use Cros\Core\View;
+use Cros\Platform\Contact;
 use Cros\Platform\Instance;
 use Cros\Platform\Platform;
 use Cros\Platform\Request;
@@ -313,6 +315,9 @@ class SiteController extends Controller
             echo '  <url><loc>' . e(Instance::url($instance) . '/') . '</loc></url>' . "\n";
         }
         $pages = ['condicions', 'privadesa', 'galetes'];
+        if (\Cros\Core\Settings::bool('contact_enabled', true)) {
+            array_unshift($pages, 'contacte');
+        }
         if (\Cros\Core\Settings::bool('features_enabled', true)) {
             array_unshift($pages, 'funcionalitats');
         }
@@ -425,6 +430,162 @@ class SiteController extends Controller
                 ['reply_to' => $email]
             );
         }
+    }
+
+    /** El formulari del captcha de contacte, perquè no es barregi amb cap altre. */
+    private const CAPTCHA = 'platform-contact';
+
+    /** Segons que cal per omplir el formulari: menys, és un robot. */
+    private const MIN_SECONDS = 3;
+
+    /** La pàgina de contacte. */
+    public function contact(): void
+    {
+        if (!\Cros\Core\Settings::bool('contact_enabled', true)) {
+            abort(404, 'Aquesta pàgina no existeix.');
+        }
+        $this->contactPage([]);
+    }
+
+    /**
+     * Arriba un missatge del formulari de contacte.
+     *
+     * Per davant de tot hi ha quatre filtres contra el correu brossa: el
+     * parany que només omplen els robots, el captcha, que no s'hagi enviat
+     * massa de pressa i que una mateixa adreça no n'enviï una pila. Un robot
+     * que caigui al parany rep el mateix «gràcies» que una persona: si sabés
+     * que l'han enxampat, provaria una altra cosa.
+     */
+    public function contactSend(): void
+    {
+        if (!\Cros\Core\Settings::bool('contact_enabled', true)) {
+            abort(404, 'Aquesta pàgina no existeix.');
+        }
+        $this->checkCsrf();
+        $thanks = (string) setting('contact_success',
+            'Gràcies! Hem rebut el vostre missatge i us respondrem al correu que ens heu deixat.');
+        if (trim((string) input('website_url')) !== '') {
+            flash('success', $thanks);
+            redirect('/contacte');
+        }
+        // La pàgina pública no posa al dia la base de dades a cada visita; un
+        // missatge sí que hi escriu, i ha de trobar-hi la taula.
+        try {
+            Platform::migrate();
+        } catch (\Throwable $e) {
+            log_line('platform', 'No s\'han pogut aplicar les migracions abans d\'un contacte', ['error' => $e->getMessage()]);
+        }
+
+        $data = [
+            'name' => trim((string) input('name')),
+            'entity' => trim((string) input('entity')),
+            'email' => mb_strtolower(trim((string) input('email'))),
+            'phone' => trim((string) input('phone')),
+            'message' => trim((string) input('message')),
+            'privacy' => input_bool('privacy'),
+            'news' => input_bool('news'),
+        ];
+        $errors = $this->validate([
+            'name' => 'required|max:150',
+            'entity' => 'max:190',
+            'email' => 'required|email|max:190',
+            'phone' => 'max:40',
+            'message' => 'required|max:5000',
+            'privacy' => 'accepted',
+        ], $data);
+        if (!isset($errors['message']) && mb_strlen($data['message']) < 10) {
+            $errors['message'] = 'Expliqueu-nos una mica més què necessiteu.';
+        }
+        if ($data['phone'] !== '' && !preg_match('/^[0-9 +().\-]{6,40}$/', $data['phone'])) {
+            $errors['phone'] = 'Aquest telèfon no sembla bo: només xifres, espais i el signe +.';
+        }
+        // Els missatges brossa porten una pila d'enllaços; una consulta de debò, cap o un.
+        if (!isset($errors['message']) && preg_match_all('#https?://|www\.#i', $data['message']) > 3) {
+            $errors['message'] = 'El missatge porta massa enllaços. Traieu-ne alguns i torneu-lo a enviar.';
+        }
+        // El captcha es comprova sempre, encara que hi hagi altres errors: si
+        // no, un robot podria saber quins camps fallen sense haver-lo resolt.
+        if (!Captcha::check(self::CAPTCHA, (string) input('captcha'), self::MIN_SECONDS)) {
+            $errors['captcha'] = 'El codi de la imatge no és correcte. Torneu-lo a escriure.';
+        }
+        $ip = client_ip();
+        if (!$errors && Contact::tooMany($ip)) {
+            $errors['message'] = 'Ja ens heu escrit unes quantes vegades fa poc. Espereu una estona o escriviu-nos per correu.';
+        }
+
+        if ($errors) {
+            set_old($data);
+            flash('error', 'Reviseu les dades marcades.');
+            $this->contactPage($errors);
+
+            return;
+        }
+
+        $contact = Contact::create($data + ['domain' => Site::current(), 'ip' => $ip]);
+        Platform::log('contact_new', 'contact', (int) ($contact['id'] ?? 0), ['domini' => Site::current()]);
+        $this->notifyContact($contact);
+
+        flash('success', $thanks);
+        redirect('/contacte');
+    }
+
+    /**
+     * La imatge del captcha.
+     *
+     * No es guarda mai a la memòria cau: cada vegada que es demana, ha de ser
+     * la del repte que hi ha ara a la sessió.
+     */
+    public function captcha(): void
+    {
+        if (!Captcha::drawable()) {
+            abort(404, 'Aquest servidor no dibuixa imatges.');
+        }
+        // «Doneu-me'n un altre»: un repte nou, amb codi i rellotge nous.
+        if (isset($_GET['nou'])) {
+            Captcha::issue(self::CAPTCHA);
+        }
+        $png = Captcha::png(self::CAPTCHA);
+        header('Content-Type: image/png');
+        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+        header('X-Robots-Tag: noindex');
+        header('Content-Length: ' . strlen($png));
+        echo $png;
+        exit;
+    }
+
+    /** Pinta la pàgina de contacte amb un repte nou. */
+    private function contactPage(array $errors): void
+    {
+        Captcha::issue(self::CAPTCHA);
+        $this->page('platform/contact', [
+            'title' => (string) setting('contact_title', 'Parlem-ne'),
+            'description' => (string) setting('contact_intro', ''),
+            'errors' => $errors,
+            'captchaImage' => Captcha::isImage(self::CAPTCHA),
+            'captchaQuestion' => Captcha::question(self::CAPTCHA),
+        ]);
+    }
+
+    /**
+     * Avisa qui porta la plataforma que ha arribat un missatge.
+     *
+     * No se n'envia cap còpia a qui l'ha escrit. Seria còmode, però el
+     * formulari passaria a ser una manera d'enviar correus a qualsevol adreça
+     * en nom nostre: n'hi hauria prou d'escriure-hi la de la víctima.
+     */
+    private function notifyContact(array $contact): void
+    {
+        $notify = Platform::notifyEmail();
+        if ($notify === '' || !filter_var($notify, FILTER_VALIDATE_EMAIL)) {
+            return;
+        }
+        Mailer::sendTemplate(
+            $notify,
+            'Contacte: ' . $contact['name'] . ($contact['entity'] ? ' (' . $contact['entity'] . ')' : ''),
+            'contact-admin',
+            ['contact' => $contact, 'domain' => Site::current()],
+            ['reply_to' => (string) $contact['email']]
+        );
     }
 
     /** Vista de la plataforma, amb la seva plantilla. */

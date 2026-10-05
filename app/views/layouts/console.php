@@ -1,6 +1,7 @@
 <?php
 /** Plantilla del panell de superadministració. */
 use Cros\Core\Icons;
+use Cros\Platform\Contact;
 use Cros\Platform\Platform;
 use Cros\Platform\Request;
 use Cros\Platform\Site;
@@ -11,6 +12,7 @@ $path = \Cros\Core\Router::currentPath();
 $isActive = static fn (string $href): bool => $path === $href || ($href !== '/' && str_starts_with($path, $href));
 $pending = Request::pending();
 $waiting = Support::pending();
+$unread = Contact::unread();
 // El panell té la imatge del domini principal, tant si s'hi estan tocant els
 // textos d'un domini com d'un altre.
 $principal = Platform::domain();
@@ -49,6 +51,10 @@ $marca = static fn (string $key, string $default = ''): string => Site::value($p
     <a class="nav-link<?= $isActive('/sollicituds') ? ' is-active' : '' ?>" href="<?= e(url('/sollicituds')) ?>">
       <?= Icons::svg('mail', 'icon', 18) ?> Sol·licituds
       <?php if ($pending > 0): ?><span class="badge badge--amber"><?= $pending ?></span><?php endif; ?>
+    </a>
+    <a class="nav-link<?= $isActive('/contacte') ? ' is-active' : '' ?>" href="<?= e(url('/contacte')) ?>">
+      <?= Icons::svg('phone', 'icon', 18) ?> Contacte
+      <?php if ($unread > 0): ?><span class="badge badge--amber"><?= $unread ?></span><?php endif; ?>
     </a>
     <a class="nav-link<?= $isActive('/instancies') ? ' is-active' : '' ?>" href="<?= e(url('/instancies')) ?>"><?= Icons::svg('run', 'icon', 18) ?> Instàncies</a>
     <a class="nav-link<?= $isActive('/clients') ? ' is-active' : '' ?>" href="<?= e(url('/clients')) ?>"><?= Icons::svg('users', 'icon', 18) ?> Clients</a>

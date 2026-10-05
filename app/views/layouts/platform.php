@@ -78,10 +78,12 @@ $platformLogo = (string) setting('platform_logo', '');
       <?= \Cros\Core\Icons::svg('menu') ?>
     </button>
     <?php $funcionalitats = \Cros\Core\Settings::bool('features_enabled', true); ?>
+    <?php $contacte = \Cros\Core\Settings::bool('contact_enabled', true); ?>
     <nav class="nav" id="menu-plataforma" aria-label="Menú principal">
       <a href="<?= e(url('/')) ?>#cros"><?= e($llistat) ?></a>
       <?php if ($funcionalitats): ?><a href="<?= e(url('/funcionalitats')) ?>">Funcionalitats</a><?php endif; ?>
       <a href="<?= e(url('/')) ?>#com-va">Com funciona</a>
+      <?php if ($contacte): ?><a href="<?= e(url('/contacte')) ?>">Contacte</a><?php endif; ?>
       <a class="btn btn--accent btn--sm" href="<?= e(url('/')) ?>#formulari"><?= e($crida) ?></a>
     </nav>
   </div>
@@ -118,6 +120,7 @@ $platformLogo = (string) setting('platform_logo', '');
       <div>
         <h4>Contacte</h4>
         <ul class="footer-links">
+          <?php if ($contacte): ?><li><a href="<?= e(url('/contacte')) ?>">Formulari de contacte</a></li><?php endif; ?>
           <li><a href="mailto:<?= e(Platform::notifyEmail()) ?>"><?= e(Platform::notifyEmail()) ?></a></li>
         </ul>
       </div>

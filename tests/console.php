@@ -47,6 +47,7 @@ use Cros\Platform\Client;
 use Cros\Platform\Console;
 use Cros\Platform\Dns;
 use Cros\Platform\Health;
+use Cros\Platform\Contact;
 use Cros\Platform\Importer;
 use Cros\Platform\Instance;
 use Cros\Platform\Charge;
@@ -1362,6 +1363,181 @@ try {
     check('El client desa una imatge nova al seu panell', $desada['status'] === 302, 'estat ' . $desada['status']);
     check('I la plataforma la té al moment', $granadaImatge !== '' && is_file($site . '/tenants/lagranada/uploads/' . $granadaImatge),
         $granadaImatge !== '' ? $granadaImatge : 'cap');
+
+    echo "\n== La pàgina de contacte de la plataforma ==\n";
+    // La resposta del captcha viu a la sessió del servidor, com ha de ser. Les
+    // proves la hi van a buscar: la mateixa galeta que porta curl diu quin
+    // fitxer de sessió és.
+    $respostaCaptcha = static function (string $host = 'crosescolar.test') use ($jar): string {
+        // curl desa una galeta per amfitrió, i les que són «HttpOnly» les
+        // escriu amb aquest prefix davant del domini.
+        $cookie = '';
+        foreach (@file($jar) ?: [] as $line) {
+            $parts = explode("\t", trim($line));
+            $domain = preg_replace('/^#HttpOnly_/', '', $parts[0] ?? '');
+            if (count($parts) >= 7 && $parts[5] === 'cros_session' && ltrim((string) $domain, '.') === $host) {
+                $cookie = $parts[6];
+            }
+        }
+        foreach (array_unique([session_save_path() ?: '', '/var/lib/php/sessions', sys_get_temp_dir()]) as $dir) {
+            $file = rtrim($dir, '/') . '/sess_' . $cookie;
+            if ($cookie !== '' && $dir !== '' && is_file($file)) {
+                $raw = (string) @file_get_contents($file);
+                if (preg_match('/"platform-contact";a:\d+:\{[^}]*?s:6:"answer";s:\d+:"([^"]+)"/', $raw, $m)) {
+                    return $m[1];
+                }
+            }
+        }
+
+        return '';
+    };
+    $missatges = static fn (): int => (int) Db::val('SELECT COUNT(*) FROM platform_contacts', [], 0);
+    Platform::migrate();
+    Db::q('DELETE FROM platform_contacts');
+
+    $pagina = $web('GET', '/contacte', [], 'crosescolar.test');
+    check('Hi ha la pàgina de contacte', $pagina['status'] === 200, 'estat ' . $pagina['status']);
+    check('Amb el títol i l\'entradeta del domini', str_contains(text($pagina['body']), 'Parlem-ne')
+        && str_contains(text($pagina['body']), 'Escriviu-nos i us respondrem'));
+    $tots = true;
+    foreach (['name', 'entity', 'email', 'phone', 'message', 'privacy', 'news', 'captcha'] as $camp) {
+        $tots = $tots && str_contains($pagina['body'], 'name="' . $camp . '"');
+    }
+    check('Amb tots els camps: nom, entitat, correu, telèfon, missatge, privadesa i captcha', $tots);
+    check('El captcha és una imatge feta aquí mateix',
+        str_contains($pagina['body'], '/contacte/captcha.png') && !preg_match('#google|recaptcha|hcaptcha#i', $pagina['body']));
+    check('La casella de privadesa porta a la política',
+        str_contains($pagina['body'], 'href="' . 'http://crosescolar.test/privadesa"')
+        || str_contains($pagina['body'], '/privadesa" target="_blank"'));
+    check('El menú i el peu hi porten', substr_count($pagina['body'], '/contacte"') >= 2);
+
+    $imatge = $web('GET', '/contacte/captcha.png', [], 'crosescolar.test');
+    check('La imatge del captcha es dibuixa',
+        $imatge['status'] === 200 && str_starts_with($imatge['body'], "\x89PNG")
+        && str_contains(strtolower($imatge['headers']), 'image/png'), 'estat ' . $imatge['status']);
+    check('I no es guarda a cap memòria cau', str_contains(strtolower($imatge['headers']), 'no-store'));
+    $resposta = $respostaCaptcha();
+    check('La resposta és a la sessió del servidor', strlen($resposta) === 5, $resposta !== '' ? $resposta : 'no s\'ha trobat');
+
+    $dades = [
+        'name' => 'Núria Vidal', 'entity' => 'Club Atlètic de Prova', 'email' => 'nuria@example.cat',
+        'phone' => '+34 600 11 22 33', 'message' => "Hola! Voldríem muntar la cursa de primavera.\nEns truqueu?",
+        'privacy' => '1', 'news' => '1',
+    ];
+    $envia = static function (array $canvis) use ($web, $token, $dades): array {
+        $form = $web('GET', '/contacte', [], 'crosescolar.test');
+
+        return ['form' => $form, 'fields' => array_merge(['_token' => $token($form['body'])], $dades, $canvis)];
+    };
+
+    // Un codi equivocat no passa.
+    $intent = $envia([]);
+    sleep(3);
+    $mal = $web('POST', '/contacte', $intent['fields'] + ['captcha' => 'XXXXX'], 'crosescolar.test');
+    check('Amb el codi equivocat, no es desa res', $missatges() === 0);
+    check('I es diu per què', str_contains(text($mal['body']), 'El codi de la imatge no és correcte'));
+    check('Sense perdre el que s\'havia escrit', str_contains($mal['body'], 'Club Atlètic de Prova'));
+
+    // Massa de pressa, encara que el codi sigui bo: és un robot.
+    $intent = $envia([]);
+    $web('POST', '/contacte', $intent['fields'] + ['captcha' => $respostaCaptcha()], 'crosescolar.test');
+    check('Enviat en el mateix segon que es rep, no es desa', $missatges() === 0);
+
+    // El parany per a robots: rep el «gràcies» però no es desa res.
+    $intent = $envia(['website_url' => 'http://spam.example']);
+    $codi = $respostaCaptcha();
+    sleep(3);
+    $parany = $web('POST', '/contacte', $intent['fields'] + ['captcha' => $codi], 'crosescolar.test');
+    check('Qui cau al parany no deixa res a la safata', $parany['status'] === 302 && $missatges() === 0);
+
+    // Sense acceptar la privadesa, no.
+    $intent = $envia(['privacy' => '']);
+    $codi = $respostaCaptcha();
+    sleep(3);
+    $web('POST', '/contacte', $intent['fields'] + ['captcha' => $codi], 'crosescolar.test');
+    check('Sense acceptar la privadesa, no es desa', $missatges() === 0);
+
+    // I ara bé.
+    $intent = $envia([]);
+    $codi = $respostaCaptcha();
+    sleep(3);
+    $bo = $web('POST', '/contacte', $intent['fields'] + ['captcha' => strtolower($codi)], 'crosescolar.test');
+    $desat = Db::one('SELECT * FROM platform_contacts ORDER BY id DESC LIMIT 1');
+    check('Amb tot bé, el missatge es desa', $bo['status'] === 302 && $desat !== null, 'estat ' . $bo['status']);
+    check('Amb totes les dades', $desat !== null && $desat['name'] === 'Núria Vidal'
+        && $desat['entity'] === 'Club Atlètic de Prova' && $desat['email'] === 'nuria@example.cat'
+        && $desat['phone'] === '+34 600 11 22 33' && str_contains((string) $desat['message'], 'cursa de primavera')
+        && (int) $desat['news'] === 1 && !empty($desat['privacy_at']));
+    check('I sap de quin domini ve', ($desat['domain'] ?? '') === 'crosescolar.test', (string) ($desat['domain'] ?? ''));
+    check('Qui l\'ha enviat veu que ha arribat',
+        str_contains(text($web('GET', '/contacte', [], 'crosescolar.test')['body']), 'Hem rebut el vostre missatge'));
+    $log = (string) @file_get_contents($site . '/storage/logs/app-' . date('Y-m') . '.log');
+    check('I se n\'avisa la plataforma per correu', str_contains($log, 'Contacte: Núria Vidal'));
+
+    // El mateix codi no serveix dues vegades.
+    $intent = $envia([]);
+    sleep(3);
+    $web('POST', '/contacte', $intent['fields'] + ['captcha' => $codi], 'crosescolar.test');
+    check('Un codi ja gastat no torna a servir', $missatges() === 1);
+
+    // Una mateixa adreça no pot omplir la safata.
+    for ($i = 0; $i < Contact::PER_HOUR; $i++) {
+        Db::insert('platform_contacts', ['name' => 'Repetit', 'email' => 'r@example.cat', 'message' => 'Hola hola hola',
+            'privacy_at' => date('Y-m-d H:i:s'), 'status' => 'archived', 'ip' => '127.0.0.1',
+            'created_at' => date('Y-m-d H:i:s')]);
+    }
+    $intent = $envia([]);
+    $codi = $respostaCaptcha();
+    sleep(3);
+    $massa = $web('POST', '/contacte', $intent['fields'] + ['captcha' => $codi], 'crosescolar.test');
+    check('Massa missatges seguits des de la mateixa adreça, no', $missatges() === 1 + Contact::PER_HOUR
+        && str_contains(text($massa['body']), 'Ja ens heu escrit unes quantes vegades'));
+    Db::q("DELETE FROM platform_contacts WHERE name = 'Repetit'");
+
+    // L'altre domini té la seva pàgina, i el missatge ho recorda.
+    $altre = $web('GET', '/contacte', [], 'esportweb.test');
+    check('L\'altre domini també té la pàgina de contacte', $altre['status'] === 200);
+    $botoFuncionalitats = $web('GET', '/funcionalitats', [], 'crosescolar.test');
+    check('El botó «Pregunta\'ns el que et calgui» porta a la pàgina de contacte',
+        preg_match('#href="[^"]*/contacte">Pregunta\'ns el que et calgui#', html_entity_decode($botoFuncionalitats['body'], ENT_QUOTES)) === 1);
+
+    // Un domini que no la vulgui, no la té, ni al menú.
+    Db::q("INSERT INTO settings (k, v) VALUES ('site:esportweb.test:contact_enabled', '0')
+        ON DUPLICATE KEY UPDATE v = VALUES(v)");
+    $tancada = $web('GET', '/contacte', [], 'esportweb.test');
+    check('Desactivada en un domini, no hi és', $tancada['status'] === 404, 'estat ' . $tancada['status']);
+    check('Ni surt al seu menú', !str_contains($web('GET', '/', [], 'esportweb.test')['body'], '/contacte"'));
+    check('I a l\'altre domini continua igual', $web('GET', '/contacte', [], 'crosescolar.test')['status'] === 200);
+    check('El botó de funcionalitats torna al correu',
+        !str_contains($web('GET', '/funcionalitats', [], 'esportweb.test')['body'], '/contacte">Pregunta'));
+    Db::q("UPDATE settings SET v = '1' WHERE k = 'site:esportweb.test:contact_enabled'");
+
+    echo "\n== L'apartat de Contacte del panell ==\n";
+    $web('POST', '/acces', ['_token' => $token($web('GET', '/acces')['body']),
+        'email' => 'super@crosescolar.test', 'password' => 'unaClauBenLlarga1']);
+    $safata = $web('GET', '/contacte');
+    check('Hi ha l\'apartat de Contacte', $safata['status'] === 200, 'estat ' . $safata['status']);
+    check('Amb el missatge que ha arribat', str_contains($safata['body'], 'Núria Vidal')
+        && str_contains($safata['body'], 'crosescolar.test'));
+    check('I la xifra dels que queden per llegir al menú',
+        preg_match('#/contacte">\s*<svg[^>]*>.*?</svg>\s*Contacte\s*<span class="badge badge--amber">1</span>#s', $safata['body']) === 1);
+    $id = (int) $desat['id'];
+    $fitxa = $web('GET', '/contacte/' . $id);
+    check('El missatge s\'obre sencer', $fitxa['status'] === 200
+        && str_contains($fitxa['body'], '+34 600 11 22 33') && str_contains($fitxa['body'], 'Ens truqueu?')
+        && str_contains($fitxa['body'], 'mailto:nuria@example.cat'));
+    check('I en obrir-lo queda llegit', (string) Contact::find($id)['status'] === 'read');
+    $web('POST', '/contacte/' . $id . '/accio', ['_token' => $token($fitxa['body']), 'action' => 'answered']);
+    check('Es pot marcar com a respost', (string) Contact::find($id)['status'] === 'answered');
+    $web('POST', '/contacte/' . $id . '/accio', ['_token' => $token($web('GET', '/contacte/' . $id)['body']), 'action' => 'archived']);
+    check('Un cop arxivat, ja no és a la safata', !str_contains($web('GET', '/contacte')['body'], 'Núria Vidal'));
+    check('Sinó als arxivats', str_contains($web('GET', '/contacte?estat=archived')['body'], 'Núria Vidal'));
+    check('Es pot cercar', str_contains($web('GET', '/contacte?estat=archived&q=primavera')['body'], 'Núria Vidal')
+        && !str_contains($web('GET', '/contacte?estat=archived&q=res-de-res')['body'], 'Núria Vidal'));
+    $web('POST', '/contacte/' . $id . '/accio', ['_token' => $token($web('GET', '/contacte/' . $id)['body']), 'action' => 'delete']);
+    check('I esborrar', Contact::find($id) === null);
+    check('Els textos de la pàgina es configuren per domini',
+        str_contains($web('GET', '/configuracio/contact')['body'], 'name="contact_intro"'));
 
     echo "\n== Desestimar una sol·licitud ==\n";
     $home = $web('GET', '/', [], 'crosescolar.test');

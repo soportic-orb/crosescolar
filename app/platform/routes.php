@@ -14,6 +14,7 @@ use Cros\Core\Router;
 use Cros\Platform\Controllers\ChargeController;
 use Cros\Platform\Controllers\ConfigController;
 use Cros\Platform\Controllers\ConsoleController;
+use Cros\Platform\Controllers\ContactController;
 use Cros\Platform\Controllers\InstanceController;
 use Cros\Platform\Controllers\MailoutController;
 use Cros\Platform\Controllers\RequestController;
@@ -85,6 +86,11 @@ if (($mode ?? 'platform') === 'console') {
     $router->post('/enviaments/{id:\d+}/tanda', [MailoutController::class, 'batch']);
     $router->post('/enviaments/{id:\d+}/esborrar', [MailoutController::class, 'destroy']);
 
+    /* Els missatges del formulari de contacte de les webs públiques. */
+    $router->get('/contacte', [ContactController::class, 'index']);
+    $router->get('/contacte/{id:\d+}', [ContactController::class, 'show']);
+    $router->post('/contacte/{id:\d+}/accio', [ContactController::class, 'action']);
+
     $router->get('/instancies', [InstanceController::class, 'index']);
     $router->get('/instancies/nova', [InstanceController::class, 'create']);
     $router->post('/instancies/nova', [InstanceController::class, 'store']);
@@ -103,6 +109,9 @@ $router->get('/benvinguda', [SiteController::class, 'welcome']);
 $router->post('/sollicitud', [SiteController::class, 'request']);
 $router->get('/sollicitud/{code}', [SiteController::class, 'sent']);
 $router->get('/funcionalitats', [SiteController::class, 'features']);
+$router->get('/contacte', [SiteController::class, 'contact']);
+$router->post('/contacte', [SiteController::class, 'contactSend']);
+$router->get('/contacte/captcha.png', [SiteController::class, 'captcha']);
 // L'avís de Stripe sobre els pagaments de la plataforma. Va al web públic
 // perquè no hi ha sessió: qui truca és el servidor de Stripe.
 $router->post('/pagament/avis', [SiteController::class, 'stripeWebhook']);
