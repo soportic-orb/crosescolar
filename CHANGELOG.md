@@ -3,6 +3,21 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.43.0] — 2026-10-05
+
+### Afegit
+- **El formulari d'alta diu al moment si l'adreça triada està lliure.** Mentre
+  s'escriu el subdomini, a sota surt si es pot fer servir o si ja és d'un altre
+  web (o està reservat, o no és vàlid), sense haver d'enviar el formulari. Si
+  no està lliure, en proposa una de semblant (`-2`, `-3`… o amb l'any) que es
+  posa amb un clic, i el formulari no s'envia fins que se'n tria una de bona.
+  Si es deixa en blanc, diu quina sortirà del nom.
+
+### Canviat
+- Si es deixa l'adreça en blanc i la que surt del nom ja és d'un altre, l'alta
+  fa servir una de semblant en comptes de tornar el formulari amb un error en
+  un camp que no s'havia omplert.
+
 ## [1.42.0] — 2026-10-05
 
 ### Afegit

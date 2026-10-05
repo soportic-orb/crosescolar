@@ -93,6 +93,22 @@
   color: var(--ink-soft, #5a6b60); font-size: .95rem;
 }
 
+/* Si l'adreça està lliure, dit mentre s'escriu */
+.slug-status { display: block; font-size: .88rem; font-weight: 600; }
+.slug-status[hidden] { display: none; }
+.slug-status::before {
+  content: ""; display: inline-block; width: .6rem; height: .6rem; margin-right: .45rem;
+  border-radius: 999px; background: currentColor;
+}
+.slug-status--checking { color: var(--ink-soft, #5a6b60); font-weight: 400; }
+.slug-status--ok { color: var(--green-700, #2f6b3c); }
+.slug-status--taken { color: var(--accent-dark, #b3261e); }
+.slug-status button {
+  font: inherit; font-weight: 700; color: inherit; background: none; border: 0; padding: 0;
+  text-decoration: underline; cursor: pointer;
+}
+.slug-field input.is-taken { border-color: var(--accent-dark, #b3261e); }
+
 /* El banner amb imatge de fons ------------------------------------------- */
 /* La imatge i el vel venen de la configuració, per això van a variables. */
 .platform-hero--image { background: var(--platform-dark, #10261a); }

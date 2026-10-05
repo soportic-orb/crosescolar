@@ -213,7 +213,9 @@ foreach ($faqs as $faq) {
       <div class="field<?= isset($errors['slug']) ? ' field--error' : '' ?>">
         <label for="slug">L'adreça que voleu</label>
         <div class="slug-field">
-          <input type="text" id="slug" name="slug" value="<?= e($old('slug')) ?>" placeholder="<?= e($exemple) ?>">
+          <input type="text" id="slug" name="slug" value="<?= e($old('slug')) ?>" placeholder="<?= e($exemple) ?>"
+                 autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="30"
+                 aria-describedby="slug-status" data-slug-check="<?= e(url('/registre/adreca')) ?>">
           <?php if (count($domains) > 1): ?>
             <select name="domain" aria-label="Domini">
               <?php foreach ($domains as $option): ?>
@@ -229,6 +231,7 @@ foreach ($faqs as $faq) {
           El vostre panell serà aquesta mateixa adreça acabada amb <code>/admin</code>.
         </span>
         <?php if (isset($errors['slug'])): ?><span class="field__error"><?= e($errors['slug']) ?></span><?php endif; ?>
+        <span class="slug-status" id="slug-status" role="status" aria-live="polite" hidden></span>
       </div>
 
       <div class="field<?= isset($errors['client_kind']) ? ' field--error' : '' ?>">

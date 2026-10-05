@@ -164,15 +164,69 @@ final class Signup
     /** Un subdomini a partir del nom que hagin escrit. */
     public static function suggest(string $name): string
     {
-        $slug = mb_strtolower(trim($name));
-        $slug = strtr($slug, [
+        return mb_substr((string) preg_replace('/[^a-z0-9]+/', '', self::plain($name)), 0, 30);
+    }
+
+    /** En minúscules i sense accents, que és com van les adreces. */
+    private static function plain(string $text): string
+    {
+        return strtr(mb_strtolower(trim($text)), [
             'à' => 'a', 'á' => 'a', 'ä' => 'a', 'â' => 'a', 'è' => 'e', 'é' => 'e', 'ë' => 'e',
             'ê' => 'e', 'í' => 'i', 'ì' => 'i', 'ï' => 'i', 'î' => 'i', 'ò' => 'o', 'ó' => 'o',
             'ö' => 'o', 'ô' => 'o', 'ú' => 'u', 'ù' => 'u', 'ü' => 'u', 'û' => 'u', 'ç' => 'c',
             'ñ' => 'n', '·' => '',
         ]);
-        $slug = (string) preg_replace('/[^a-z0-9]+/', '', $slug);
+    }
 
-        return mb_substr($slug, 0, 30);
+    /**
+     * Una adreça lliure que s'assembli a la que es volia.
+     *
+     * Es fa servir quan la que s'ha escrit ja és d'un altre: primer amb el
+     * número darrere (-2, -3…) i, si totes són agafades, amb l'any. Torna ''
+     * si no se'n troba cap, cosa que vol dir que la base no val.
+     */
+    public static function alternative(string $slug): string
+    {
+        // El que no sigui lletra o número fa de guió, com en una adreça bona.
+        $base = trim((string) preg_replace('/[^a-z0-9]+/', '-', self::plain($slug)), '-');
+        if ($base === '') {
+            return '';
+        }
+        // Si només fallava la manera d'escriure-la, ja n'hi ha prou d'arreglar-la.
+        if ($base !== mb_strtolower(trim($slug)) && Instance::slugProblem($base) === '') {
+            return $base;
+        }
+        $tails = [];
+        for ($n = 2; $n <= 9; $n++) {
+            $tails[] = '-' . $n;
+        }
+        $tails[] = '-' . date('Y');
+        foreach ($tails as $tail) {
+            $candidate = rtrim(mb_substr($base, 0, 30 - strlen($tail)), '-') . $tail;
+            if (Instance::slugProblem($candidate) === '') {
+                return $candidate;
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * Què passa amb una adreça: si es pot fer servir i, si no, per què i quina
+     * altra s'hi podria posar. És el que consulta el formulari mentre s'escriu.
+     *
+     * @return array{slug:string,ok:bool,message:string,alternative:string}
+     */
+    public static function availability(string $slug): array
+    {
+        $slug = mb_strtolower(trim($slug));
+        $problem = Instance::slugProblem($slug);
+
+        return [
+            'slug' => $slug,
+            'ok' => $problem === '',
+            'message' => $problem,
+            'alternative' => $problem === '' ? '' : self::alternative($slug),
+        ];
     }
 }

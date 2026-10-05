@@ -306,4 +306,89 @@
     };
     window.requestAnimationFrame(frame);
   })();
+
+  /* Registre: si l'adreça triada està lliure, dit mentre s'escriu -------- */
+  // Es pregunta al servidor quan s'ha deixat d'escriure una estona. Si ja és
+  // d'un altre, el formulari no s'envia fins que es canvia, i se'n proposa una
+  // de semblant que es pot posar amb un clic. Si la consulta falla, no passa
+  // res: el servidor ho torna a mirar en enviar.
+  (function () {
+    var input = document.querySelector('[data-slug-check]');
+    var status = document.getElementById('slug-status');
+    if (!input || !status || !window.fetch) { return; }
+    var form = input.form;
+    var name = form ? form.querySelector('[name="site_name"]') : null;
+    var domain = form ? form.querySelector('select[name="domain"]') : null;
+    var domainText = input.parentNode.querySelector('span');
+    var serverError = input.closest('.field').querySelector('.field__error');
+    var timer = null;
+    var asked = 0;
+
+    function host(slug) {
+      var tail = domain ? domain.value : (domainText ? domainText.textContent.replace(/^\./, '') : '');
+      return slug + (tail ? '.' + tail : '');
+    }
+
+    function show(kind, parts) {
+      status.className = 'slug-status slug-status--' + kind;
+      status.textContent = '';
+      parts.forEach(function (part) { status.appendChild(typeof part === 'string' ? document.createTextNode(part) : part); });
+      status.hidden = false;
+    }
+
+    function clear() {
+      status.hidden = true;
+      input.classList.remove('is-taken');
+      input.setCustomValidity('');
+    }
+
+    function answer(data) {
+      if (!data.slug) { clear(); return; }
+      if (data.ok) {
+        input.classList.remove('is-taken');
+        input.setCustomValidity('');
+        show('ok', [data.from_name ? 'Farem servir ' + host(data.slug) + '.' : host(data.slug) + ' està lliure.']);
+        return;
+      }
+      input.classList.add('is-taken');
+      input.setCustomValidity(data.message);
+      var parts = [data.message];
+      if (data.alternative) {
+        var use = document.createElement('button');
+        use.type = 'button';
+        use.textContent = host(data.alternative);
+        use.addEventListener('click', function () {
+          input.value = data.alternative;
+          input.focus();
+          check();
+        });
+        parts.push(' Podeu fer servir ', use, '.');
+      }
+      show('taken', parts);
+    }
+
+    function check() {
+      window.clearTimeout(timer);
+      var slug = input.value.trim();
+      var nom = name ? name.value.trim() : '';
+      if (slug === '' && nom === '') { clear(); return; }
+      var mine = ++asked;
+      timer = window.setTimeout(function () {
+        if (slug !== '') { show('checking', ['Mirant si està lliure…']); }
+        var url = input.getAttribute('data-slug-check') + '?slug=' + encodeURIComponent(slug) + '&nom=' + encodeURIComponent(nom);
+        fetch(url, { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+          .then(function (response) { if (!response.ok) { throw new Error(); } return response.json(); })
+          .then(function (data) { if (mine === asked) { answer(data); } })
+          .catch(function () { if (mine === asked) { clear(); } });
+      }, 350);
+    }
+
+    input.addEventListener('input', function () {
+      if (serverError) { serverError.hidden = true; input.closest('.field').classList.remove('field--error'); }
+      check();
+    });
+    if (name) { name.addEventListener('input', function () { if (input.value.trim() === '') { check(); } }); }
+    if (domain) { domain.addEventListener('change', function () { if (!status.hidden) { check(); } }); }
+    if (input.value.trim() !== '' || (name && name.value.trim() !== '')) { check(); }
+  })();
 })();

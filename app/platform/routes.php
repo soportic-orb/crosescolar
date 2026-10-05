@@ -105,6 +105,8 @@ if (($mode ?? 'platform') === 'console') {
 $router->get('/', [SiteController::class, 'home']);
 // El registre lliure: el web es crea al moment i l'accés va per correu.
 $router->post('/registre', [SiteController::class, 'signup']);
+// Si l'adreça triada està lliure, que el formulari consulta mentre s'escriu.
+$router->get('/registre/adreca', [SiteController::class, 'slugCheck']);
 $router->get('/benvinguda', [SiteController::class, 'welcome']);
 $router->post('/sollicitud', [SiteController::class, 'request']);
 $router->get('/sollicitud/{code}', [SiteController::class, 'sent']);

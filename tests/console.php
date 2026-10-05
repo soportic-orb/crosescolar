@@ -2084,6 +2084,8 @@ try {
         str_contains($portada['body'], 'value="esportweb.test"')
         && str_contains($portada['body'], 'value="crosescolar.test"'));
     check('I diu on serà el panell', str_contains(text($portada['body']), '/admin'));
+    check('L\'adreça es comprova mentre s\'escriu',
+        str_contains($portada['body'], 'data-slug-check="') && str_contains($portada['body'], 'id="slug-status"'));
     check('I demana quina mena de client és',
         str_contains($portada['body'], 'name="client_kind"')
         && str_contains($portada['body'], 'value="person"')
@@ -2154,6 +2156,42 @@ try {
     check('Sense cap drecera per entrar-hi sense el correu',
         !str_contains($benvinguda['body'], '/admin/clau/'));
     check('Tornar-hi no ensenya res', $web('GET', '/benvinguda', [], 'esportweb.test')['status'] === 302);
+
+    // Mentre s'escriu l'adreça, el formulari pregunta si està lliure.
+    $adreca = static function (array $query) use ($web): array {
+        $resposta = $web('GET', '/registre/adreca?' . http_build_query($query), [], 'esportweb.test');
+
+        return ['status' => $resposta['status'], 'headers' => $resposta['headers'],
+            'data' => (array) json_decode($resposta['body'], true)];
+    };
+    $agafada = $adreca(['slug' => 'lariera']);
+    check('Una adreça que ja és d\'un altre es diu al moment',
+        $agafada['status'] === 200 && ($agafada['data']['ok'] ?? true) === false
+        && str_contains((string) ($agafada['data']['message'] ?? ''), 'Ja hi ha'),
+        json_encode($agafada['data']));
+    check('I se\'n proposa una de semblant que està lliure',
+        ($agafada['data']['alternative'] ?? '') === 'lariera-2');
+    check('La resposta és JSON i no es guarda',
+        str_contains(strtolower($agafada['headers']), 'application/json')
+        && str_contains(strtolower($agafada['headers']), 'no-store'));
+    $lliure = $adreca(['slug' => 'LaRieraNova']);
+    check('Una de lliure es dona per bona',
+        ($lliure['data']['ok'] ?? false) === true && ($lliure['data']['slug'] ?? '') === 'larieranova'
+        && ($lliure['data']['alternative'] ?? 'x') === '');
+    $reservada = $adreca(['slug' => 'admin']);
+    check('Una de reservada també es diu',
+        ($reservada['data']['ok'] ?? true) === false
+        && str_contains((string) ($reservada['data']['message'] ?? ''), 'reservat'));
+    $malescrita = $adreca(['slug' => 'La Riera de Dalt']);
+    check('Una de mal escrita en proposa la bona',
+        ($malescrita['data']['ok'] ?? true) === false && ($malescrita['data']['alternative'] ?? '') === 'la-riera-de-dalt');
+    $delNom = $adreca(['slug' => '', 'nom' => 'La Riera']);
+    check('Sense adreça, es mira la que sortiria del nom, i si és d\'un altre se\'n fa servir una de semblant',
+        ($delNom['data']['ok'] ?? false) === true && ($delNom['data']['slug'] ?? '') === 'lariera-2'
+        && ($delNom['data']['from_name'] ?? false) === true, json_encode($delNom['data']));
+    check('Sense res, no diu res', ($adreca([])['data']['message'] ?? 'x') === '');
+    check('Els cercadors no hi han d\'entrar',
+        str_contains($web('GET', '/robots.txt', [], 'esportweb.test')['body'], 'Disallow: /registre'));
 
     check('Al panell hi surt marcada com a pendent de validar',
         str_contains($web('GET', '/instancies')['body'], 'Correu per validar'));

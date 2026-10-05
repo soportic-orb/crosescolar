@@ -83,8 +83,13 @@ class SiteController extends Controller
             'consent' => input_bool('consent') ? '1' : '',
         ];
         // Qui no s'hagi mirat l'adreça, que en tingui una de raonable.
+        // I si la que surt del nom ja és d'un altre, una que s'hi assembli: no
+        // té sentit queixar-se d'un camp que no han omplert.
         if ($data['slug'] === '') {
             $data['slug'] = Signup::suggest($data['site_name']);
+            if (Instance::slugProblem($data['slug']) !== '') {
+                $data['slug'] = Signup::alternative($data['slug']) ?: $data['slug'];
+            }
         }
 
         $errors = Signup::check($data);
@@ -108,6 +113,34 @@ class SiteController extends Controller
 
         $_SESSION['signup'] = ['slug' => $alta['slug'], 'url' => $alta['url'], 'email' => $alta['email']];
         redirect('/benvinguda');
+    }
+
+    /**
+     * Si una adreça està lliure, consultat mentre s'escriu al formulari.
+     *
+     * Així qui la tria sap de seguida si ja és d'un altre i la pot canviar
+     * abans d'enviar res. Si no hi ha adreça però sí nom, es mira la que en
+     * sortiria, que és la que es faria servir.
+     */
+    public function slugCheck(): void
+    {
+        header('Cache-Control: no-store');
+        header('X-Robots-Tag: noindex');
+        $slug = trim((string) input('slug'));
+        $fromName = $slug === '';
+        if ($fromName) {
+            $slug = Signup::suggest((string) input('nom'));
+        }
+        if ($slug === '') {
+            json_out(['slug' => '', 'ok' => false, 'message' => '', 'alternative' => '', 'from_name' => $fromName]);
+        }
+        $result = Signup::availability(mb_substr($slug, 0, 60));
+        // Una adreça que surt del nom i que ja és d'un altre no és un error de
+        // ningú: ja es farà servir la semblant.
+        if ($fromName && !$result['ok'] && $result['alternative'] !== '') {
+            $result = Signup::availability($result['alternative']);
+        }
+        json_out($result + ['from_name' => $fromName]);
     }
 
     /** Torna a la portada amb el formulari i els errors marcats. */
