@@ -13,10 +13,38 @@ i el versionatge semàntic.
   posa amb un clic, i el formulari no s'envia fins que se'n tria una de bona.
   Si es deixa en blanc, diu quina sortirà del nom.
 
+- **Tornar a enviar el correu de benvinguda.** Si no arriba, la pantalla que
+  surt després de l'alta té el botó «No m'ha arribat: torneu-me'l a enviar»
+  (un cop per minut, tres vegades com a molt). A la fitxa de la instància, al
+  Panell de Superadministració, també hi ha el botó «Tornar a enviar el correu
+  de benvinguda» mentre el correu no estigui validat.
+- **La plataforma apunta els correus que envia** i si han sortit o no. A la
+  fitxa de cada instància hi ha els últims que s'han enviat a qui l'administra,
+  amb el motiu si n'hi ha cap que no ha sortit.
+- Nou mètode d'enviament per als webs de les curses: **«El servidor de correu
+  de la plataforma»**. Els correus surten pel servidor SMTP de la plataforma,
+  amb el nom del web com a remitent, l'adreça de la plataforma i les respostes
+  adreçades a qui organitza la cursa.
+
 ### Canviat
 - Si es deixa l'adreça en blanc i la que surt del nom ja és d'un altre, l'alta
   fa servir una de semblant en comptes de tornar el formulari amb un error en
   un camp que no s'havia omplert.
+- **Els webs nous envien pel servidor de correu de la plataforma.** Fins ara
+  naixien amb la funció mail() del servidor i cap SMTP, i els correus que
+  envia el mateix web (codis d'accés de les famílies, confirmacions
+  d'inscripció, correus de prova…) podien no arribar o anar a parar al correu
+  brossa. En actualitzar, els webs de la plataforma que encara tenien això de
+  sèrie (mail() i cap servidor SMTP escrit) passen a fer servir el de la
+  plataforma. Els que tenen el seu propi SMTP el conserven.
+- Quan un correu no surt, el panell diu per què (la resposta del servidor de
+  correu) en comptes d'un «reviseu la configuració» genèric. Això inclou l'alta
+  d'un web nou, que abans donava el correu per enviat passés el que passés.
+
+### Corregit
+- El correu de benvinguda deia que, si l'enllaç caducava, se'n podia demanar
+  un de nou a la pantalla d'accés, però allà no hi ha aquesta opció. Ara diu
+  que ens escriguin.
 
 ## [1.42.0] — 2026-10-05
 

@@ -112,6 +112,28 @@ class Instance
         return Db::one('SELECT * FROM instances WHERE slug = :slug', ['slug' => mb_strtolower(trim($slug))]);
     }
 
+    /**
+     * Els últims correus que la plataforma ha enviat a una adreça, amb com han
+     * anat. Si encara no hi ha on mirar-ho (falta la migració), cap.
+     *
+     * @return array<int,array<string,mixed>>
+     */
+    public static function emails(string $email, int $limit = 5): array
+    {
+        $email = mb_strtolower(trim($email));
+        if ($email === '') {
+            return [];
+        }
+        try {
+            return Db::all(
+                'SELECT * FROM email_log WHERE LOWER(recipient) = :email ORDER BY id DESC LIMIT ' . max(1, $limit),
+                ['email' => $email]
+            );
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
+
     /** @return array<int,array<string,mixed>> */
     public static function all(string $status = ''): array
     {

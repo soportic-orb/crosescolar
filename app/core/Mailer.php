@@ -9,13 +9,56 @@ namespace Cros\Core;
  */
 class Mailer
 {
+    /** Per què ha fallat l'últim enviament, o '' si ha anat bé. */
+    private static string $lastError = '';
+
+    /**
+     * Com envia la plataforma, un cop llegit: una tanda d'enviaments no ha
+     * d'obrir una connexió a la plataforma per a cada correu.
+     *
+     * @var array<string,mixed>|null|false  false vol dir que encara no s'ha mirat
+     */
+    private static $platformMail = false;
+
+    /** Per què no ha sortit l'últim correu, per poder-ho dir a qui ho ha demanat. */
+    public static function lastError(): string
+    {
+        return self::$lastError;
+    }
+
     /**
      * Envia un correu HTML.
      * @param array{reply_to?:string,text?:string,attachments?:array<int,array{name:string,content:string,type:string}>,bcc?:string} $options
      */
     public static function send(string $to, string $subject, string $html, array $options = []): bool
     {
+        self::$lastError = '';
+        $transport = (string) setting('mail_transport', 'mail');
+        $smtp = self::smtpConfig();
         $fromEmail = (string) setting('mail_from_email', '');
+        $replyTo = (string) ($options['reply_to'] ?? '');
+        if ($replyTo === '') {
+            $replyTo = (string) setting('mail_reply_to', '');
+        }
+        // El web d'una cursa que és a la plataforma envia pel servidor de correu
+        // d'ella, que és el que té el domini preparat perquè els correus arribin.
+        // Surt amb el nom del web i l'adreça de la plataforma, i les respostes
+        // van a qui organitza la cursa.
+        if ($transport === 'platform') {
+            $platform = self::platformMail();
+            if ($platform === null) {
+                $transport = 'mail';
+            } else {
+                $transport = $platform['transport'];
+                $smtp = $platform['smtp'];
+                if ($platform['from_email'] !== '') {
+                    $fromEmail = $platform['from_email'];
+                }
+                if ($replyTo === '') {
+                    $replyTo = (string) setting('contact_email', '');
+                }
+            }
+        }
         if ($fromEmail === '') {
             $host = parse_url(base_url(), PHP_URL_HOST) ?: 'localhost';
             $fromEmail = 'no-reply@' . preg_replace('/^www\./', '', (string) $host);
@@ -35,9 +78,7 @@ class Mailer
             'Date: ' . date('r'),
             'Message-ID: <' . bin2hex(random_bytes(12)) . '@' . (parse_url(base_url(), PHP_URL_HOST) ?: 'localhost') . '>',
         ];
-        if (!empty($options['reply_to'])) {
-            $headers[] = 'Reply-To: ' . $options['reply_to'];
-        } elseif ($replyTo = (string) setting('mail_reply_to', '')) {
+        if ($replyTo !== '') {
             $headers[] = 'Reply-To: ' . $replyTo;
         }
         if (!empty($options['bcc'])) {
@@ -73,7 +114,6 @@ class Mailer
         }
 
         $encodedSubject = self::encodeName($subject);
-        $transport = (string) setting('mail_transport', 'mail');
 
         try {
             if ($transport === 'log') {
@@ -84,9 +124,10 @@ class Mailer
                 return true;
             }
             $sent = $transport === 'smtp'
-                ? self::smtpSend($fromEmail, $to, $encodedSubject, $headers, $body, $options)
+                ? self::smtpSend($smtp, $fromEmail, $to, $encodedSubject, $headers, $body, $options)
                 : @mail($to, $encodedSubject, $body, implode("\r\n", $headers));
         } catch (\Throwable $e) {
+            self::$lastError = $e->getMessage();
             log_line('mail', 'Error enviant correu', ['to' => $to, 'error' => $e->getMessage()]);
             self::logEmail($to, $subject, 'error', $e->getMessage());
             return false;
@@ -94,6 +135,7 @@ class Mailer
 
         self::logEmail($to, $subject, $sent ? 'sent' : 'error', $sent ? '' : 'L\'enviament ha fallat');
         if (!$sent) {
+            self::$lastError = 'El servidor no ha acceptat el correu (' . $transport . ').';
             log_line('mail', 'Enviament fallit', ['to' => $to, 'subject' => $subject, 'transport' => $transport]);
         }
         return (bool) $sent;
@@ -138,14 +180,75 @@ class Mailer
         return trim($text);
     }
 
-    /** Enviament per SMTP amb autenticació. */
-    private static function smtpSend(string $from, string $to, string $subject, array $headers, string $body, array $options = []): bool
+    /**
+     * Les dades del servidor SMTP de la configuració que hi ha activa.
+     *
+     * @return array{host:string,port:int,user:string,pass:string,secure:string}
+     */
+    private static function smtpConfig(): array
     {
-        $host = (string) setting('smtp_host', '');
-        $port = (int) setting('smtp_port', 587);
-        $user = (string) setting('smtp_user', '');
-        $pass = (string) setting('smtp_pass', '');
-        $secure = (string) setting('smtp_secure', 'tls'); // tls | ssl | none
+        return [
+            'host' => (string) setting('smtp_host', ''),
+            'port' => (int) setting('smtp_port', 587),
+            'user' => (string) setting('smtp_user', ''),
+            'pass' => (string) setting('smtp_pass', ''),
+            'secure' => (string) setting('smtp_secure', 'tls'), // tls | ssl | none
+        ];
+    }
+
+    /**
+     * Com envia la plataforma, vist des del web d'una cursa. Torna null si
+     * aquest web no és en cap plataforma o no s'hi pot arribar.
+     *
+     * @return array{transport:string,from_email:string,smtp:array{host:string,port:int,user:string,pass:string,secure:string}}|null
+     */
+    private static function platformMail(): ?array
+    {
+        if (self::$platformMail !== false) {
+            return self::$platformMail;
+        }
+
+        return self::$platformMail = self::readPlatformMail();
+    }
+
+    /** @return array{transport:string,from_email:string,smtp:array{host:string,port:int,user:string,pass:string,secure:string}}|null */
+    private static function readPlatformMail(): ?array
+    {
+        if (!class_exists(\Cros\Platform\Bridge::class) || !\Cros\Platform\Bridge::available()) {
+            return null;
+        }
+        try {
+            $mail = \Cros\Platform\Bridge::run(static fn (): array => [
+                'transport' => (string) setting('mail_transport', 'mail'),
+                'from_email' => (string) setting('mail_from_email', ''),
+                'smtp' => self::smtpConfig(),
+            ], null, true);
+        } catch (\Throwable $e) {
+            log_line('mail', 'No s\'ha pogut llegir el correu de la plataforma', ['error' => $e->getMessage()]);
+
+            return null;
+        }
+        // La plataforma no en pot tenir cap altre, però per si de cas: que no
+        // es quedi donant voltes.
+        if (!in_array($mail['transport'], ['mail', 'smtp', 'log'], true)) {
+            $mail['transport'] = 'mail';
+        }
+
+        return $mail;
+    }
+
+    /**
+     * Enviament per SMTP amb autenticació.
+     *
+     * @param array{host:string,port:int,user:string,pass:string,secure:string} $smtp
+     */
+    private static function smtpSend(array $smtp, string $from, string $to, string $subject, array $headers, string $body, array $options = []): bool
+    {
+        $host = $smtp['host'];
+        $port = $smtp['port'] > 0 ? $smtp['port'] : 587;
+        $user = $smtp['user'];
+        $pass = $smtp['pass'];
+        $secure = $smtp['secure'];
         if ($host === '') {
             throw new \RuntimeException('No s\'ha configurat cap servidor SMTP.');
         }

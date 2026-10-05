@@ -212,6 +212,13 @@ class Installer
 
         // Els correus surten amb el nom del web, no amb el de qui el va fer.
         Settings::set('mail_from_name', (string) $this->data['site_name']);
+        // Un web que neix dins d'una plataforma envia pel servidor de correu
+        // d'ella: el web nou no en té cap de configurat, i la funció mail() del
+        // servidor sovint no envia res o va a parar al correu brossa.
+        $transport = (string) ($this->data['mail_transport'] ?? '');
+        if (in_array($transport, ['platform', 'mail', 'smtp', 'log'], true)) {
+            Settings::set('mail_transport', $transport);
+        }
 
         // El poc que se sap del client des del primer dia: el poble i el nom de
         // qui hi ha al darrere. La resta l'anirà escrivint ell mateix.

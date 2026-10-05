@@ -376,8 +376,8 @@ return [
         'description' => 'Enviament dels correus de confirmació i avisos.',
         'admin_only' => true,
         'fields' => [
-            'mail_transport' => ['label' => 'Mètode d\'enviament', 'type' => 'select', 'default' => 'mail', 'options' => ['mail' => 'Funció mail() del servidor', 'smtp' => 'Servidor SMTP', 'log' => 'Assaig: no enviar res'],
-                'help' => 'Amb «assaig» els correus no surten del servidor, però queden al registre de correus com si s\'haguessin enviat. Serveix per provar-ho tot sense escriure a ningú.'],
+            'mail_transport' => ['label' => 'Mètode d\'enviament', 'type' => 'select', 'default' => 'mail', 'options' => ['platform' => 'El servidor de correu de la plataforma', 'mail' => 'Funció mail() del servidor', 'smtp' => 'Servidor SMTP', 'log' => 'Assaig: no enviar res'],
+                'help' => 'Si el web és en una plataforma, el més segur és enviar pel seu servidor de correu: els correus surten amb el nom del web i les respostes us arriben a vosaltres. Amb «assaig» els correus no surten del servidor, però queden al registre de correus com si s\'haguessin enviat. Serveix per provar-ho tot sense escriure a ningú.'],
             'mail_from_name' => ['label' => 'Nom del remitent', 'type' => 'text', 'default' => ''],
             'mail_from_email' => ['label' => 'Adreça del remitent', 'type' => 'email', 'default' => ''],
             'mail_reply_to' => ['label' => 'Respondre a', 'type' => 'email', 'default' => ''],

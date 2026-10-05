@@ -97,6 +97,7 @@ class Provisioner
                 'admin_email' => (string) $data['admin_email'],
                 'admin_pass' => $password,
                 'demo' => !empty($data['demo']) ? '1' : '',
+                'mail_transport' => 'platform',
             ], [
                 'config_file' => $dir . '/config.php',
                 'storage_dir' => $dir . '/storage',
@@ -140,10 +141,20 @@ class Provisioner
             // gestionarà el cros entra amb un enllaç i se'n posa una de seva.
             $access = Instance::accessLink($created['instance'], 'welcome', $root, 'Alta de la instància');
             $link = $access['ok'] ? $access['url'] : '';
-            self::welcome($data, $slug, $link, $root, $domain);
-            $steps['welcome'] = $link !== ''
-                ? 'Enllaç d\'accés enviat a ' . $data['admin_email'] . '.'
-                : 'No s\'ha pogut crear l\'enllaç d\'accés: ' . $access['error'];
+            $sent = self::welcome($data, $slug, $link, $root, $domain);
+            if ($link === '') {
+                $steps['welcome'] = 'No s\'ha pogut crear l\'enllaç d\'accés: ' . $access['error'];
+            } elseif ($sent) {
+                $steps['welcome'] = 'Enllaç d\'accés enviat a ' . $data['admin_email'] . '.';
+            } else {
+                // El web ja hi és i no s'ha de desfer per això: el correu es pot
+                // tornar a enviar des del panell. Però que quedi dit.
+                $steps['welcome'] = 'No s\'ha pogut enviar el correu a ' . $data['admin_email'] . ': '
+                    . (Mailer::lastError() ?: 'reviseu la configuració del correu.');
+                log_line('platform', 'No s\'ha pogut enviar el correu de benvinguda', [
+                    'slug' => $slug, 'to' => $data['admin_email'], 'error' => Mailer::lastError(),
+                ]);
+            }
 
             Platform::log('instance_create', 'instance', $created['instance'], ['slug' => $slug]);
         } catch (\Throwable $e) {
@@ -313,15 +324,52 @@ class Provisioner
         }
     }
 
-    /** Avisa qui gestionarà el cros, amb l'adreça i l'enllaç per entrar-hi. */
-    private static function welcome(array $data, string $slug, string $link, string $root, string $domain = ''): void
+    /**
+     * Torna a enviar el correu de benvinguda, amb un enllaç d'estrena nou.
+     *
+     * Per quan no ha arribat: l'enllaç que portava encara valdria, però no se
+     * sap quin era (no es desa enlloc), i un de nou és el mateix per a qui el rep.
+     *
+     * @return array{ok:bool,email:string,error:string}
+     */
+    public static function resendWelcome(int $id, ?string $root = null, string $note = 'Correu de benvinguda reenviat'): array
+    {
+        $root = $root ?? CROS_ROOT;
+        $instance = Instance::find($id);
+        if (!$instance) {
+            return ['ok' => false, 'email' => '', 'error' => 'No hi ha aquesta instància.'];
+        }
+        $access = Instance::accessLink($id, 'welcome', $root, $note);
+        if (!$access['ok']) {
+            return ['ok' => false, 'email' => '', 'error' => $access['error']];
+        }
+        $client = !empty($instance['client_id']) ? Client::find((int) $instance['client_id']) : null;
+        $email = $access['email'];
+        $sent = self::welcome([
+            'admin_email' => $email,
+            'admin_name' => (string) ($client['contact_name'] ?? ''),
+            'site_name' => (string) $instance['site_name'],
+            'source' => (string) ($instance['source'] ?? ''),
+        ], (string) $instance['slug'], $access['url'], $root, (string) ($instance['domain'] ?? ''));
+        Platform::log($sent ? 'welcome_resent' : 'welcome_failed', 'instance', $id, ['correu' => $email]);
+
+        return [
+            'ok' => $sent,
+            'email' => $email,
+            'error' => $sent ? '' : (Mailer::lastError() ?: 'El correu no ha sortit.'),
+        ];
+    }
+
+    /** Avisa qui gestionarà el cros, amb l'adreça i l'enllaç per entrar-hi. Diu si ha sortit. */
+    private static function welcome(array $data, string $slug, string $link, string $root, string $domain = ''): bool
     {
         $email = (string) $data['admin_email'];
         if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            return;
+            return false;
         }
         $signup = (string) ($data['source'] ?? '') === 'signup';
-        Mailer::sendTemplate(
+
+        return Mailer::sendTemplate(
             $email,
             $signup ? 'Confirmeu el correu i entreu al vostre panell' : 'Ja teniu el web del vostre cros',
             'instance-welcome',

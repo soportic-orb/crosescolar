@@ -441,6 +441,26 @@ try {
     ], 'santjordi.crosescolar.test');
     check('Qui gestiona el cros entra amb la contrasenya que s\'ha triat', $entered['status'] === 302);
 
+    // Un web de la plataforma no té servidor de correu propi: envia pel d'ella.
+    $correusJordi = $web('GET', '/admin/correus', [], 'santjordi.crosescolar.test');
+    $prova = $web('POST', '/admin/correus/prova', [
+        '_token' => $token($correusJordi['body']), 'to' => 'laia@example.cat',
+    ], 'santjordi.crosescolar.test');
+    $jordiPdo = new PDO(
+        sprintf('mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4', $db['host'], $db['port'], $prefix . 'santjordi'),
+        $db['admin_user'], $db['admin_pass'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+    );
+    check('Un web creat des de la plataforma envia pel correu d\'ella',
+        $jordiPdo->query("SELECT v FROM settings WHERE k = 'mail_transport'")->fetchColumn() === 'platform');
+    $provaRegistre = $jordiPdo->query("SELECT status, error FROM email_log WHERE subject LIKE 'Prova de correu%' ORDER BY id DESC LIMIT 1")
+        ->fetch(PDO::FETCH_ASSOC);
+    check('I un correu del web surt',
+        $prova['status'] === 302 && is_array($provaRegistre) && $provaRegistre['status'] === 'sent',
+        'estat ' . $correusJordi['status'] . '/' . $prova['status'] . ' ' . json_encode($provaRegistre));
+    $logJordi = (string) @file_get_contents($site . '/tenants/santjordi/storage/logs/app-' . date('Y-m') . '.log');
+    check('Amb la manera d\'enviar de la plataforma, no amb la funció mail() del servidor',
+        str_contains($logJordi, 'Assaig') && str_contains($logJordi, 'Prova de correu'));
+
     check('El client no pot actualitzar el codi de tothom',
         $web('GET', '/admin/actualitzacions', [], 'santjordi.crosescolar.test')['status'] === 403);
     check('Ni li surt al menú',
@@ -2146,6 +2166,10 @@ try {
     check('Amb la mena de client que ha dit', Client::kindOf($fitxa) === 'company');
     $correus = (string) @file_get_contents($site . '/storage/logs/app-' . date('Y-m') . '.log');
     check('Se li envia el correu de confirmació', str_contains($correus, 'ona@example.cat'));
+    $registreCorreu = Db::one("SELECT * FROM email_log WHERE recipient = 'ona@example.cat' ORDER BY id DESC LIMIT 1");
+    check('I la plataforma apunta que ha sortit',
+        $registreCorreu !== null && (string) $registreCorreu['status'] === 'sent'
+        && str_contains((string) $registreCorreu['subject'], 'Confirmeu el correu'));
 
     $benvinguda = $web('GET', '/benvinguda', [], 'esportweb.test');
     check('La pantalla de després diu on mirar',
@@ -2156,6 +2180,13 @@ try {
     check('Sense cap drecera per entrar-hi sense el correu',
         !str_contains($benvinguda['body'], '/admin/clau/'));
     check('Tornar-hi no ensenya res', $web('GET', '/benvinguda', [], 'esportweb.test')['status'] === 302);
+    check('Si no arriba, des d\'allà mateix el poden tornar a demanar',
+        str_contains($benvinguda['body'], '/benvinguda/reenviar'));
+    $massaAviat = $web('POST', '/benvinguda/reenviar', ['_token' => $token($benvinguda['body'])], 'esportweb.test');
+    check('Però no tot seguit: cal esperar una mica',
+        $massaAviat['status'] === 200 && str_contains(text($massaAviat['body']), 'Espereu un minut'));
+    check('I sense sessió d\'alta no es pot demanar per a cap altre web',
+        $web('POST', '/benvinguda/reenviar', ['_token' => $token($web('GET', '/', [], 'crosescolar.test')['body'])], 'crosescolar.test')['status'] === 302);
 
     // Mentre s'escriu l'adreça, el formulari pregunta si està lliure.
     $adreca = static function (array $query) use ($web): array {
@@ -2196,6 +2227,21 @@ try {
     check('Al panell hi surt marcada com a pendent de validar',
         str_contains($web('GET', '/instancies')['body'], 'Correu per validar'));
 
+    // Si no li ha arribat, el correu de benvinguda es pot tornar a enviar.
+    $fitxaRiera = $web('GET', '/instancies/' . (int) $riera['id']);
+    check('La fitxa diu quins correus li hem enviat i com han anat',
+        str_contains($fitxaRiera['body'], 'Últims correus') && str_contains(text($fitxaRiera['body']), 'Confirmeu el correu'));
+    check('I, mentre no l\'ha validat, deixa tornar a enviar la benvinguda',
+        str_contains($fitxaRiera['body'], 'value="welcome"'));
+    $abansCorreus = (int) Db::val("SELECT COUNT(*) FROM email_log WHERE recipient = 'ona@example.cat'", [], 0);
+    $reenviat = $web('POST', '/instancies/' . (int) $riera['id'] . '/accio',
+        ['_token' => $token($fitxaRiera['body']), 'action' => 'welcome']);
+    check('Es torna a enviar des del panell', $reenviat['status'] === 302
+        && (int) Db::val("SELECT COUNT(*) FROM email_log WHERE recipient = 'ona@example.cat'", [], 0) === $abansCorreus + 1);
+    check('I ho diu', str_contains(text($web('GET', '/instancies/' . (int) $riera['id'])['body']), 'enviat de nou a ona@example.cat'));
+    check('I queda al registre de la instància',
+        Db::one("SELECT * FROM platform_activity WHERE action = 'welcome_resent' AND subject_id = :id", ['id' => (int) $riera['id']]) !== null);
+
     // El botó del correu: entra al panell i, alhora, valida l'adreça.
     $porta = Instance::accessLink((int) $riera['id'], 'welcome', $site, 'Prova del registre');
     check('Es pot fer l\'enllaç d\'estrena', $porta['ok'], (string) $porta['error']);
@@ -2218,6 +2264,10 @@ try {
     );
     $quan = $seuaPdo->query("SELECT email_verified_at FROM users WHERE email = 'ona@example.cat'")->fetchColumn();
     check('I al seu propi web també', $quan !== null && $quan !== false);
+
+    // El web nou no té servidor de correu propi: envia pel de la plataforma.
+    $transportRiera = $seuaPdo->query("SELECT v FROM settings WHERE k = 'mail_transport'")->fetchColumn();
+    check('El web nou neix enviant pel correu de la plataforma', $transportRiera === 'platform', (string) $transportRiera);
 
     // Amb les altes tancades no se'n pot fer cap més.
     $altes = $web('GET', '/configuracio/requests?domini=esportweb.test');

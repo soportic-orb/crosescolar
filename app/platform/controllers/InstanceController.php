@@ -382,6 +382,7 @@ class InstanceController extends Controller
                 ['s' => 'instance', 'id' => $instance['id']]
             ),
             'url' => Instance::url($instance),
+            'emails' => Instance::emails((string) ($instance['admin_email'] ?? '')),
             'fresh' => $fresh,
         ], 'layouts/console');
     }
@@ -456,11 +457,27 @@ class InstanceController extends Controller
                     flash('error', 'No s\'ha pogut crear l\'enllaç: ' . $link['error']);
                     break;
                 }
-                Mailer::sendTemplate($link['email'], 'Enllaç per entrar al panell', 'access-link', [
+                $sent = Mailer::sendTemplate($link['email'], 'Enllaç per entrar al panell', 'access-link', [
                     'site_name' => (string) $instance['site_name'],
                     'link' => $link['url'],
                 ]);
-                flash('success', 'Enllaç d\'accés enviat a ' . $link['email'] . '. Val dues hores i serveix un sol cop.');
+                flash(
+                    $sent ? 'success' : 'error',
+                    $sent
+                        ? 'Enllaç d\'accés enviat a ' . $link['email'] . '. Val dues hores i serveix un sol cop.'
+                        : 'No s\'ha pogut enviar el correu a ' . $link['email'] . ': ' . Mailer::lastError()
+                );
+                break;
+            case 'welcome':
+                // El correu de benvinguda no ha arribat: un de nou, amb un enllaç
+                // d'estrena nou, que en prémer-lo també valida l'adreça.
+                $resend = Provisioner::resendWelcome($id, null, 'Reenviat des del panell de la plataforma');
+                flash(
+                    $resend['ok'] ? 'success' : 'error',
+                    $resend['ok']
+                        ? 'Correu de benvinguda enviat de nou a ' . $resend['email'] . '.'
+                        : 'No s\'ha pogut enviar el correu de benvinguda: ' . $resend['error']
+                );
                 break;
             case 'support':
                 $link = Instance::accessLink($id, 'support', null, 'Suport des de la plataforma');

@@ -36,7 +36,7 @@ $signup = !empty($signup);
     <?php if ($signup): ?>
       Aquest botó fa dues coses alhora: confirma que aquesta adreça és vostra i us fa entrar
       al panell, on us podreu posar la contrasenya que vulgueu. Serveix una sola vegada i val
-      set dies; si caduca, demaneu-ne un de nou des de la pantalla d'accés.
+      set dies; si caduca, escriviu-nos i us n'enviarem un altre.
     <?php else: ?>
       Aquest enllaç serveix una sola vegada i val set dies. En prémer-lo entrareu al panell i
       us podreu posar la contrasenya que vulgueu. Si caduca, demaneu-nos-en un altre.

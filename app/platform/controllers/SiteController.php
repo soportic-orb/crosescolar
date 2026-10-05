@@ -11,6 +11,7 @@ use Cros\Core\View;
 use Cros\Platform\Contact;
 use Cros\Platform\Instance;
 use Cros\Platform\Platform;
+use Cros\Platform\Provisioner;
 use Cros\Platform\Request;
 use Cros\Platform\Seo;
 use Cros\Platform\Signup;
@@ -112,7 +113,53 @@ class SiteController extends Controller
         }
 
         $_SESSION['signup'] = ['slug' => $alta['slug'], 'url' => $alta['url'], 'email' => $alta['email']];
+        // Per si el correu no arriba: des d'aquesta mateixa sessió se'l poden
+        // tornar a enviar, poques vegades i sense poder triar l'adreça.
+        $_SESSION['signup_resend'] = [
+            'id' => (int) $alta['instance_id'], 'slug' => $alta['slug'], 'url' => $alta['url'],
+            'email' => $alta['email'], 'count' => 0, 'at' => time(),
+        ];
         redirect('/benvinguda');
+    }
+
+    /** Quantes vegades es pot tornar a enviar la benvinguda, i cada quant. */
+    private const RESEND_MAX = 3;
+    private const RESEND_WAIT = 60;
+
+    /** «No m'ha arribat»: torna a enviar el correu de benvinguda. */
+    public function resendWelcome(): void
+    {
+        $this->checkCsrf();
+        $alta = (array) ($_SESSION['signup_resend'] ?? []);
+        if ((int) ($alta['id'] ?? 0) === 0) {
+            redirect('/');
+        }
+        $instance = Instance::find((int) $alta['id']);
+        $notice = ['type' => 'error', 'text' => ''];
+        if (!$instance || !empty($instance['verified_at'])) {
+            // Ja ha entrat (o el web ja no hi és): no cal res més.
+            unset($_SESSION['signup_resend']);
+            flash('success', 'Aquest correu ja està confirmat. Podeu entrar al vostre panell.');
+            redirect('/');
+        } elseif ((int) $alta['count'] >= self::RESEND_MAX) {
+            $notice['text'] = 'Ja us l\'hem tornat a enviar unes quantes vegades. Si no us arriba, escriviu-nos.';
+        } elseif (time() - (int) $alta['at'] < self::RESEND_WAIT) {
+            $notice['text'] = 'Espereu un minut abans de tornar-lo a demanar: de vegades triga una mica.';
+        } else {
+            $resend = Provisioner::resendWelcome((int) $alta['id'], null, 'Reenviat a petició de qui s\'ha donat d\'alta');
+            $_SESSION['signup_resend']['count'] = (int) $alta['count'] + 1;
+            $_SESSION['signup_resend']['at'] = time();
+            $notice = $resend['ok']
+                ? ['type' => 'success', 'text' => 'Us l\'hem tornat a enviar. Mireu també el correu brossa.']
+                : ['type' => 'error', 'text' => 'Ara mateix no us el podem enviar. Proveu-ho d\'aquí una estona o escriviu-nos.'];
+        }
+        $this->page('platform/signup-done', [
+            'title' => 'Ja teniu el vostre web',
+            'noindex' => true,
+            'alta' => $alta,
+            'notice' => $notice,
+            'canResend' => (int) ($_SESSION['signup_resend']['count'] ?? self::RESEND_MAX) < self::RESEND_MAX,
+        ]);
     }
 
     /**
@@ -167,6 +214,7 @@ class SiteController extends Controller
             'title' => 'Ja teniu el vostre web',
             'noindex' => true,
             'alta' => $alta,
+            'canResend' => isset($_SESSION['signup_resend']),
         ]);
     }
 

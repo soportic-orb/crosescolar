@@ -164,7 +164,9 @@ class ToolsController extends Controller
         $ok = Mailer::send($to, 'Prova de correu — ' . site_name(),
             '<p>Aquest és un correu de prova enviat des del panell de ' . e(site_name()) . '.</p>'
             . '<p>Si el rebeu, la configuració de correu funciona correctament.</p>');
-        flash($ok ? 'success' : 'error', $ok ? 'Correu de prova enviat a ' . $to : 'No s\'ha pogut enviar el correu. Reviseu la configuració.');
+        flash($ok ? 'success' : 'error', $ok
+            ? 'Correu de prova enviat a ' . $to
+            : 'No s\'ha pogut enviar el correu: ' . (Mailer::lastError() ?: 'reviseu la configuració.'));
         redirect('/admin/correus');
     }
 

@@ -7,6 +7,8 @@
  * seria saltar-se la validació del correu.
  *
  * @var array{slug:string,url:string,email:string} $alta
+ * @var bool $canResend                    si encara es pot demanar que es torni a enviar
+ * @var array{type:string,text:string} $notice  com ha anat, si s'acaba de demanar
  */
 use Cros\Core\Icons;
 ?>
@@ -30,10 +32,22 @@ use Cros\Core\Icons;
         </p>
       </div>
 
+      <?php if (!empty($notice['text'])): ?>
+        <div class="alert alert--<?= ($notice['type'] ?? '') === 'success' ? 'success' : 'error' ?>" role="status" style="margin-top:1.2rem;text-align:left">
+          <?= e((string) $notice['text']) ?>
+        </div>
+      <?php endif; ?>
+
       <p class="field__hint" style="margin-top:1.4rem">
         Si no us arriba en uns minuts, mireu la carpeta de correu brossa. El vostre panell
         serà sempre a <code><?= e(preg_replace('#^https?://#', '', (string) $alta['url'])) ?>/admin</code>.
       </p>
+      <?php if (!empty($canResend)): ?>
+        <form method="post" action="<?= e(url('/benvinguda/reenviar')) ?>" style="margin-top:.6rem">
+          <?= csrf_field() ?>
+          <button class="btn btn--ghost btn--sm" type="submit">No m'ha arribat: torneu-me'l a enviar</button>
+        </form>
+      <?php endif; ?>
       <div class="flex" style="justify-content:center;margin-top:1.2rem">
         <a class="btn btn--ghost" href="<?= e(url('/')) ?>">Tornar a la portada</a>
       </div>

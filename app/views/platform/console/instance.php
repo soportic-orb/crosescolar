@@ -68,7 +68,33 @@ $status = (string) $instance['status'];
           <?php elseif ((string) ($instance['source'] ?? '') === 'signup'): ?>
             <span class="badge badge--amber" title="Encara no ha fet servir l'enllaç d'estrena">Correu per validar</span>
           <?php endif; ?>
+          <?php if (empty($instance['verified_at']) && !in_array($status, ['cancelled', 'purged'], true) && !empty($instance['admin_email'])): ?>
+            <form method="post" action="<?= e(url('/instancies/' . (int) $instance['id'] . '/accio')) ?>" style="display:inline">
+              <?= csrf_field() ?>
+              <input type="hidden" name="action" value="welcome">
+              <button class="btn btn--ghost btn--sm" type="submit">Tornar a enviar el correu de benvinguda</button>
+            </form>
+          <?php endif; ?>
         </td></tr>
+        <?php if (!empty($emails)): ?>
+          <tr><th>Últims correus</th><td>
+            <?php foreach ($emails as $correu): ?>
+              <div style="margin-bottom:.25rem">
+                <?php if ((string) $correu['status'] === 'sent'): ?>
+                  <span class="badge badge--green">Enviat</span>
+                <?php else: ?>
+                  <span class="badge badge--red" title="<?= e((string) ($correu['error'] ?? '')) ?>">No ha sortit</span>
+                <?php endif; ?>
+                <?= e((string) $correu['subject']) ?>
+                <span class="text-soft">· <?= e(dt((string) $correu['created_at'])) ?></span>
+                <?php if ((string) $correu['status'] !== 'sent' && !empty($correu['error'])): ?>
+                  <br><small class="text-soft"><?= e((string) $correu['error']) ?></small>
+                <?php endif; ?>
+              </div>
+            <?php endforeach; ?>
+            <small class="text-soft">Si diu «Enviat» i no li ha arribat, que miri el correu brossa.</small>
+          </td></tr>
+        <?php endif; ?>
         <tr><th>D'on surt</th><td>
           <?= (string) ($instance['source'] ?? 'console') === 'signup'
               ? 'Alta feta des del web, sense passar pel panell'
