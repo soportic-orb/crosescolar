@@ -163,7 +163,14 @@ envia, la que hi ha a Configuració → Correu.
    llegeixi. Si és `no-reply@…` i no existeix, les devolucions es perden i no
    hi ha manera de saber què passa.
 2. **Activeu el DKIM** del domini. A Nominalia: Àrea de client → el domini →
-   EMAIL → ACCIONES → DKIM → On. Microsoft hi dona molt de pes.
+   EMAIL → ACCIONES → DKIM → On. Microsoft hi dona molt de pes. Nominalia hi
+   posa dos CNAME, `key-nomi001._domainkey` i `key-nomi002._domainkey`, que
+   apunten a `securemail.pro`. El que signa és el primer; el segon pot no
+   tenir encara cap clau al darrere (és el de recanvi). Per comprovar-ho:
+   `dig +short TXT key-nomi001._domainkey.crosescolar.cat` ha de tornar un
+   `v=DKIM1; …`. Que el registre hi sigui no vol dir que se signi: només se
+   signa el que surt pel servidor SMTP de Nominalia amb una bústia del domini,
+   i ho confirma la capçalera del correu rebut (punt 3).
 3. **Envieu una prova** des del panell d'un web de cursa a una bústia
    d'Outlook o Hotmail i mireu què torna. Els codis més habituals:
 
