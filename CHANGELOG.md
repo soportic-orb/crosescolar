@@ -3,7 +3,7 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
-## [1.43.0] — 2026-10-05
+## [1.43.0] — 2026-10-06
 
 ### Afegit
 - **El formulari d'alta diu al moment si l'adreça triada està lliure.** Mentre

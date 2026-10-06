@@ -5,6 +5,6 @@
  */
 return [
     'version' => '1.43.0',
-    'released' => '2026-10-05',
+    'released' => '2026-10-06',
     'min_php' => '8.0.0',
 ];
