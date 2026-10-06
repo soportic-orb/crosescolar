@@ -85,6 +85,9 @@ jobs:
       - name: Proves dels enviaments de correu
         run: php tests/mailings.php
 
+      - name: Proves de com es construeix un correu
+        run: php tests/mailer.php
+
       - name: Proves dels límits de pujada
         run: php tests/pujades.php
 

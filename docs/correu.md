@@ -151,3 +151,30 @@ de cada domini.
   `tenants/<web>/storage/logs/`) hi apunta l'adreça de qui envia i l'error.
 - Si diu que ha sortit i no arriba: correu brossa, i reviseu el SPF, el DKIM i
   el DMARC d'aquell domini amb el punt 3.
+
+## 5. Si no arriben a Outlook, Hotmail o Microsoft 365
+
+Microsoft és el més estricte. Un correu que Gmail accepta, Microsoft el pot
+rebutjar o enviar al correu brossa. Per saber per què, cal el **missatge de
+devolució** (el «no s'ha pogut lliurar»), que Microsoft envia a l'adreça de qui
+envia, la que hi ha a Configuració → Correu.
+
+1. **Que l'adreça de qui envia sigui una bústia que existeixi** i que algú
+   llegeixi. Si és `no-reply@…` i no existeix, les devolucions es perden i no
+   hi ha manera de saber què passa.
+2. **Activeu el DKIM** del domini. A Nominalia: Àrea de client → el domini →
+   EMAIL → ACCIONES → DKIM → On. Microsoft hi dona molt de pes.
+3. **Envieu una prova** des del panell d'un web de cursa a una bústia
+   d'Outlook o Hotmail i mireu què torna. Els codis més habituals:
+
+| Codi a la devolució | Què vol dir | Què cal fer |
+|---|---|---|
+| `550 5.7.1 … (S3150)` | L'adreça IP del servidor de correu és a la llista de bloqueig de Microsoft. Passa sovint amb els servidors compartits dels allotjaments. | Passeu la devolució al suport del proveïdor de correu (Nominalia) perquè en demani la retirada a Microsoft, o feu servir un servei d'enviament que no hi sigui. |
+| `550 5.7.512` | El remitent (`From`) no compleix la norma. | Arreglat a la 1.45.0: ara els noms amb comes o parèntesis van entre cometes. |
+| `550 5.7.515` | Microsoft demana SPF, DKIM i DMARC correctes. | Reviseu els tres registres (punt 2 i punt 3). |
+| `550 5.7.606`–`5.7.649` | L'adreça IP està bloquejada a Microsoft 365. | Demaneu-ne la retirada a [sender.office.com](https://sender.office.com) amb l'adreça IP que surt a la devolució. |
+| No torna res, però no arriba | Ha anat al correu brossa o a la quarantena de l'organització. | Que la persona miri «Correu brossa». A Microsoft 365, l'administrador de la seva organització ho pot veure a la quarantena. |
+
+Si el correu arriba però va al correu brossa, que la persona el marqui com a
+«No és correu brossa». També ajuda que el DKIM i el DMARC passin i que
+l'adreça de qui envia sigui sempre la mateixa.

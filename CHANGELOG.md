@@ -3,6 +3,27 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.45.0] — 2026-10-06
+
+### Corregit
+- **Correus que Microsoft (Outlook, Hotmail, Microsoft 365) rebutjava.** Un
+  nom de remitent amb comes, parèntesis o punts (per exemple «Cros Escolar, La
+  Granada») sortia sense cometes, i la capçalera semblava portar dues adreces.
+  La majoria de servidors ho deixen passar, però Microsoft rebutja el correu
+  (550 5.7.512). Ara aquests noms van entre cometes. Els noms amb accents van
+  codificats sencers, amb comes incloses.
+- Els assumptes llargs amb accents van partits en trossos de la mida que diu
+  la norma, en comptes d'un sol bloc massa llarg.
+- La còpia oculta (Bcc) ja no apareix a les capçaleres del missatge quan
+  s'envia per SMTP: només la reben, sense que es vegi.
+- L'identificador del missatge (Message-ID) porta el domini de qui envia.
+
+### Afegit
+- Proves de com es construeix un correu, línia per línia, amb un servidor SMTP
+  de prova (`tests/mailer.php`).
+- A la guia del correu (`docs/correu.md`), què fer quan no arriben a Microsoft:
+  els codis de devolució més habituals i com resoldre'ls.
+
 ## [1.44.0] — 2026-10-06
 
 ### Afegit

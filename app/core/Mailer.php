@@ -72,17 +72,19 @@ class Mailer
         $mixedBoundary = 'm' . bin2hex(random_bytes(12));
         $attachments = $options['attachments'] ?? [];
 
+        // L'identificador del missatge, amb el domini de qui envia: alguns
+        // servidors (els de Microsoft, sobretot) desconfien d'un correu que
+        // diu venir d'un domini i porta l'identificador d'un altre.
+        $messageDomain = substr((string) strrchr($fromEmail, '@'), 1)
+            ?: (parse_url(base_url(), PHP_URL_HOST) ?: 'localhost');
         $headers = [
             'MIME-Version: 1.0',
-            'From: ' . self::encodeName($fromName) . ' <' . $fromEmail . '>',
+            'From: ' . self::address($fromEmail, $fromName),
             'Date: ' . date('r'),
-            'Message-ID: <' . bin2hex(random_bytes(12)) . '@' . (parse_url(base_url(), PHP_URL_HOST) ?: 'localhost') . '>',
+            'Message-ID: <' . bin2hex(random_bytes(12)) . '@' . $messageDomain . '>',
         ];
         if ($replyTo !== '') {
             $headers[] = 'Reply-To: ' . $replyTo;
-        }
-        if (!empty($options['bcc'])) {
-            $headers[] = 'Bcc: ' . $options['bcc'];
         }
 
         $alternative = "--{$boundary}\r\n"
@@ -113,7 +115,6 @@ class Mailer
             $body = $alternative;
         }
 
-        $encodedSubject = self::encodeName($subject);
 
         try {
             if ($transport === 'log') {
@@ -123,9 +124,15 @@ class Mailer
                 self::logEmail($to, $subject, 'sent');
                 return true;
             }
+            // La còpia oculta va només al sobre (RCPT TO), mai a les capçaleres:
+            // si hi anés, tothom veuria qui la rep. La funció mail() la treu ella
+            // mateixa de les capçaleres, per això allà sí que s'hi posa.
             $sent = $transport === 'smtp'
-                ? self::smtpSend($smtp, $fromEmail, $to, $encodedSubject, $headers, $body, $options)
-                : @mail($to, $encodedSubject, $body, implode("\r\n", $headers));
+                ? self::smtpSend($smtp, $fromEmail, $to, self::encodeHeader($subject, strlen('Subject: ')), $headers, $body, $options)
+                : @mail($to, self::encodeName($subject), $body, implode("\r\n", array_merge(
+                    $headers,
+                    !empty($options['bcc']) ? ['Bcc: ' . $options['bcc']] : []
+                )));
         } catch (\Throwable $e) {
             self::$lastError = $e->getMessage();
             log_line('mail', 'Error enviant correu', ['to' => $to, 'from' => $fromEmail, 'error' => $e->getMessage()]);
@@ -161,6 +168,69 @@ class Mailer
         } catch (\Throwable $e) {
             // ignora
         }
+    }
+
+    /**
+     * Una adreça amb nom per a les capçaleres (From, To…), ben escrita.
+     *
+     * Un nom amb accents va codificat; un nom sense accents però amb signes
+     * com la coma o els parèntesis va entre cometes. Sense cometes, «Cros
+     * Escolar, La Granada <hola@…>» semblarien dues adreces, i els servidors de
+     * Microsoft rebutgen el correu (550 5.7.512) mentre que d'altres el deixen
+     * passar.
+     */
+    public static function address(string $email, string $name = ''): string
+    {
+        $name = trim((string) preg_replace('/[\r\n\t]+/', ' ', $name));
+        if ($name === '') {
+            return $email;
+        }
+        if (preg_match('/[\x80-\xFF]/', $name)) {
+            $phrase = self::encodeHeader($name, strlen('From: '));
+        } elseif (preg_match('/^[A-Za-z0-9!#$%&\'*+\/=?^_`{|}~ -]+$/', $name)) {
+            $phrase = $name;
+        } else {
+            $phrase = '"' . addcslashes($name, '"\\') . '"';
+        }
+
+        return $phrase . ' <' . $email . '>';
+    }
+
+    /**
+     * Un text per a una capçalera: tal qual si és ASCII i, si no, codificat i
+     * partit en trossos de la mida que mana la norma (RFC 2047), que un
+     * assumpte llarg en un sol bloc també fa desconfiar alguns servidors.
+     *
+     * @param int $prefix quants caràcters porta la línia abans del text («Subject: »)
+     */
+    public static function encodeHeader(string $value, int $prefix = 0): string
+    {
+        $value = trim((string) preg_replace('/[\r\n]+/', ' ', $value));
+        if (!preg_match('/[\x80-\xFF]/', $value)) {
+            return $value;
+        }
+
+        // Tot el text codificat, a trossos de com a molt 75 caràcters per
+        // tros (i la primera línia comptant el que hi ha al davant), sense
+        // partir mai una lletra de més d'un byte. Codificar-ho tot, i no només
+        // les paraules amb accents, evita que una coma quedi fora i trenqui la
+        // capçalera.
+        $words = [];
+        $chunk = '';
+        $room = max(3, intdiv(75 - 12 - $prefix, 4) * 3);
+        foreach (mb_str_split($value, 1, 'UTF-8') as $char) {
+            if ($chunk !== '' && strlen($chunk . $char) > $room) {
+                $words[] = $chunk;
+                $chunk = '';
+                $room = 45; // les línies de continuació: «␠=?UTF-8?B?» + 60 + «?=»
+            }
+            $chunk .= $char;
+        }
+        if ($chunk !== '') {
+            $words[] = $chunk;
+        }
+
+        return implode("\r\n ", array_map(static fn (string $w): string => '=?UTF-8?B?' . base64_encode($w) . '?=', $words));
     }
 
     public static function encodeName(string $value): string
