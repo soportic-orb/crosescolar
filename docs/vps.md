@@ -403,6 +403,18 @@ crontab -u www-data -e
 15 5 * * 1   cd /var/www/crosescolar && php tools/platform.php purgar --de-veritat
 ```
 
+Per comprovar que les feines hi són i funcionen:
+
+```bash
+crontab -u www-data -l                                   # han de sortir les quatre línies
+cd /var/www/crosescolar && sudo -u www-data php tools/platform.php copies
+```
+
+L'última ordre fa les còpies al moment i diu, de cada instància, si ha sortit
+bé o per què no. Si el tauler del panell avisa que una instància «fa dies que no
+es copia», també hi diu quin dels dos casos és: que el cron no passa, o que
+passa però la còpia d'aquella instància falla, i per què.
+
 I la renovació del certificat, **al cron de root** (no al de `www-data`:
 renovar demana permisos que el servidor web no ha de tenir mai):
 

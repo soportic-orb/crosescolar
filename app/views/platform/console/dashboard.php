@@ -123,10 +123,31 @@ $certAvis = ($certificate['checked_at'] ?? '') !== ''
 <?php endif; ?>
 
 <?php if ($unsaved && (int) $stats['instances'] > 0): ?>
+  <?php
+  // Dues coses molt diferents: que el cron no passi, o que passi però la
+  // còpia d'alguna instància falli. Cadascuna s'arregla d'una altra manera.
+  $cronPassa = !empty($backupRun) && strtotime((string) $backupRun) > time() - 86400 * 2;
+  ?>
   <div class="alert alert--warning mt-2">
     <strong><?= count($unsaved) === 1 ? 'Una instància fa dies que no es copia' : count($unsaved) . ' instàncies fa dies que no es copien' ?>:</strong>
-    <?= e(implode(', ', array_column($unsaved, 'slug'))) ?>.
-    Comproveu que el cron faci <code>php tools/platform.php copies</code> cada nit.
+    <?php if ($cronPassa): ?>
+      la feina de les còpies sí que passa (l'última, <?= e(dt((string) $backupRun)) ?>), però la d'aquestes falla:
+      <ul style="margin:.4rem 0 .2rem 1.2rem">
+        <?php foreach ($unsaved as $instance): ?>
+          <li>
+            <a href="<?= e(url('/instancies/' . (int) $instance['id'])) ?>"><strong><?= e($instance['slug']) ?></strong></a>:
+            <?= $instance['backup_error'] !== '' ? e($instance['backup_error']) : 'no ha dit per què; proveu-ne una a mà des de la seva fitxa.' ?>
+          </li>
+        <?php endforeach; ?>
+      </ul>
+    <?php else: ?>
+      <?= e(implode(', ', array_column($unsaved, 'slug'))) ?>.
+      <?= empty($backupRun)
+          ? 'La feina de les còpies no ha passat mai:'
+          : 'La feina de les còpies no passa des del ' . e(dt((string) $backupRun)) . ':' ?>
+      el cron de <code>www-data</code> ha de fer <code>php tools/platform.php copies</code> cada nit
+      (<code>crontab -u www-data -l</code> per mirar-ho).
+    <?php endif; ?>
   </div>
 <?php endif; ?>
 

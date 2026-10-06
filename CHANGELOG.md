@@ -3,6 +3,19 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.46.0] — 2026-10-06
+
+### Canviat
+- **L'avís de «fa dies que no es copia» diu per què.** El tauler del Panell de
+  Superadministració distingeix els dos casos, que s'arreglen de manera
+  diferent:
+  - la feina de les còpies no passa (o no ha passat mai): cal mirar el cron de
+    `www-data`;
+  - la feina passa, però la còpia d'alguna instància falla: es diu de cada una
+    quin error ha donat, amb l'enllaç a la seva fitxa.
+- Cada còpia fallida queda apuntada al registre de la instància, amb el motiu.
+  Abans només sortia per la pantalla del cron.
+
 ## [1.45.0] — 2026-10-06
 
 ### Corregit

@@ -111,6 +111,9 @@ class Backup
                 $report['bytes'] += $result['size'];
             } else {
                 $report['failed'][(string) $instance['slug']] = $result['error'];
+                // Que quedi dit a la fitxa de la instància i al tauler: sense
+                // això, l'error només el veia qui llegís la sortida del cron.
+                Platform::log('backup_failed', 'instance', (int) $instance['id'], ['error' => $result['error']]);
             }
         }
         Platform::log('backup_run', '', null, [
@@ -122,6 +125,34 @@ class Backup
     }
 
     /** Les còpies que hi ha d'una instància, de la més nova a la més vella. */
+    /** Quan va passar l'última vegada la feina de les còpies (el cron), o null si mai. */
+    public static function lastRun(): ?string
+    {
+        $when = Db::val("SELECT MAX(created_at) FROM platform_activity WHERE action = 'backup_run'", [], null);
+
+        return $when !== null && $when !== '' ? (string) $when : null;
+    }
+
+    /**
+     * Per què va fallar l'última còpia d'una instància, si ha fallat després
+     * de l'última que va sortir bé. '' si no n'hi ha cap de fallida.
+     */
+    public static function lastError(int $id, ?string $since = null): string
+    {
+        $row = Db::one(
+            "SELECT context FROM platform_activity WHERE action = 'backup_failed' AND subject = 'instance'
+             AND subject_id = :id AND created_at >= :since ORDER BY id DESC LIMIT 1",
+            ['id' => $id, 'since' => $since ?? '1970-01-01 00:00:00']
+        );
+        if (!$row) {
+            return '';
+        }
+
+        $context = (array) json_decode((string) $row['context'], true);
+
+        return (string) ($context['error'] ?? '');
+    }
+
     public static function all(string $slug, ?string $root = null): array
     {
         $files = glob(self::dir($root, $slug) . '/*.zip') ?: [];

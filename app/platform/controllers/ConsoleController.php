@@ -12,6 +12,7 @@ use Cros\Platform\Console;
 use Cros\Platform\Dns;
 use Cros\Platform\Instance;
 use Cros\Platform\Request;
+use Cros\Platform\Backup;
 
 /** Accés, tauler i pantalles generals del panell de superadministració. */
 class ConsoleController extends Controller
@@ -67,6 +68,10 @@ class ConsoleController extends Controller
              AND (backup_at IS NULL OR backup_at < :limit) ORDER BY slug",
             ['limit' => date('Y-m-d H:i:s', time() - 86400 * 3)]
         );
+        // I per què: si el cron no passa, o si passa però la còpia falla.
+        foreach ($unsaved as $i => $instance) {
+            $unsaved[$i]['backup_error'] = Backup::lastError((int) $instance['id'], $instance['backup_at'] ?? null);
+        }
         $upcoming = Db::all(
             'SELECT * FROM instances WHERE status = :s AND event_date >= :today ORDER BY event_date LIMIT 6',
             ['s' => 'active', 'today' => date('Y-m-d')]
@@ -87,6 +92,7 @@ class ConsoleController extends Controller
             'upcoming' => $upcoming,
             'failing' => $failing,
             'unsaved' => $unsaved,
+            'backupRun' => $unsaved ? Backup::lastRun() : null,
             'activity' => Db::all('SELECT * FROM platform_activity ORDER BY id DESC LIMIT 8'),
         ], 'layouts/console');
     }

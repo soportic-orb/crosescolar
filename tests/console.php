@@ -1059,6 +1059,31 @@ try {
     check('Un nom inventat no dona res',
         $web('GET', '/instancies/' . $instanceId . '/copia?fitxer=' . rawurlencode('../../platform.php'))['status'] === 404);
 
+    // El tauler avisa si una instància fa dies que no es copia, i diu per què:
+    // si és que el cron no passa, o si passa però la còpia falla.
+    $pdo->prepare('UPDATE instances SET backup_at = ? WHERE id = ?')
+        ->execute([date('Y-m-d H:i:s', time() - 86400 * 5), $instanceId]);
+    $pdo->exec("DELETE FROM platform_activity WHERE action IN ('backup_run', 'backup_failed')");
+    $tauler = text($web('GET', '/')['body']);
+    check('Una instància sense còpia de fa dies surt al tauler', str_contains($tauler, 'santjordi')
+        && str_contains($tauler, 'fa dies que no es copia'));
+    check('I si el cron no ha passat mai, ho diu', str_contains($tauler, 'no ha passat mai'), $tauler);
+
+    $configCopia = $configFile . '.amagat';
+    rename($configFile, $configCopia);
+    $fallida = Backup::run($site);
+    rename($configCopia, $configFile);
+    check('Si la còpia falla, el cron ho diu', isset($fallida['failed']['santjordi']));
+    check('I queda apuntat a la instància',
+        Backup::lastError($instanceId, (string) Instance::find($instanceId)['backup_at']) !== '');
+    $tauler = text($web('GET', '/')['body']);
+    check('El tauler diu que el cron sí que passa', str_contains($tauler, 'sí que passa'), $tauler);
+    check('I per què falla la d\'aquesta instància', str_contains($tauler, 'No hi ha la carpeta de la instància'), $tauler);
+
+    Backup::run($site);
+    check('Quan torna a sortir bé, l\'avís desapareix',
+        !str_contains(text($web('GET', '/')['body']), 'fa dies que no es copia'));
+
     echo "\n== Portar un cros que ja existia ==\n";
     // El cros «antic» és el que ja tenim: se li posen textos amb l'adreça de
     // sempre i un fitxer pujat, i se'n fa el paquet com ho faria el seu panell.
