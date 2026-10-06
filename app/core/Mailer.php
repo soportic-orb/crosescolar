@@ -119,7 +119,7 @@ class Mailer
             if ($transport === 'log') {
                 // Mode d'assaig: no surt res del servidor, però queda registrat
                 // com si s'hagués enviat, per poder-ho provar tot sense molestar ningú.
-                log_line('mail', 'Assaig (no s\'envia)', ['to' => $to, 'subject' => $subject]);
+                log_line('mail', 'Assaig (no s\'envia)', ['to' => $to, 'subject' => $subject, 'from' => $fromEmail]);
                 self::logEmail($to, $subject, 'sent');
                 return true;
             }
@@ -128,7 +128,7 @@ class Mailer
                 : @mail($to, $encodedSubject, $body, implode("\r\n", $headers));
         } catch (\Throwable $e) {
             self::$lastError = $e->getMessage();
-            log_line('mail', 'Error enviant correu', ['to' => $to, 'error' => $e->getMessage()]);
+            log_line('mail', 'Error enviant correu', ['to' => $to, 'from' => $fromEmail, 'error' => $e->getMessage()]);
             self::logEmail($to, $subject, 'error', $e->getMessage());
             return false;
         }

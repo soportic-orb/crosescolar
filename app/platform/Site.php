@@ -62,6 +62,34 @@ final class Site
         return $keys;
     }
 
+    /**
+     * Les opcions per domini que, mentre un domini no en digui res, valen el
+     * que hi hagi per a tota la plataforma. És el correu: cada domini pot tenir
+     * el seu servidor, però mentre no se li posi fa servir el que ja anava.
+     *
+     * @return array<int,string>
+     */
+    public static function inheritKeys(): array
+    {
+        static $keys = null;
+        if ($keys !== null) {
+            return $keys;
+        }
+        $keys = [];
+        foreach (self::schema() as $group) {
+            if (empty($group['per_site']) || empty($group['inherit'])) {
+                continue;
+            }
+            foreach ((array) ($group['fields'] ?? []) as $name => $field) {
+                if (($field['inherit'] ?? true) !== false) {
+                    $keys[] = (string) $name;
+                }
+            }
+        }
+
+        return $keys;
+    }
+
     /** Aquest grup de configuració és d'una pàgina concreta? */
     public static function isPerSite(string $group): bool
     {
@@ -103,7 +131,28 @@ final class Site
             return;
         }
         self::$current = $domain;
-        Settings::scope(self::prefix($domain), self::keys(), self::birth($domain));
+        Settings::scope(self::prefix($domain), self::keys(), self::birth($domain), self::inheritKeys());
+    }
+
+    /**
+     * Fa una feina amb la configuració d'un altre domini i després torna al
+     * que hi havia. Per exemple, escriure a qui té un web a crosescolar.cat
+     * des del panell, que va per esportweb.cat: el correu ha de sortir pel
+     * servidor de crosescolar.cat.
+     *
+     * @template T
+     * @param callable():T $fn
+     * @return T
+     */
+    public static function during(string $domain, callable $fn)
+    {
+        $previ = self::$current;
+        self::activate(Platform::validDomain($domain));
+        try {
+            return $fn();
+        } finally {
+            self::activate($previ);
+        }
     }
 
     /** El domini que s'està servint, o el principal si no n'hi ha cap. */
@@ -157,8 +206,15 @@ final class Site
             // i només el primer cop de tots.
             $hereta = $estrena && $i === 0;
             $birth = self::birth($domain);
+            $hereten = array_fill_keys(self::inheritKeys(), true);
             foreach (self::keys() as $key) {
                 if (array_key_exists($prefix . $key, $desat)) {
+                    continue;
+                }
+                // El que s'hereta es deixa en blanc, i així val el de tota la
+                // plataforma fins que el domini en tingui un de seu.
+                if (isset($hereten[$key])) {
+                    Settings::set($prefix . $key, (string) ($birth[$key] ?? ''));
                     continue;
                 }
                 $value = (string) ($birth[$key] ?? ($defaults[$key] ?? ''));

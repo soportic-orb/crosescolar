@@ -11,6 +11,7 @@ use Cros\Platform\Console;
 use Cros\Platform\Instance;
 use Cros\Platform\Platform;
 use Cros\Platform\Support;
+use Cros\Platform\Site;
 
 /** La safata del suport: els tiquets de tots els clients en un sol lloc. */
 class SupportController extends Controller
@@ -187,10 +188,13 @@ class SupportController extends Controller
         $instance = !empty($ticket['instance_id']) ? Instance::find((int) $ticket['instance_id']) : null;
         $base = $instance ? Instance::url($instance) : Platform::url((string) ($ticket['slug'] ?? ''));
 
-        return Mailer::sendTemplate($to, 'Resposta a la consulta ' . $ticket['reference'], 'support-reply', [
-            'ticket' => $ticket,
-            'body' => $body,
-            'link' => ($ticket['slug'] ?? '') !== '' ? $base . '/admin/suport/' . (int) $ticket['id'] : '',
-        ]);
+        // Pel servidor de correu del domini del seu web.
+        return Site::during((string) ($instance['domain'] ?? ''), static fn (): bool => Mailer::sendTemplate(
+            $to, 'Resposta a la consulta ' . $ticket['reference'], 'support-reply', [
+                'ticket' => $ticket,
+                'body' => $body,
+                'link' => ($ticket['slug'] ?? '') !== '' ? $base . '/admin/suport/' . (int) $ticket['id'] : '',
+            ]
+        ));
     }
 }

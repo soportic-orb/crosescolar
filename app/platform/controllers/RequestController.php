@@ -11,6 +11,7 @@ use Cros\Platform\Console;
 use Cros\Platform\Instance;
 use Cros\Platform\Platform;
 use Cros\Platform\Request;
+use Cros\Platform\Site;
 
 /** Les sol·licituds de gent que vol el web del seu cros. */
 class RequestController extends Controller
@@ -82,12 +83,15 @@ class RequestController extends Controller
         if ($reason === '' || !filter_var((string) $request['contact_email'], FILTER_VALIDATE_EMAIL)) {
             return;
         }
-        Mailer::sendTemplate((string) $request['contact_email'], 'Sobre la vostra sol·licitud ' . $request['code'], 'request-rejected', [
-            'name' => (string) $request['contact_name'],
-            'entity' => (string) $request['entity'],
-            'code' => (string) $request['code'],
-            'reason' => $reason,
-            'contact' => Platform::notifyEmail(),
-        ]);
+        // Pel servidor de correu del domini des d'on la van fer.
+        Site::during((string) ($request['domain'] ?? ''), static fn (): bool => Mailer::sendTemplate(
+            (string) $request['contact_email'], 'Sobre la vostra sol·licitud ' . $request['code'], 'request-rejected', [
+                'name' => (string) $request['contact_name'],
+                'entity' => (string) $request['entity'],
+                'code' => (string) $request['code'],
+                'reason' => $reason,
+                'contact' => Platform::notifyEmail(),
+            ]
+        ));
     }
 }

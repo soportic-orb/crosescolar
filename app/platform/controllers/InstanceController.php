@@ -16,6 +16,7 @@ use Cros\Platform\Instance;
 use Cros\Platform\Platform;
 use Cros\Platform\Provisioner;
 use Cros\Platform\Request;
+use Cros\Platform\Site;
 use RuntimeException;
 
 /** Les instàncies: alta, fitxa i manteniment. */
@@ -457,10 +458,13 @@ class InstanceController extends Controller
                     flash('error', 'No s\'ha pogut crear l\'enllaç: ' . $link['error']);
                     break;
                 }
-                $sent = Mailer::sendTemplate($link['email'], 'Enllaç per entrar al panell', 'access-link', [
-                    'site_name' => (string) $instance['site_name'],
-                    'link' => $link['url'],
-                ]);
+                // Pel servidor de correu del domini del web, com tot el que li escrivim.
+                $sent = Site::during((string) ($instance['domain'] ?? ''), static fn (): bool => Mailer::sendTemplate(
+                    $link['email'], 'Enllaç per entrar al panell', 'access-link', [
+                        'site_name' => (string) $instance['site_name'],
+                        'link' => $link['url'],
+                    ]
+                ));
                 flash(
                     $sent ? 'success' : 'error',
                     $sent

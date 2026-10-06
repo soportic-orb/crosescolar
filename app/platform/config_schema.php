@@ -129,10 +129,20 @@ return [
     'mail' => [
         'title' => 'Correu',
         'icon' => 'mail',
-        'description' => 'D\'on surten els avisos i les claus que s\'envien als clients.',
+        'description' => 'El servidor de correu de cada domini. D\'aquí surten els correus de la plataforma i també els de '
+            . 'tots els webs de les curses que són en aquest domini: els de crosescolar.cat, pel de crosescolar.cat, i '
+            . 'els d\'esportweb.cat, pel d\'esportweb.cat. Un domini que encara no en té cap d\'escrit fa servir el '
+            . 'que hi havia per a tota la plataforma.',
+        // Cada domini el seu, però el que un domini no digui val el que ja hi
+        // havia: així, en actualitzar, els correus continuen sortint.
+        'per_site' => true,
+        'inherit' => true,
         'fields' => [
-            'mail_from_name' => ['label' => 'Nom de qui envia', 'type' => 'text', 'default' => 'EsportWeb'],
-            'mail_from_email' => ['label' => 'Adreça de qui envia', 'type' => 'email', 'default' => ''],
+            'mail_from_name' => ['label' => 'Nom de qui envia', 'type' => 'text', 'default' => '', 'inherit' => false,
+                'help' => 'Si es deixa en blanc, el nom d\'aquesta pàgina. Els correus dels webs de les curses surten sempre amb el nom de cada web.'],
+            'mail_from_email' => ['label' => 'Adreça de qui envia', 'type' => 'email', 'default' => '',
+                'help' => 'Ha de ser d\'aquest domini (per exemple, no-reply@crosescolar.cat) i el servidor SMTP l\'ha de poder fer servir. '
+                    . 'Si no, els correus poden anar a parar al correu brossa.'],
             'mail_reply_to' => ['label' => 'Adreça per a les respostes', 'type' => 'email', 'default' => ''],
             'mail_admin_notify' => ['label' => 'On arriben els avisos', 'type' => 'email', 'default' => '',
                 'help' => 'Sol·licituds noves i webs que deixen de respondre.'],

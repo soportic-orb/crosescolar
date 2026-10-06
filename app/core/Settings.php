@@ -27,6 +27,8 @@ class Settings
     private static array $scopeKeys = [];
     /** @var array<string,string> */
     private static array $scopeDefaults = [];
+    /** @var array<string,bool> claus de l'àmbit que, si no diuen res, valen el que valen fora */
+    private static array $scopeInherit = [];
 
     /** Carrega tots els valors a memòria. */
     public static function load(bool $force = false): array
@@ -74,12 +76,15 @@ class Settings
      *
      * @param array<int,string>    $keys     claus que hi pertanyen
      * @param array<string,string> $defaults què valen si l'àmbit no diu res
+     * @param array<int,string>    $inherit  claus que, si l'àmbit no diu res,
+     *                                       valen el que hi hagi desat sense àmbit
      */
-    public static function scope(string $prefix = '', array $keys = [], array $defaults = []): void
+    public static function scope(string $prefix = '', array $keys = [], array $defaults = [], array $inherit = []): void
     {
         self::$scope = $prefix;
         self::$scopeKeys = array_fill_keys($keys, true);
         self::$scopeDefaults = $defaults;
+        self::$scopeInherit = array_fill_keys($inherit, true);
     }
 
     /** Quin àmbit hi ha actiu, o '' si cap. */
@@ -107,6 +112,9 @@ class Settings
             $own = $all[self::$scope . $key] ?? null;
             if ($own !== null && $own !== '') {
                 return $own;
+            }
+            if (isset(self::$scopeInherit[$key]) && isset($all[$key]) && (string) $all[$key] !== '') {
+                return $all[$key];
             }
             $seed = self::$scopeDefaults[$key] ?? null;
             if ($seed !== null && $seed !== '') {

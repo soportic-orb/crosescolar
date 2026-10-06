@@ -3,6 +3,30 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.44.0] — 2026-10-06
+
+### Afegit
+- **Un servidor de correu per domini.** A Configuració → Correu del Panell de
+  Superadministració, cada domini (crosescolar.cat, esportweb.cat…) té la seva
+  pestanya amb el seu remitent, el seu servidor SMTP i on li arriben els avisos.
+  Tot el que és d'un domini surt pel seu servidor:
+  - la pàgina pública i els formularis d'aquell domini;
+  - tots els webs de les curses que hi són (`*.crosescolar.cat` pel de
+    crosescolar.cat, `*.esportweb.cat` pel d'esportweb.cat), amb el nom de
+    cada web com a remitent;
+  - el que el panell escriu als clients d'aquell domini: la benvinguda, els
+    enllaços d'accés, les respostes de suport i les sol·licituds.
+- **Guia per preparar el SPF, el DKIM i el DMARC** de cada domini
+  (`docs/correu.md`).
+- El registre de correus apunta també l'adreça de qui envia.
+
+### Canviat
+- Un domini que encara no té el correu escrit fa servir el que hi havia per a
+  tota la plataforma, de manera que en actualitzar tot continua sortint com
+  abans fins que es configura el segon servidor.
+- El nom de qui envia, si es deixa en blanc, és el de la pàgina de cada domini.
+- La prova de correu del panell diu per què ha fallat, si falla.
+
 ## [1.43.0] — 2026-10-06
 
 ### Afegit

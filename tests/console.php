@@ -460,6 +460,21 @@ try {
     $logJordi = (string) @file_get_contents($site . '/tenants/santjordi/storage/logs/app-' . date('Y-m') . '.log');
     check('Amb la manera d\'enviar de la plataforma, no amb la funció mail() del servidor',
         str_contains($logJordi, 'Assaig') && str_contains($logJordi, 'Prova de correu'));
+    // I pel del seu domini: si crosescolar.test té el seu propi remitent, és
+    // aquest el que fa servir, no el de tota la plataforma.
+    $pdo->prepare('INSERT INTO settings (k, v, updated_at) VALUES (?, ?, NOW()) ON DUPLICATE KEY UPDATE v = VALUES(v)')
+        ->execute(['site:crosescolar.test:mail_from_email', 'correu@crosescolar.test']);
+    $web('POST', '/admin/correus/prova', [
+        '_token' => $token($web('GET', '/admin/correus', [], 'santjordi.crosescolar.test')['body']), 'to' => 'laia@example.cat',
+    ], 'santjordi.crosescolar.test');
+    $darreraProva = '';
+    foreach (explode("\n", (string) @file_get_contents($site . '/tenants/santjordi/storage/logs/app-' . date('Y-m') . '.log')) as $linia) {
+        if (str_contains($linia, 'Prova de correu')) {
+            $darreraProva = $linia;
+        }
+    }
+    check('Pel servidor de correu del seu domini', str_contains($darreraProva, 'correu@crosescolar.test'), $darreraProva);
+    $pdo->prepare('UPDATE settings SET v = ? WHERE k = ?')->execute(['', 'site:crosescolar.test:mail_from_email']);
 
     check('El client no pot actualitzar el codi de tothom',
         $web('GET', '/admin/actualitzacions', [], 'santjordi.crosescolar.test')['status'] === 403);
@@ -1909,7 +1924,9 @@ try {
     check('La configuració avisa que hi ha un web per domini',
         str_contains($general['body'], 'site-tabs') && str_contains($general['body'], 'domini=esportweb.test'));
     check('I el que és de tota la plataforma, no',
-        !str_contains($web('GET', '/configuracio/mail')['body'], 'site-tabs'));
+        !str_contains($web('GET', '/configuracio/monitor')['body'], 'site-tabs'));
+    check('El correu, en canvi, també va per domini',
+        str_contains($web('GET', '/configuracio/mail')['body'], 'site-tabs'));
 
     $altre = $web('GET', '/configuracio/general?domini=esportweb.test');
     check('S\'hi pot triar l\'altre domini', $altre['status'] === 200, 'estat ' . $altre['status']);
@@ -2091,6 +2108,44 @@ try {
         (string) Db::val("SELECT v FROM settings WHERE k = 'site:esportweb.test:site_name'", [], '') === 'EsportWeb Catalunya');
     exec('rm -rf ' . escapeshellarg($altraArrel));
 
+    echo "\n== Un servidor de correu per domini ==\n";
+    // Mentre un domini no en diu res, fa servir el que hi havia per a tota la
+    // plataforma: en actualitzar, els correus continuen sortint com sortien.
+    Settings::forget();
+    Platform::prime($site);
+    check('Un domini sense correu propi fa servir el de tota la plataforma',
+        Site::value('esportweb.test', 'mail_from_email') === 'hola@crosescolar.test'
+        && Site::value('crosescolar.test', 'mail_from_email') === 'hola@crosescolar.test');
+    check('I la manera d\'enviar també', Site::value('esportweb.test', 'mail_transport') === 'log');
+    $correuEsport = $web('GET', '/configuracio/mail?domini=esportweb.test');
+    check('El correu de cada domini es configura al panell',
+        $correuEsport['status'] === 200 && str_contains($correuEsport['body'], 'name="smtp_host"')
+        && str_contains($correuEsport['body'], 'domini=crosescolar.test'));
+    $web('POST', '/configuracio/mail?domini=esportweb.test', [
+        '_token' => $token($correuEsport['body']),
+        'mail_from_email' => 'hola@esportweb.test', 'mail_transport' => 'log',
+        'smtp_host' => 'smtp.esportweb.test', 'smtp_port' => '587', 'smtp_secure' => 'tls',
+    ]);
+    $correuCros = $web('GET', '/configuracio/mail?domini=crosescolar.test');
+    $web('POST', '/configuracio/mail?domini=crosescolar.test', [
+        '_token' => $token($correuCros['body']),
+        'mail_from_email' => 'correu@crosescolar.test', 'mail_transport' => 'log',
+        'smtp_host' => 'smtp.crosescolar.test', 'smtp_port' => '465', 'smtp_secure' => 'ssl',
+    ]);
+    Settings::forget();
+    Platform::prime($site);
+    check('Cada domini es queda el seu',
+        Site::value('esportweb.test', 'mail_from_email') === 'hola@esportweb.test'
+        && Site::value('crosescolar.test', 'mail_from_email') === 'correu@crosescolar.test');
+    check('Amb el seu servidor',
+        Site::value('esportweb.test', 'smtp_host') === 'smtp.esportweb.test'
+        && Site::value('crosescolar.test', 'smtp_host') === 'smtp.crosescolar.test'
+        && Site::value('crosescolar.test', 'smtp_port') === '465');
+    check('I el formulari ensenya el de cada un',
+        str_contains($web('GET', '/configuracio/mail?domini=crosescolar.test')['body'], 'value="smtp.crosescolar.test"')
+        && !str_contains($web('GET', '/configuracio/mail?domini=crosescolar.test')['body'], 'value="smtp.esportweb.test"'));
+
+
     echo "\n== Registre lliure ==\n";
     $portada = $web('GET', '/', [], 'esportweb.test');
     check('La portada porta el formulari de registre',
@@ -2166,6 +2221,13 @@ try {
     check('Amb la mena de client que ha dit', Client::kindOf($fitxa) === 'company');
     $correus = (string) @file_get_contents($site . '/storage/logs/app-' . date('Y-m') . '.log');
     check('Se li envia el correu de confirmació', str_contains($correus, 'ona@example.cat'));
+    $linia = '';
+    foreach (explode("\n", $correus) as $l) {
+        if (str_contains($l, 'ona@example.cat') && str_contains($l, 'Confirmeu el correu')) {
+            $linia = $l;
+        }
+    }
+    check('Pel servidor de correu del domini on és el web', str_contains($linia, 'hola@esportweb.test'), $linia);
     $registreCorreu = Db::one("SELECT * FROM email_log WHERE recipient = 'ona@example.cat' ORDER BY id DESC LIMIT 1");
     check('I la plataforma apunta que ha sortit',
         $registreCorreu !== null && (string) $registreCorreu['status'] === 'sent'

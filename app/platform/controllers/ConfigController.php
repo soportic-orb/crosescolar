@@ -71,7 +71,7 @@ class ConfigController extends Controller
                     '<p>Si llegiu això, el correu de la plataforma funciona.</p>');
                 $sent
                     ? flash('success', 'Prova enviada a ' . $to . '.')
-                    : flash('error', 'No s\'ha pogut enviar la prova. Reviseu les dades del servidor de correu.');
+                    : flash('error', 'No s\'ha pogut enviar la prova: ' . (Mailer::lastError() ?: 'reviseu les dades del servidor de correu.'));
             }
         }
 

@@ -369,7 +369,8 @@ class Provisioner
         }
         $signup = (string) ($data['source'] ?? '') === 'signup';
 
-        return Mailer::sendTemplate(
+        // Surt pel servidor de correu del domini del web nou.
+        return Site::during($domain, static fn (): bool => Mailer::sendTemplate(
             $email,
             $signup ? 'Confirmeu el correu i entreu al vostre panell' : 'Ja teniu el web del vostre cros',
             'instance-welcome',
@@ -381,7 +382,7 @@ class Provisioner
                 'link' => $link,
                 'signup' => $signup,
             ]
-        );
+        ));
     }
 
     /** Desfà el que s'hagi fet si l'alta s'ha quedat a mitges. */

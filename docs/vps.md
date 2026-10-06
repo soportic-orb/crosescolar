@@ -281,17 +281,13 @@ chmod 640 tenants/platform.php
 > Mentre no existeixi aquest fitxer, el codi funciona com una instal·lació de
 > tota la vida (un sol web). És el que l'engega tot.
 
-> **El correu és un de sol per a tota la plataforma.** El que hi poseu aquí (o a
-> Configuració → Correu del panell de superadministració, que mana sobre el
-> fitxer) és el que fan servir la plataforma i tots els webs de les curses: un
-> web nou neix amb «El servidor de correu de la plataforma» com a mètode
-> d'enviament. Els seus correus surten amb el nom del web i l'adreça de la
-> plataforma, i les respostes van a qui l'organitza. Per això cal que el domini
-> de `from_email` tingui ben posats el SPF i el DKIM del vostre proveïdor.
->
-> Si un correu no arriba, a la fitxa de la instància, al panell, hi ha els
-> últims que s'hi han enviat i si han sortit o no, i el botó per tornar a enviar
-> la benvinguda. Els errors també queden a `storage/logs/app-AAAA-MM.log`.
+> **Cada domini té el seu servidor de correu.** El que hi poseu aquí és el de
+> partida per a tota la plataforma. Després, a **Configuració → Correu** del
+> Panell de Superadministració, cada domini (crosescolar.cat, esportweb.cat…) hi
+> té el seu: la pàgina pública, el panell i tots els webs de les curses d'aquell
+> domini envien per aquell servidor. Un domini que encara no en té cap d'escrit
+> fa servir el d'aquí. Com preparar el SPF, el DKIM i el DMARC de cada domini:
+> [correu.md](correu.md).
 
 ## 5. nginx
 

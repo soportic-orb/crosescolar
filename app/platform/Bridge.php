@@ -60,6 +60,12 @@ class Bridge
             if ($withSettings) {
                 Settings::forget();
                 Platform::prime($root);
+                // I la del domini d'aquest web, que és la que li toca: un web de
+                // crosescolar.cat envia pel correu de crosescolar.cat.
+                $domain = self::domain($root);
+                if ($domain !== '') {
+                    Site::activate($domain);
+                }
             }
 
             return $fn();
@@ -69,6 +75,28 @@ class Bridge
             Settings::forget();
             Settings::useSchema($schema);
         }
+    }
+
+    /**
+     * El domini de la plataforma on és aquest web: el de la petició si n'hi
+     * ha, i si no (una tasca programada) el de la seva adreça. '' si no és
+     * cap dels nostres.
+     */
+    public static function domain(?string $root = null): string
+    {
+        $domains = Platform::domains($root ?? CROS_ROOT);
+        $domain = Tenancy::domain();
+        if ($domain !== '' && in_array($domain, $domains, true)) {
+            return $domain;
+        }
+        $host = strtolower((string) (parse_url((string) config('base_url', ''), PHP_URL_HOST) ?: ''));
+        foreach ($domains as $candidate) {
+            if (str_ends_with($host, '.' . $candidate)) {
+                return $candidate;
+            }
+        }
+
+        return '';
     }
 
     /**

@@ -4,7 +4,7 @@
  * manifest remot per decidir si hi ha una versió nova disponible.
  */
 return [
-    'version' => '1.43.0',
+    'version' => '1.44.0',
     'released' => '2026-10-06',
     'min_php' => '8.0.0',
 ];
