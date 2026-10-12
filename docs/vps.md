@@ -397,6 +397,7 @@ crontab -u www-data -e
 ```
 
 ```
+*/5 * * * *  cd /var/www/crosescolar && php tools/platform.php enviaments
 */15 * * * * cd /var/www/crosescolar && php tools/platform.php vigilar
 0 3 * * *    cd /var/www/crosescolar && php tools/platform.php copies
 30 4 * * *   cd /var/www/crosescolar && php tools/platform.php repassar
@@ -406,7 +407,7 @@ crontab -u www-data -e
 Per comprovar que les feines hi són i funcionen:
 
 ```bash
-crontab -u www-data -l                                   # han de sortir les quatre línies
+crontab -u www-data -l                                   # han de sortir les cinc línies
 cd /var/www/crosescolar && sudo -u www-data php tools/platform.php copies
 ```
 

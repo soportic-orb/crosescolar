@@ -28,7 +28,7 @@ class Mailer
 
     /**
      * Envia un correu HTML.
-     * @param array{reply_to?:string,text?:string,attachments?:array<int,array{name:string,content:string,type:string}>,bcc?:string} $options
+     * @param array{reply_to?:string,text?:string,attachments?:array<int,array{name:string,content:string,type:string}>,bcc?:string,headers?:array<string,string>} $options
      */
     public static function send(string $to, string $subject, string $html, array $options = []): bool
     {
@@ -85,6 +85,13 @@ class Mailer
         ];
         if ($replyTo !== '') {
             $headers[] = 'Reply-To: ' . $replyTo;
+        }
+        // Capçaleres de més (List-Unsubscribe als enviaments). Sense salts de
+        // línia: un salt dins d'un valor afegiria capçaleres d'amagat.
+        foreach ((array) ($options['headers'] ?? []) as $name => $value) {
+            if (preg_match('/^[A-Za-z][A-Za-z0-9-]{1,60}$/', (string) $name) && !preg_match('/[\r\n]/', (string) $value)) {
+                $headers[] = $name . ': ' . $value;
+            }
         }
 
         $alternative = "--{$boundary}\r\n"

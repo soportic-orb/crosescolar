@@ -220,14 +220,17 @@ Altres ordres de la mateixa eina:
 | `php tools/platform.php actualitzar` | aplica els canvis pendents de la versió nova a totes |
 | `php tools/platform.php vigilar` | mira que totes responguin i avisa dels canvis |
 | `php tools/platform.php copies` | fa la còpia de seguretat de totes |
+| `php tools/platform.php enviaments` | envia els correus programats i les tandes pendents |
 | `php tools/platform.php paquet <fitxer>` | diu què porta un paquet de migració |
 | `php tools/platform.php purgar` | diu quines baixes ja han passat els 90 dies |
 | `php tools/platform.php purgar --de-veritat` | les esborra de debò (base de dades i carpeta) |
 
-Va bé posar `repassar` al cron un cop al dia, i `purgar --de-veritat` un cop a la
-setmana:
+Va bé posar `enviaments` al cron cada cinc minuts (és qui envia els correus del
+panell, també els programats), `repassar` un cop al dia i `purgar --de-veritat` un
+cop a la setmana:
 
 ```
+*/5 * * * *  cd /var/www/crosescolar && php tools/platform.php enviaments
 */15 * * * * cd /var/www/crosescolar && php tools/platform.php vigilar
 0 3 * * *    cd /var/www/crosescolar && php tools/platform.php copies
 30 4 * * *   cd /var/www/crosescolar && php tools/platform.php repassar

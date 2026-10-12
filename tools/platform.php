@@ -11,6 +11,7 @@
  *   php tools/platform.php certificat                 diu com està el certificat i què cal per renovar-lo
  *   php tools/platform.php dns                        mira que els noms resolguin i que hi hagi el comodí
  *   php tools/platform.php copies                     fa la còpia de seguretat de totes
+ *   php tools/platform.php enviaments                 envia els correus programats i les tandes pendents (cada 5 minuts)
  *   php tools/platform.php paquet <fitxer.zip>        diu què porta un paquet de migració
  *   php tools/platform.php purgar [--de-veritat]      esborra les baixes que ja han passat els 90 dies
  */
@@ -32,6 +33,7 @@ use Cros\Platform\Dns;
 use Cros\Platform\Importer;
 use Cros\Platform\Health;
 use Cros\Platform\Instance;
+use Cros\Platform\Mailout;
 use Cros\Platform\Platform;
 use Cros\Platform\Provisioner;
 
@@ -242,6 +244,15 @@ switch ($command) {
         echo 'Es guarden les ' . Backup::keep($root) . " últimes de cada instància.\n";
         break;
 
+    case 'enviaments':
+        @set_time_limit(0);
+        $r = Mailout::tick();
+        if ($r['started'] + $r['sent'] + $r['failed'] + $r['waiting'] > 0 || in_array('-v', $argv, true)) {
+            echo date('Y-m-d H:i') . ' · ' . $r['started'] . ' començats, ' . $r['sent'] . ' enviats, ' . $r['failed'] . ' fallits'
+                . ($r['waiting'] ? ', ' . $r['waiting'] . ' esperant el límit per hora' : '') . ".\n";
+        }
+        break;
+
     case 'paquet':
         $file = $argv[2] ?? '';
         if ($file === '') {
@@ -285,5 +296,5 @@ switch ($command) {
         break;
 
     default:
-        echo "Ordres: migrar · usuari · instancies · repassar · actualitzar · vigilar · copies · paquet · purgar\n";
+        echo "Ordres: migrar · usuari · instancies · repassar · actualitzar · vigilar · copies · enviaments · paquet · purgar\n";
 }

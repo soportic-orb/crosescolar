@@ -20,6 +20,7 @@ use Cros\Platform\Controllers\MailoutController;
 use Cros\Platform\Controllers\RequestController;
 use Cros\Platform\Controllers\SiteController;
 use Cros\Platform\Controllers\SupportController;
+use Cros\Platform\Controllers\UnsubscribeController;
 use Cros\Platform\Controllers\UpdatesController;
 
 $router = new Router();
@@ -118,6 +119,9 @@ $router->get('/contacte/captcha', [SiteController::class, 'captcha']);
 // L'avís de Stripe sobre els pagaments de la plataforma. Va al web públic
 // perquè no hi ha sessió: qui truca és el servidor de Stripe.
 $router->post('/pagament/avis', [SiteController::class, 'stripeWebhook']);
+// La baixa dels enviaments: l'enllaç del peu de cada correu i la de la capçalera List-Unsubscribe.
+$router->get('/baixa/{token}', [UnsubscribeController::class, 'show']);
+$router->post('/baixa/{token}', [UnsubscribeController::class, 'confirm']);
 $router->get('/{page:condicions|privadesa|galetes}', [SiteController::class, 'legal']);
 $router->get('/sitemap.xml', [SiteController::class, 'sitemap']);
 $router->get('/robots.txt', [SiteController::class, 'robots']);

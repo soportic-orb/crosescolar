@@ -154,6 +154,9 @@ return [
             'smtp_pass' => ['label' => 'Contrasenya', 'type' => 'password', 'default' => '', 'show_if' => 'mail_transport:smtp'],
             'smtp_secure' => ['label' => 'Xifratge', 'type' => 'select', 'default' => 'tls', 'show_if' => 'mail_transport:smtp',
                 'options' => ['tls' => 'TLS (587)', 'ssl' => 'SSL (465)', 'none' => 'Cap']],
+            'mail_hourly_limit' => ['label' => 'Màxim de correus per hora', 'type' => 'number', 'default' => '0',
+                'help' => 'Els enviaments del panell no en fan més d\'aquests per hora des d\'aquest domini (comptant tots els que hi hagi en marxa). 0 vol dir sense límit. '
+                    . 'Mireu el límit del vostre pla de correu: si se supera, el servidor els comença a rebutjar.'],
             'mail_batch_size' => ['label' => 'Correus per tanda', 'type' => 'number', 'default' => '20',
                 'help' => 'Els enviaments es fan a trossos per no saturar el servidor. Amb SMTP propi s\'hi pot pujar; amb la funció del sistema, val més deixar-ho baix.'],
         ],
@@ -221,6 +224,25 @@ return [
                 'default' => 'Ara mateix no donem altes noves. Escriviu-nos i us avisarem quan tornem a obrir.',
                 'show_if' => '!platform_requests_open'],
             'platform_directory' => ['label' => 'Ensenyar el llistat de webs a la portada', 'type' => 'bool', 'default' => '1'],
+        ],
+    ],
+
+    'ai' => [
+        'title' => 'Intel·ligència artificial',
+        'icon' => 'star',
+        'description' => 'L\'assistent «✨ IA» de l\'editor d\'enviaments: escriu textos (Claude o OpenAI) i crea imatges (OpenAI). '
+            . 'Les claus es desen xifrades.',
+        'fields' => [
+            'ai_enabled' => ['label' => 'Activa l\'assistent d\'IA a l\'editor', 'type' => 'checkbox', 'default' => '1'],
+            'ai_default_text' => ['label' => 'Per als textos, per defecte', 'type' => 'select', 'default' => 'claude',
+                'options' => ['claude' => 'Claude (Anthropic)', 'openai' => 'OpenAI']],
+            'ai_anthropic_key' => ['label' => 'Clau d\'Anthropic (Claude)', 'type' => 'password', 'secret' => true, 'default' => '',
+                'help' => 'Es crea a console.anthropic.com. Si es deixa en blanc, es conserva la que hi ha.'],
+            'ai_claude_model' => ['label' => 'Model de Claude', 'type' => 'text', 'default' => 'claude-opus-5-5'],
+            'ai_openai_key' => ['label' => 'Clau d\'OpenAI', 'type' => 'password', 'secret' => true, 'default' => '',
+                'help' => 'Cal per crear imatges (Claude no en fa). Si es deixa en blanc, es conserva la que hi ha.'],
+            'ai_openai_text_model' => ['label' => 'Model d\'OpenAI per als textos', 'type' => 'text', 'default' => 'gpt-5'],
+            'ai_openai_image_model' => ['label' => 'Model d\'OpenAI per a les imatges', 'type' => 'text', 'default' => 'gpt-image-1'],
         ],
     ],
 

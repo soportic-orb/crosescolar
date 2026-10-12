@@ -108,7 +108,11 @@ Settings::prime([
     'mail_from_name' => 'Cros Escolar, La Granada',
     'mail_reply_to' => '',
 ]);
-$ok = Mailer::send('familia@outlook.com', $llarg, '<p>Hola</p>', ['bcc' => 'copia@crosescolar.cat']);
+$ok = Mailer::send('familia@outlook.com', $llarg, '<p>Hola</p>', ['bcc' => 'copia@crosescolar.cat', 'headers' => [
+    'List-Unsubscribe' => '<https://crosescolar.cat/baixa/abc.123>',
+    'List-Unsubscribe-Post' => 'List-Unsubscribe=One-Click',
+    'X-Amagada' => "res\r\nBcc: algu@x.cat",
+]]);
 proc_close($proc);
 $conversa = (string) @file_get_contents($capture);
 @unlink($capture);
@@ -125,6 +129,9 @@ $capcaleres = substr($missatge, 0, (int) strpos($missatge, "\r\n\r\n"));
 check('El remitent va entre cometes',
     str_contains($capcaleres, 'From: "Cros Escolar, La Granada" <no-reply@crosescolar.cat>'), $capcaleres);
 check('La còpia oculta no surt a les capçaleres', !preg_match('/^Bcc:/mi', $capcaleres));
+check('La baixa d\'un sol clic va a les capçaleres (Gmail i Yahoo la demanen)',
+    str_contains($capcaleres, "List-Unsubscribe: <https://crosescolar.cat/baixa/abc.123>\r\nList-Unsubscribe-Post: List-Unsubscribe=One-Click"), $capcaleres);
+check('Una capçalera de més amb un salt de línia no hi entra', !str_contains($capcaleres, 'X-Amagada'));
 check('Però sí que arriba a qui l\'ha de rebre', str_contains($conversa, 'C:RCPT TO:<copia@crosescolar.cat>'));
 check('L\'identificador és del domini de qui envia',
     (bool) preg_match('/^Message-ID: <[0-9a-f]+@crosescolar\.cat>/m', $capcaleres), $capcaleres);

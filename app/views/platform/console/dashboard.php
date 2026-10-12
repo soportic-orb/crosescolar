@@ -122,6 +122,18 @@ $certAvis = ($certificate['checked_at'] ?? '') !== ''
   </div>
 <?php endif; ?>
 
+<?php if (!empty($mailoutStale)): ?>
+  <div class="alert alert--warning mt-2">
+    <strong>Hi ha enviaments esperant el cron:</strong>
+    <?= ($mailoutTick ?? '') === ''
+        ? 'la feina dels enviaments no ha passat mai,'
+        : 'la feina dels enviaments no passa des del ' . e(dt((string) $mailoutTick)) . ',' ?>
+    i els correus programats o a mig enviar no surten. El cron de <code>www-data</code> ha de fer
+    <code>php tools/platform.php enviaments</code> cada cinc minuts. Mentrestant, es poden enviar a mà
+    des de cada <a href="<?= e(url('/enviaments?filtre=enviant')) ?>">enviament</a>.
+  </div>
+<?php endif; ?>
+
 <?php if ($unsaved && (int) $stats['instances'] > 0): ?>
   <?php
   // Dues coses molt diferents: que el cron no passi, o que passi però la

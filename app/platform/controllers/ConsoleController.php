@@ -11,6 +11,7 @@ use Cros\Platform\Client;
 use Cros\Platform\Console;
 use Cros\Platform\Dns;
 use Cros\Platform\Instance;
+use Cros\Platform\Mailout;
 use Cros\Platform\Request;
 use Cros\Platform\Backup;
 
@@ -93,6 +94,9 @@ class ConsoleController extends Controller
             'failing' => $failing,
             'unsaved' => $unsaved,
             'backupRun' => $unsaved ? Backup::lastRun() : null,
+            // Hi ha correus programats o a mig enviar i el cron no passa.
+            'mailoutStale' => Mailout::cronStale(),
+            'mailoutTick' => Mailout::lastTick(),
             'activity' => Db::all('SELECT * FROM platform_activity ORDER BY id DESC LIMIT 8'),
         ], 'layouts/console');
     }

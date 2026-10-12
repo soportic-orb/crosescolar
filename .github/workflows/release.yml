@@ -159,6 +159,17 @@ jobs:
           mysql -h127.0.0.1 -uroot -proot -e "CREATE DATABASE IF NOT EXISTS cros_consola CHARACTER SET utf8mb4; GRANT ALL ON cros_consola.* TO 'cros'@'%';"
           php tests/console.php
 
+      - name: Proves dels enviaments de la plataforma (MySQL real)
+        env:
+          CROS_DB_HOST: 127.0.0.1
+          CROS_DB_PORT: '3306'
+          CROS_DB_USER: cros
+          CROS_DB_PASS: cros
+          CROS_DB_PLATFORM: cros_enviaments
+        run: |
+          mysql -h127.0.0.1 -uroot -proot -e "CREATE DATABASE IF NOT EXISTS cros_enviaments CHARACTER SET utf8mb4; GRANT ALL ON cros_enviaments.* TO 'cros'@'%';"
+          php tests/mailout.php
+
       - name: Generar el paquet
         env:
           VERSION: ${{ steps.versio.outputs.version }}
