@@ -247,8 +247,13 @@ avisen. Mentrestant, des del seguiment de cada enviament es poden enviar tandes
 a mà.
 
 - **Correus per hora**: a **Configuració → Correu**, cada domini pot tenir un
-  límit (el que admeti el seu proveïdor: Mailjet, Nominalia…). En arribar-hi,
-  la resta s'esperen a l'hora següent. Amb 0 no n'hi ha.
+  límit (el que admeti el seu proveïdor: Mailjet, Nominalia…). Compta tots els
+  enviaments massius que surten pel servidor del domini: els del panell i els
+  que fan els webs dels clients a les seves persones inscrites. En arribar-hi,
+  la resta s'esperen: els del panell, a la passada del cron; els d'un web, a la
+  seva pantalla d'enviament, que ho diu i continua sola si es deixa oberta.
+  Amb 0 no n'hi ha. Els correus d'un en un (confirmacions, accessos, avisos) no
+  compten ni s'aturen mai.
 - **Pausa automàtica**: si en una tanda no en surt cap (el servidor de correu
   no va o rebutja la clau), l'enviament es posa en pausa amb l'error. Un cop
   arreglat, **Reprèn**. Els que han fallat es poden tornar a provar.

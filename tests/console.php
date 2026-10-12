@@ -515,6 +515,31 @@ try {
     check('I les respostes van a qui ha dit el web', str_contains($darreraProva, '"reply_to":"organitzacio@santjordi.cat"'), $darreraProva);
     $jordiPdo->exec("UPDATE settings SET v = 'platform' WHERE k = 'mail_transport'");
 
+    // Els enviaments del web a les seves inscripcions comparteixen el límit
+    // per hora del servidor de correu del domini amb la plataforma.
+    $pdo->exec("DELETE FROM platform_mail_quota");
+    $pdo->prepare('INSERT INTO settings (k, v, updated_at) VALUES (?, ?, NOW()) ON DUPLICATE KEY UPDATE v = VALUES(v)')
+        ->execute(['site:crosescolar.test:mail_hourly_limit', '2']);
+    $jordiPdo->exec("INSERT INTO mailings (subject, body, audience, status, total, created_at, started_at)
+        VALUES ('Recordatori de la cursa', '<p>Hola</p>', 'manual', 'sending', 3, NOW(), NOW())");
+    $tandaId = (int) $jordiPdo->lastInsertId();
+    foreach (['a@familia.cat', 'b@familia.cat', 'c@familia.cat'] as $adreca) {
+        $jordiPdo->prepare("INSERT INTO mailing_recipients (mailing_id, email, status) VALUES (?, ?, 'pending')")->execute([$tandaId, $adreca]);
+    }
+    $enviatsTanda = static fn (): int => (int) $jordiPdo->query("SELECT COUNT(*) FROM mailing_recipients WHERE mailing_id = $tandaId AND status = 'sent'")->fetchColumn();
+    $web('POST', '/admin/enviaments/' . $tandaId . '/tanda', [
+        '_token' => $token($web('GET', '/admin/enviaments/' . $tandaId, [], 'santjordi.crosescolar.test')['body']),
+    ], 'santjordi.crosescolar.test');
+    check('El web envia fins al límit per hora del seu domini', $enviatsTanda() === 2, (string) $enviatsTanda());
+    check('I queda apuntat al comptador de la plataforma, amb el nom del web',
+        (int) Db::val("SELECT SUM(count) FROM platform_mail_quota WHERE domain = 'crosescolar.test' AND source = 'web:santjordi'", [], 0) === 2);
+    $web('POST', '/admin/enviaments/' . $tandaId . '/tanda', [
+        '_token' => $token($web('GET', '/admin/enviaments/' . $tandaId, [], 'santjordi.crosescolar.test')['body']),
+    ], 'santjordi.crosescolar.test');
+    check('La tanda següent s\'espera', $enviatsTanda() === 2 && str_contains(text($web('GET', '/admin/enviaments/' . $tandaId, [], 'santjordi.crosescolar.test')['body']), 'límit de correus per hora'));
+    $pdo->prepare('UPDATE settings SET v = ? WHERE k = ?')->execute(['', 'site:crosescolar.test:mail_hourly_limit']);
+    $pdo->exec("DELETE FROM platform_mail_quota");
+
     check('El client no pot actualitzar el codi de tothom',
         $web('GET', '/admin/actualitzacions', [], 'santjordi.crosescolar.test')['status'] === 403);
     check('Ni li surt al menú',

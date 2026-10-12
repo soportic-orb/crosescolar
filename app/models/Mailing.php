@@ -7,7 +7,10 @@ use Cros\Core\Auth;
 use Cros\Core\Db;
 use Cros\Core\Html;
 use Cros\Core\Mailer;
+use Cros\Core\Tenancy;
 use Cros\Core\View;
+use Cros\Platform\Bridge;
+use Cros\Platform\Mail\Quota;
 
 /**
  * Enviaments de correu a les persones inscrites.
@@ -212,19 +215,34 @@ class Mailing
 
     /**
      * Envia una tanda de correus.
-     * @return array{sent:int,failed:int,pending:int,done:bool}
+     *
+     * Al web d'un client de la plataforma, els correus surten pel servidor del
+     * seu domini, que comparteix amb la plataforma i amb els altres webs: cada
+     * tanda agafa lloc del límit per hora del domini abans d'enviar, i si no
+     * en queda, espera (waiting, i quants minuts falten).
+     *
+     * @return array{sent:int,failed:int,pending:int,done:bool,waiting:bool,wait:int}
      */
     public static function sendBatch(int $id, ?int $size = null): array
     {
         $mailing = self::find($id);
         if (!$mailing || $mailing['status'] === 'draft') {
-            return ['sent' => 0, 'failed' => 0, 'pending' => 0, 'done' => true];
+            return ['sent' => 0, 'failed' => 0, 'pending' => 0, 'done' => true, 'waiting' => false, 'wait' => 0];
         }
         $size = $size ?? self::batchSize();
         $rows = Db::all(
             'SELECT * FROM mailing_recipients WHERE mailing_id = :id AND status = :status ORDER BY id ASC LIMIT ' . max(1, $size),
             ['id' => $id, 'status' => 'pending']
         );
+        $quota = $rows ? self::takeQuota(count($rows)) : null;
+        if ($quota !== null && $quota['taken'] === 0) {
+            $pending = (int) Db::val('SELECT COUNT(*) FROM mailing_recipients WHERE mailing_id = :id AND status = :s', ['id' => $id, 's' => 'pending'], 0);
+
+            return ['sent' => 0, 'failed' => 0, 'pending' => $pending, 'done' => false, 'waiting' => true, 'wait' => $quota['wait']];
+        }
+        if ($quota !== null) {
+            $rows = array_slice($rows, 0, $quota['taken']);
+        }
 
         $sent = 0;
         $failed = 0;
@@ -266,7 +284,33 @@ class Mailing
             Auth::logActivity('mailing_done', 'mailing', $id, ['enviats' => $sent, 'errors' => $failed]);
         }
 
-        return ['sent' => $sent, 'failed' => $failed, 'pending' => $pending, 'done' => $done];
+        return ['sent' => $sent, 'failed' => $failed, 'pending' => $pending, 'done' => $done, 'waiting' => false, 'wait' => 0];
+    }
+
+    /**
+     * Agafa lloc del límit per hora del domini, a la plataforma. Torna null si
+     * aquest web no és en cap plataforma (o no s'hi arriba: llavors no es para
+     * l'enviament per això).
+     *
+     * @return array{taken:int,wait:int}|null
+     */
+    private static function takeQuota(int $want): ?array
+    {
+        if (!Tenancy::isTenant() || !class_exists(Bridge::class) || !Bridge::available()) {
+            return null;
+        }
+        try {
+            return Bridge::run(static function () use ($want): array {
+                $domain = Bridge::domain();
+                $taken = Quota::take($domain, 'web:' . Tenancy::slugOf(), $want);
+
+                return ['taken' => $taken, 'wait' => $taken > 0 ? 0 : Quota::minutesToWait($domain)];
+            }, null, true);
+        } catch (\Throwable $e) {
+            log_line('mail', 'No s\'ha pogut consultar el límit de correus de la plataforma', ['error' => $e->getMessage()]);
+
+            return null;
+        }
     }
 
     /** El correu d'una persona concreta, amb els marcadors substituïts. */

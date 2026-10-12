@@ -155,7 +155,7 @@ return [
             'smtp_secure' => ['label' => 'Xifratge', 'type' => 'select', 'default' => 'tls', 'show_if' => 'mail_transport:smtp',
                 'options' => ['tls' => 'TLS (587)', 'ssl' => 'SSL (465)', 'none' => 'Cap']],
             'mail_hourly_limit' => ['label' => 'Màxim de correus per hora', 'type' => 'number', 'default' => '0',
-                'help' => 'Els enviaments del panell no en fan més d\'aquests per hora des d\'aquest domini (comptant tots els que hi hagi en marxa). 0 vol dir sense límit. '
+                'help' => 'Els enviaments massius no en fan més d\'aquests per hora des d\'aquest domini: els del panell i els que fan els webs dels clients a les seves inscripcions, tots plegats. 0 vol dir sense límit. '
                     . 'Mireu el límit del vostre pla de correu: si se supera, el servidor els comença a rebutjar.'],
             'mail_batch_size' => ['label' => 'Correus per tanda', 'type' => 'number', 'default' => '20',
                 'help' => 'Els enviaments es fan a trossos per no saturar el servidor. Amb SMTP propi s\'hi pot pujar; amb la funció del sistema, val més deixar-ho baix.'],

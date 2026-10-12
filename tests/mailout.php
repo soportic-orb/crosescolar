@@ -45,6 +45,7 @@ use Cros\Platform\Mail\Ai;
 use Cros\Platform\Mail\Brand;
 use Cros\Platform\Mail\Doc;
 use Cros\Platform\Mail\Images;
+use Cros\Platform\Mail\Quota;
 use Cros\Platform\Mail\Renderer;
 use Cros\Platform\Mail\RichText;
 use Cros\Platform\Mail\Unsubscribe;
@@ -77,7 +78,7 @@ file_put_contents($site . '/tenants/platform.php', "<?php return " . var_export(
 
 $pdo = Platform::boot($site);
 Platform::migrate();
-foreach (['platform_mailing_recipients', 'platform_mailing_versions', 'platform_mailings', 'platform_unsubscribes',
+foreach (['platform_mailing_recipients', 'platform_mailing_versions', 'platform_mailings', 'platform_unsubscribes', 'platform_mail_quota',
     'mail_contacts', 'mail_lists', 'instances', 'clients'] as $table) {
     $pdo->exec('DELETE FROM ' . $table);
 }
@@ -252,7 +253,14 @@ check('Una tanda a mà tampoc no passa del límit', Mailout::sendBatch($id)['wai
 $log = (string) @file_get_contents($site . '/storage/logs/app-' . date('Y-m') . '.log');
 check('Els correus han sortit amb el nom de cadascú', str_contains($log, 'Benvinguda, Contacte Club B'), substr($log, -400));
 check('I des del domini que toca', str_contains($log, '"from":"hola@esportweb.test"') && !str_contains($log, '"from":"hola@crosescolar.test"'));
-Db::update('platform_mailing_recipients', ['sent_at' => date('Y-m-d H:i:s', time() - 7200)], 'mailing_id = :id', ['id' => $id]);
+check('El comptador del domini diu quants n\'han sortit', Quota::used('esportweb.test') === 3 && Quota::used('crosescolar.test') === 0);
+check('I d\'aquí a quant es podrà tornar a enviar', Quota::minutesToWait('esportweb.test') >= 59);
+Db::update('platform_mail_quota', ['created_at' => date('Y-m-d H:i:s', time() - 7200)], "domain = 'esportweb.test'");
+// Un web de client del mateix domini n'envia dos: el límit és de tots plegats.
+check('Un web del domini agafa lloc del mateix límit', Quota::take('esportweb.test', 'web:trail', 2) === 2);
+check('I no en pot agafar més dels que queden', Quota::take('esportweb.test', 'web:trail', 5) === 1);
+check('Llavors el panell també s\'espera', Mailout::sendBatch($id)['waiting'] === true);
+Db::update('platform_mail_quota', ['created_at' => date('Y-m-d H:i:s', time() - 7200)], "domain = 'esportweb.test'");
 $r = Mailout::tick(3);
 check('Passada l\'hora, s\'acaba d\'enviar', $r['sent'] === 1 && Mailout::find($id)['status'] === 'sent', json_encode($r));
 check('I no l\'envia dos cops a ningú', (int) Mailout::find($id)['sent'] === 4 && Mailout::recipientCounts($id)['sent'] === 4);

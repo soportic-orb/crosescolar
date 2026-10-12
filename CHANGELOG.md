@@ -16,6 +16,12 @@ i el versionatge semàntic.
   remitent és sempre el nom del web (el de Configuració → General).
 - Tampoc no es poden canviar enviant els camps a mà: el formulari només desa
   els que surten a la pantalla.
+- **El límit de correus per hora de cada domini és de tots plegats**: compta
+  els enviaments del panell i els que fan els webs dels clients a les seves
+  inscripcions, que surten pel mateix servidor. Quan s'hi arriba, l'enviament
+  d'un web s'espera i ho diu, i continua sol si es deixa la pantalla oberta,
+  sense repetir cap correu. Les confirmacions i els avisos d'un en un no es
+  paren mai.
 - Els webs instal·lats tots sols, fora de la plataforma, ho conserven tot com
   fins ara.
 

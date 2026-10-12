@@ -425,6 +425,17 @@
         return response.ok ? response.json() : Promise.reject(new Error('estat ' + response.status));
       }).then(function (result) {
         show(result.sentTotal || 0, result.failedTotal || 0);
+        // El servidor de correu admet tants correus per hora: s'espera i es
+        // continua sol, sense repetir-ne cap.
+        if (result.waiting) {
+          var minutes = result.wait || 5;
+          if (note) {
+            note.textContent += ' · s\'ha arribat al límit de correus per hora: continuarà sol d\'aquí a uns '
+              + minutes + ' minuts si deixeu aquesta pàgina oberta';
+          }
+          window.setTimeout(step, Math.min(minutes, 10) * 60000);
+          return;
+        }
         if (result.done) {
           if (note) { note.textContent += ' · fet!'; }
           window.setTimeout(function () { window.location.reload(); }, 900);

@@ -8,6 +8,7 @@ use Cros\Core\Mailer;
 use Cros\Core\Settings;
 use Cros\Platform\Mail\Brand;
 use Cros\Platform\Mail\Doc;
+use Cros\Platform\Mail\Quota;
 use Cros\Platform\Mail\Renderer;
 use Cros\Platform\Mail\RichText;
 use Cros\Platform\Mail\Unsubscribe;
@@ -84,20 +85,16 @@ class Mailout
     /** Quants correus per hora pot enviar un domini (0: sense límit). */
     public static function hourlyLimit(string $domain): int
     {
-        return Site::during($domain, static fn (): int => max(0, (int) Settings::get('mail_hourly_limit', '0')));
+        return Quota::limit($domain);
     }
 
-    /** Els que ha enviat (o provat d'enviar) un domini l'última hora. */
+    /**
+     * Els que ha enviat un domini l'última hora: els del panell i els dels
+     * webs dels clients, que surten tots pel mateix servidor (Mail\Quota).
+     */
     public static function sentLastHour(string $domain): int
     {
-        $main = Platform::domain();
-
-        return (int) Db::val(
-            "SELECT COUNT(*) FROM platform_mailing_recipients r JOIN platform_mailings m ON m.id = r.mailing_id
-             WHERE r.status IN ('sent', 'failed') AND r.sent_at >= :since AND COALESCE(NULLIF(m.domain, ''), :main) = :domain",
-            ['since' => date('Y-m-d H:i:s', time() - 3600), 'main' => $main, 'domain' => $domain],
-            0
-        );
+        return Quota::used($domain);
     }
 
     public static function find(int $id, ?string $kind = null): ?array
@@ -636,17 +633,17 @@ class Mailout
         }
         $domain = self::domain($mailing);
         $size = max(1, $size ?? self::batchSize());
-        $limit = self::hourlyLimit($domain);
-        if ($limit > 0) {
-            $size = min($size, $limit - self::sentLastHour($domain));
-            if ($size <= 0) {
-                return ['sent' => 0, 'failed' => 0, 'pending' => self::pending($id), 'done' => false, 'waiting' => true];
-            }
-        }
         $rows = Db::all(
             "SELECT * FROM platform_mailing_recipients WHERE mailing_id = :id AND status = 'pending' ORDER BY id ASC LIMIT " . $size,
             ['id' => $id]
         );
+        // Els correus per hora del domini són de tothom qui hi envia: s'agafa
+        // lloc abans d'enviar, i si no n'hi ha, s'espera.
+        $taken = Quota::take($domain, 'panell', count($rows));
+        if ($rows && $taken === 0) {
+            return ['sent' => 0, 'failed' => 0, 'pending' => self::pending($id), 'done' => false, 'waiting' => true];
+        }
+        $rows = array_slice($rows, 0, $taken);
 
         $sent = 0;
         $failed = 0;
@@ -684,6 +681,9 @@ class Mailout
                 }
             }
         });
+        // El lloc que s'havia agafat i no s'ha fet servir (una altra passada
+        // se n'havia quedat algun) es torna.
+        Quota::giveBack($domain, 'panell', $taken - $sent - $failed);
 
         $pending = self::pending($id);
         $done = $pending === 0;

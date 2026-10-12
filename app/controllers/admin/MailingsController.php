@@ -192,7 +192,10 @@ class MailingsController extends Controller
             ]);
         }
 
-        if ($result['done']) {
+        if ($result['waiting']) {
+            flash('info', 'S\'ha arribat al límit de correus per hora del servidor de correu. Podreu continuar d\'aquí a uns '
+                . $result['wait'] . ' minuts; no es repetirà cap correu.');
+        } elseif ($result['done']) {
             flash('success', 'Enviament acabat.');
         } else {
             flash('info', 'Tanda enviada. En queden ' . $result['pending'] . '.');
