@@ -185,3 +185,95 @@ envia, la que hi ha a Configuració → Correu.
 Si el correu arriba però va al correu brossa, que la persona el marqui com a
 «No és correu brossa». També ajuda que el DKIM i el DMARC passin i que
 l'adreça de qui envia sigui sempre la mateixa.
+
+## 6. Els enviaments del panell (butlletins i comunicats)
+
+**Panell de Superadministració → Enviaments.** Són els correus que la
+plataforma escriu als seus clients: un comunicat, les novetats del mes, un
+recordatori abans de la temporada. No tenen res a veure amb els correus de
+servei (la benvinguda, els enllaços d'accés, el suport), que surten sols.
+
+### Com es fa un correu
+
+1. **Nou enviament**: l'assumpte, el domini des d'on surt i una plantilla base
+   (o en blanc). El correu en fa una còpia: si després es canvia la plantilla,
+   el correu no canvia.
+2. **L'editor**: els blocs de l'esquerra s'arrosseguen al correu, el text
+   s'escriu a sobre i les opcions del bloc triat (colors, imatges, enllaços,
+   espais, què es veu al mòbil) són a la dreta. **Ctrl+S** desa i **Ctrl+Z**
+   desfà. Cada «Desa» guarda una versió, que es pot mirar i recuperar des de
+   **⋯ → Historial de versions**.
+3. Els colors que es deixen «del domini» i el logotip són els de la pàgina
+   pública del domini que envia: el mateix correu surt amb els colors de
+   `crosescolar.cat` o amb els d'`esportweb.cat`.
+4. **Camps personals**: `{{nom}}`, `{{entitat}}`, `{{correu}}`, `{{web}}`,
+   `{{plataforma}}` i `{{any}}` es poden posar al text, a l'assumpte i als
+   enllaços (botó **{ } Camps**). Cada persona el rep amb les seves dades.
+5. **Previsualitza** ensenya el correu a l'ordinador i al mòbil, i sense
+   imatges. **⋯ → Envia'm una prova** l'envia a la vostra adreça, pel servidor
+   del domini triat.
+
+Hi ha dos blocs de la plataforma: **Cursa**, que copia un web del directori
+(nom, data, població, imatge de portada i enllaç), i **Novetat**, per explicar
+una funcionalitat nova.
+
+### Enviar-lo o programar-lo
+
+**Envia o programa…** demana tres coses:
+
+- **A qui va**: les administradores dels webs, el contacte dels clients, una
+  llista de correu o adreces escrites a mà.
+- **Des de quin domini**: el servidor de correu, el remitent i els colors. Per
+  defecte, les administradores i els clients són **només els del domini triat**;
+  traient la marca, va als de tots els dominis. Les llistes i les adreces
+  escrites a mà no es filtren mai pel domini.
+- **Quan**: ara, o un dia i una hora.
+
+Abans de confirmar diu quanta gent el rebrà. Un cop comença a sortir, el correu
+ja no es pot canviar (es pot duplicar per fer-ne un altre).
+
+### Qui l'envia de debò: el cron
+
+Les tandes les envia la feina `enviaments`, que ha de passar **cada cinc
+minuts** (vegeu la secció de feines automàtiques de `docs/vps.md`):
+
+```
+*/5 * * * *  cd /var/www/crosescolar && php tools/platform.php enviaments
+```
+
+No cal tenir el panell obert. Si hi ha correus programats o a mig enviar i la
+feina fa més de vint minuts que no passa, el tauler i la llista d'enviaments
+avisen. Mentrestant, des del seguiment de cada enviament es poden enviar tandes
+a mà.
+
+- **Correus per hora**: a **Configuració → Correu**, cada domini pot tenir un
+  límit (el que admeti el seu proveïdor: Mailjet, Nominalia…). En arribar-hi,
+  la resta s'esperen a l'hora següent. Amb 0 no n'hi ha.
+- **Pausa automàtica**: si en una tanda no en surt cap (el servidor de correu
+  no va o rebutja la clau), l'enviament es posa en pausa amb l'error. Un cop
+  arreglat, **Reprèn**. Els que han fallat es poden tornar a provar.
+- **Estats**: esborrany, programat, s'està enviant, en pausa, enviat i aturat.
+  Els acabats es poden arxivar perquè no facin nosa a la llista.
+
+### La baixa
+
+Cada correu porta, a sota del peu, l'enllaç per donar-se de baixa, i també la
+capçalera `List-Unsubscribe` amb la baixa d'un sol clic que demanen Gmail i
+Yahoo als enviaments grans. Obrir l'enllaç no dona de baixa ningú: demana
+confirmació, perquè els filtres de Microsoft obren tots els enllaços d'un correu
+per mirar si són de fiar. Qui es dona de baixa no rep cap més enviament del
+panell, sigui de la llista que sigui; els correus de servei li continuen
+arribant.
+
+### La IA de l'editor
+
+**Configuració → Intel·ligència artificial**: la clau d'Anthropic (per escriure
+textos amb Claude) i la d'OpenAI (textos i imatges; Claude no fa imatges). Es
+desen xifrades. **Desar i provar la IA** fa una crida curta a cada servei per
+comprovar que la clau funciona.
+
+A l'editor, **✨ IA** escriu un text, un títol, un botó o l'assumpte i el resum,
+o crea una imatge (també a partir d'imatges de referència). El resultat es pot
+afegir com a bloc nou o substituir el del bloc triat, i sempre s'ha de revisar
+abans d'enviar el correu. El que s'hi escriu va al servei d'IA: no hi poseu
+dades personals de ningú.

@@ -1,170 +1,125 @@
 <?php
 /**
- * Fitxa d'un enviament: destinataris, prova i enviament per tandes.
+ * El seguiment d'un enviament que ja ha començat: com va, a qui ha arribat i a
+ * qui no, com ha anat, i el correu tal com ha sortit.
+ *
  * @var array<string,mixed> $mailing
- * @var array<string,array{email:string,name:string,entity:string}> $audience
+ * @var array<string,int> $counts
  * @var array<int,array<string,mixed>> $recipients
  * @var array<string,mixed>|null $list
+ * @var array<int,array{at:string,text:string}> $timeline
+ * @var int $limit
  * @var int $batch
+ * @var bool $cronStale
  */
-use Cros\Core\Icons;
-use Cros\Platform\Console;
 use Cros\Platform\Mailout;
 
 $id = (int) $mailing['id'];
-$isDraft = $mailing['status'] === 'draft';
-$pending = max(0, (int) $mailing['total'] - (int) $mailing['sent'] - (int) $mailing['failed']);
+$status = (string) $mailing['status'];
+$total = max(1, array_sum($counts));
+$pending = $counts['pending'] + $counts['sending'];
+$filter = isset($_GET['estat']) ? (string) $_GET['estat'] : '';
+$who = [
+    'clients' => 'Contacte dels clients',
+    'instances' => 'Administradores dels webs',
+    'list' => 'La llista «' . ($list['name'] ?? '?') . '»',
+    'manual' => 'Adreces escrites a mà',
+];
+$labels = ['pending' => 'Pendent', 'sending' => 'S\'està enviant', 'sent' => 'Enviat', 'failed' => 'No ha sortit', 'skipped' => 'No s\'ha enviat'];
+$tones = ['pending' => 'draft', 'sending' => 'sending', 'sent' => 'sent', 'failed' => 'paused', 'skipped' => 'cancelled'];
+$button = static fn (string $action, string $label, string $class = 'btn btn--ghost btn--sm', string $confirm = ''): string =>
+    '<form method="post" action="' . e(url('/enviaments/' . $id . '/accio')) . '"' . ($confirm !== '' ? ' data-confirm="' . e($confirm) . '"' : '') . ' style="margin:0">'
+    . csrf_field() . '<input type="hidden" name="action" value="' . e($action) . '"><button class="' . e($class) . '" type="submit">' . e($label) . '</button></form>';
+// Quant falta, a ull: les tandes del cron cada cinc minuts, i el límit per hora si n'hi ha.
+$perHour = $limit > 0 ? min($limit, $batch * 12 * 4) : $batch * 12 * 4;
+$eta = $pending > 0 ? (int) ceil($pending / max(1, $perHour) * 60) : 0;
 ?>
-<div class="panel">
-  <div class="panel__head">
-    <h2><?= e($mailing['subject']) ?></h2>
-    <a class="btn btn--ghost btn--sm spacer" href="<?= e(url('/enviaments')) ?>">← Tots els enviaments</a>
+<div class="ml">
+  <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem">
+    <a class="btn btn--ghost btn--sm" href="<?= e(url('/enviaments')) ?>">← Enviaments</a>
+    <h2 style="margin:0;font-size:1.15rem;flex:1 1 320px"><?= e($mailing['subject']) ?></h2>
+    <span class="ml-status <?= !empty($mailing['archived_at']) ? 'archived' : e($status) ?>"><?= !empty($mailing['archived_at']) ? 'Arxivat' : e(Mailout::STATUSES[$status] ?? $status) ?></span>
+    <?php if ($status === 'sending'): ?>
+      <?= $button('batch', 'Envia una tanda ara') ?>
+      <?= $button('pause', 'Pausa') ?>
+    <?php elseif ($status === 'paused'): ?>
+      <?= $button('resume', 'Reprèn', 'btn btn--sm') ?>
+    <?php endif; ?>
+    <?php if (in_array($status, ['sending', 'paused'], true)): ?>
+      <?= $button('stop', 'Atura del tot', 'btn btn--danger btn--sm', 'Aturar-lo del tot? Els ' . $pending . ' que encara no l\'han rebut ja no el rebran.') ?>
+    <?php endif; ?>
+    <?php if ($counts['failed'] > 0 && in_array($status, ['sent', 'sending', 'paused'], true)): ?>
+      <?= $button('retry', 'Torna a provar els que han fallat') ?>
+    <?php endif; ?>
+    <?= $button('duplicate', 'Duplica') ?>
+    <?php if (in_array($status, ['sent', 'cancelled'], true)): ?>
+      <?= !empty($mailing['archived_at']) ? $button('unarchive', 'Desarxiva') : $button('archive', 'Arxiva') ?>
+      <?= $button('delete', 'Esborra', 'btn btn--danger btn--sm', 'Esborrar aquest enviament i tot el seu historial?') ?>
+    <?php endif; ?>
   </div>
-  <div class="panel__body">
 
-    <div class="grid-cards mb-2">
-      <div class="kpi">
-        <div class="kpi__label"><?= Icons::svg('users', 'icon', 16) ?> Destinataris</div>
-        <div class="kpi__value"><?= $isDraft ? count($audience) : (int) $mailing['total'] ?></div>
-        <div class="kpi__foot">adreces diferents</div>
+  <?php if ($status === 'paused' && !empty($mailing['paused_reason'])): ?>
+    <div class="alert alert--error"><strong>En pausa.</strong> <?= e((string) $mailing['paused_reason']) ?>
+      Quan estigui arreglat, cliqueu <b>Reprèn</b>.</div>
+  <?php elseif ($status === 'sending' && $cronStale): ?>
+    <div class="alert alert--warning"><strong>El cron dels enviaments no passa</strong>, i les tandes no surten soles.
+      Feu que el cron de <code>www-data</code> faci <code>php tools/platform.php enviaments</code> cada cinc minuts, o envieu-les a mà amb <b>Envia una tanda ara</b>.</div>
+  <?php elseif ($status === 'sending'): ?>
+    <div class="alert alert--info">No cal tenir aquesta pàgina oberta: les tandes surten soles cada cinc minuts.</div>
+  <?php endif; ?>
+
+  <div class="mt-grid">
+    <div class="mt-card">
+      <div class="mt-big" role="img" aria-label="<?= (int) $counts['sent'] ?> enviats de <?= array_sum($counts) ?>">
+        <span style="width:<?= round($counts['sent'] * 100 / $total, 2) ?>%;background:var(--a-green)"></span>
+        <span style="width:<?= round($counts['failed'] * 100 / $total, 2) ?>%;background:#c0492b"></span>
+        <span style="width:<?= round($counts['skipped'] * 100 / $total, 2) ?>%;background:#c9b8ae"></span>
       </div>
-      <div class="kpi">
-        <div class="kpi__label"><?= Icons::svg('check', 'icon', 16) ?> Enviats</div>
-        <div class="kpi__value"><?= (int) $mailing['sent'] ?></div>
-        <div class="kpi__foot"><?= $pending ?> per enviar</div>
+      <div class="mt-counts">
+        <a href="<?= e(url('/enviaments/' . $id . '?estat=sent')) ?>"<?= $filter === 'sent' ? ' aria-current="true"' : '' ?>><b><?= (int) $counts['sent'] ?></b>enviats</a>
+        <a href="<?= e(url('/enviaments/' . $id . '?estat=failed')) ?>"<?= $filter === 'failed' ? ' aria-current="true"' : '' ?>><b><?= (int) $counts['failed'] ?></b>no han sortit</a>
+        <a href="<?= e(url('/enviaments/' . $id . '?estat=pending')) ?>"<?= $filter === 'pending' ? ' aria-current="true"' : '' ?>><b><?= $pending ?></b><?= $counts['skipped'] ? 'pendents · ' . (int) $counts['skipped'] . ' aturats' : 'pendents' ?></a>
+        <div><b><?= $pending > 0 ? ($eta < 60 ? '~' . max(5, $eta) . ' min' : '~' . round($eta / 60, 1) . ' h') : '—' ?></b><?= $pending > 0 ? 'per acabar' : 'acabat' ?></div>
       </div>
-      <div class="kpi">
-        <div class="kpi__label"><?= Icons::svg('alert', 'icon', 16) ?> Amb error</div>
-        <div class="kpi__value"><?= (int) $mailing['failed'] ?></div>
-        <div class="kpi__foot"><?= (int) $mailing['failed'] > 0 ? 'reviseu-ho més avall' : 'cap problema' ?></div>
-      </div>
-    </div>
-
-    <h3>A qui va</h3>
-    <p>
-      <?= e(Mailout::AUDIENCES[$mailing['audience']] ?? '') ?>
-      <?php if ($list): ?> — <strong><?= e($list['name']) ?></strong><?php endif; ?>
-      <?php if ($mailing['audience'] === 'instances'): ?>
-        · <?= e(mb_strtolower(Mailout::SCOPES[$mailing['instance_status']] ?? '')) ?>
-      <?php endif; ?>
-    </p>
-
-    <?php if ($isDraft): ?>
-      <?php if (!$audience): ?>
-        <div class="alert alert--error">
-          No hi ha cap destinatari amb els criteris triats. Editeu l'enviament i reviseu-los.
-        </div>
-      <?php else: ?>
-        <details>
-          <summary>Veure les <?= count($audience) ?> adreces</summary>
-          <div class="table-wrap" style="margin-top:.8rem">
-            <table class="admin-table">
-              <thead><tr><th>Adreça</th><th>Nom</th><th>Entitat</th></tr></thead>
-              <tbody>
-                <?php foreach (array_slice($audience, 0, 200) as $person): ?>
-                  <tr>
-                    <td class="mono"><?= e($person['email']) ?></td>
-                    <td><?= e($person['name']) ?></td>
-                    <td class="text-soft"><?= e($person['entity']) ?></td>
-                  </tr>
-                <?php endforeach; ?>
-              </tbody>
-            </table>
-          </div>
-          <?php if (count($audience) > 200): ?>
-            <p class="text-soft">…i <?= count($audience) - 200 ?> més.</p>
-          <?php endif; ?>
-        </details>
-      <?php endif; ?>
-    <?php endif; ?>
-
-    <h3 style="margin-top:2rem">Abans d'enviar-lo</h3>
-    <div class="flex" style="gap:.6rem;flex-wrap:wrap">
-      <a class="btn btn--ghost btn--sm" href="<?= e(url('/enviaments/' . $id . '/vista-previa')) ?>" target="_blank">
-        <?= Icons::svg('eye', 'icon', 16) ?> Vista prèvia
-      </a>
-      <form method="post" action="<?= e(url('/enviaments/' . $id . '/prova')) ?>" class="flex" style="gap:.4rem">
-        <?= csrf_field() ?>
-        <input type="email" name="email" placeholder="<?= e(Console::user()['email'] ?? 'adreça de prova') ?>" style="width:16rem">
-        <button class="btn btn--ghost btn--sm" type="submit"><?= Icons::svg('mail', 'icon', 16) ?> Enviar-ne una prova</button>
-      </form>
-      <?php if ($isDraft): ?>
-        <a class="btn btn--ghost btn--sm" href="<?= e(url('/enviaments/' . $id . '/editar')) ?>">
-          <?= Icons::svg('edit', 'icon', 16) ?> Editar
-        </a>
-      <?php endif; ?>
-    </div>
-
-    <h3 style="margin-top:2rem">Enviar</h3>
-    <?php if ($isDraft && $audience): ?>
-      <p class="text-soft">En preparar-lo es fixa la llista de destinataris i ja no es podrà editar el correu.</p>
-      <form method="post" action="<?= e(url('/enviaments/' . $id . '/preparar')) ?>"
-            data-confirm="Preparar l'enviament per a <?= count($audience) ?> adreces? Després ja no es podrà editar.">
-        <?= csrf_field() ?>
-        <button class="btn" type="submit"><?= Icons::svg('check', 'icon', 18) ?> Preparar l'enviament</button>
-      </form>
-    <?php elseif ($pending > 0): ?>
-      <div data-send="<?= e(url('/enviaments/' . $id . '/tanda')) ?>"
-           data-token="<?= e(csrf_token()) ?>" data-total="<?= (int) $mailing['total'] ?>">
-        <div class="progress" style="margin-bottom:.7rem">
-          <div class="progress__bar" data-send-bar
-               style="width:<?= (int) $mailing['total'] > 0 ? round((((int) $mailing['sent'] + (int) $mailing['failed']) / (int) $mailing['total']) * 100) : 0 ?>%"></div>
-        </div>
-        <p class="text-soft" data-send-note>
-          <?= (int) $mailing['sent'] + (int) $mailing['failed'] ?> de <?= (int) $mailing['total'] ?> ·
-          <?= (int) $mailing['sent'] ?> enviats
-        </p>
-        <form method="post" action="<?= e(url('/enviaments/' . $id . '/tanda')) ?>">
-          <?= csrf_field() ?>
-          <button class="btn" type="submit" data-send-start>
-            <?= Icons::svg('mail', 'icon', 18) ?>
-            <?= (int) $mailing['sent'] + (int) $mailing['failed'] > 0 ? 'Continuar l\'enviament' : 'Enviar ara' ?>
-          </button>
-        </form>
-        <p class="text-soft" style="margin-top:.6rem;font-size:.9rem">
-          S'envien de <?= (int) $batch ?> en <?= (int) $batch ?>. No tanqueu aquesta pàgina mentre duri;
-          si es talla, podeu continuar des d'aquí mateix i no es repetirà cap correu.
-        </p>
-      </div>
-    <?php elseif ((int) $mailing['total'] > 0): ?>
-      <div class="alert alert--success">
-        Enviament acabat el <?= e(dt($mailing['finished_at'] ?: $mailing['updated_at'])) ?>:
-        <?= (int) $mailing['sent'] ?> correus enviats<?= (int) $mailing['failed'] > 0 ? ' i ' . (int) $mailing['failed'] . ' amb error' : '' ?>.
-      </div>
-      <form method="post" action="<?= e(url('/enviaments/' . $id . '/preparar')) ?>"
-            data-confirm="Buscar adreces noves (clients donats d'alta després, per exemple)?">
-        <?= csrf_field() ?>
-        <button class="btn btn--ghost btn--sm" type="submit">
-          <?= Icons::svg('refresh', 'icon', 16) ?> Enviar-lo a les adreces noves
-        </button>
-      </form>
-    <?php endif; ?>
-
-    <?php if ($recipients): ?>
-      <h3 style="margin-top:2rem">Destinataris</h3>
+      <p class="text-soft" style="margin:0;font-size:.86rem">
+        <?= e($who[$mailing['audience']] ?? '') ?> · <?= e(\Cros\Platform\Controllers\MailoutController::from(Mailout::domain($mailing))) ?>
+        <?= !empty($mailing['all_domains']) && in_array($mailing['audience'], ['clients', 'instances'], true) ? '(a tots els dominis)' : '' ?>
+        · tandes de <?= $batch ?><?= $limit > 0 ? ', com a molt ' . $limit . ' per hora' : '' ?>.
+        <?php if ($filter !== ''): ?><a href="<?= e(url('/enviaments/' . $id)) ?>">Mostra'ls tots</a><?php endif; ?>
+      </p>
       <div class="table-wrap">
         <table class="admin-table">
-          <thead><tr><th>Adreça</th><th>Entitat</th><th>Estat</th></tr></thead>
+          <thead><tr><th>Destinatari</th><th>Entitat</th><th>Estat</th></tr></thead>
           <tbody>
-            <?php foreach ($recipients as $row): ?>
+            <?php foreach ($recipients as $r): ?>
               <tr>
-                <td class="mono"><?= e($row['email']) ?></td>
-                <td class="text-soft"><?= e($row['entity'] ?? '') ?></td>
+                <td><?= $r['name'] ? '<b>' . e($r['name']) . '</b> · ' : '' ?><?= e($r['email']) ?></td>
+                <td class="text-soft"><?= e((string) $r['entity']) ?></td>
                 <td>
-                  <?php if ($row['status'] === 'sent'): ?>
-                    <span class="badge badge--green">Enviat</span>
-                  <?php elseif ($row['status'] === 'failed'): ?>
-                    <span class="badge badge--red">Error</span>
-                    <span class="text-soft"><?= e($row['error'] ?? '') ?></span>
-                  <?php else: ?>
-                    <span class="badge badge--amber">Per enviar</span>
-                  <?php endif; ?>
+                  <span class="ml-status <?= e($tones[$r['status']] ?? 'draft') ?>"><?= e($labels[$r['status']] ?? $r['status']) ?><?= $r['sent_at'] && $r['status'] === 'sent' ? ' ' . e(date('H:i', (int) strtotime((string) $r['sent_at']))) : '' ?></span>
+                  <?php if ($r['status'] === 'failed' && $r['error']): ?><div class="text-soft" style="font-size:.78rem;margin-top:3px"><?= e((string) $r['error']) ?></div><?php endif; ?>
                 </td>
               </tr>
             <?php endforeach; ?>
+            <?php if (!$recipients): ?><tr><td colspan="3" class="text-soft">Cap destinatari en aquest estat.</td></tr><?php endif; ?>
           </tbody>
         </table>
       </div>
-    <?php endif; ?>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+      <div class="mt-card">
+        <h3 style="margin:0;font-size:.98rem">Com ha anat</h3>
+        <div class="mt-tl">
+          <?php foreach (array_slice($timeline, -40) as $row): ?>
+            <div><span><?= e(dt($row['at'], 'd/m H:i')) ?></span><span><?= e($row['text']) ?></span></div>
+          <?php endforeach; ?>
+          <?php if (!$timeline): ?><p class="text-soft" style="margin:0">Encara no ha passat res.</p><?php endif; ?>
+        </div>
+      </div>
+      <div class="mt-card">
+        <h3 style="margin:0;font-size:.98rem">El correu</h3>
+        <iframe class="mt-frame" title="El correu enviat" src="<?= e(url('/enviaments/' . $id . '/correu')) ?>" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox" loading="lazy"></iframe>
+      </div>
+    </div>
   </div>
 </div>

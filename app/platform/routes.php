@@ -67,11 +67,15 @@ if (($mode ?? 'platform') === 'console') {
 
     /* Enviaments de correu, llistes i plantilla. */
     $router->get('/enviaments', [MailoutController::class, 'index']);
-    $router->get('/enviaments/nou', [MailoutController::class, 'create']);
     $router->post('/enviaments/nou', [MailoutController::class, 'store']);
-    $router->get('/enviaments/plantilla', [MailoutController::class, 'template']);
-    $router->post('/enviaments/plantilla', [MailoutController::class, 'saveTemplate']);
-    $router->get('/enviaments/plantilla/vista-previa', [MailoutController::class, 'templatePreview']);
+    $router->get('/enviaments/plantilles', [MailoutController::class, 'templates']);
+    $router->post('/enviaments/plantilles', [MailoutController::class, 'storeTemplate']);
+    $router->post('/enviaments/vista-previa', [MailoutController::class, 'preview']);
+    $router->post('/enviaments/imatge', [MailoutController::class, 'upload']);
+    $router->get('/enviaments/curses', [MailoutController::class, 'races']);
+    $router->get('/enviaments/curses/{slug}', [MailoutController::class, 'race']);
+    $router->post('/enviaments/ia/text', [MailoutController::class, 'aiText']);
+    $router->post('/enviaments/ia/imatge', [MailoutController::class, 'aiImage']);
     $router->get('/enviaments/llistes', [MailoutController::class, 'lists']);
     $router->post('/enviaments/llistes/desar', [MailoutController::class, 'saveList']);
     $router->get('/enviaments/llistes/{id:\d+}', [MailoutController::class, 'listShow']);
@@ -80,12 +84,15 @@ if (($mode ?? 'platform') === 'console') {
     $router->post('/enviaments/contactes/{id:\d+}', [MailoutController::class, 'contactAction']);
     $router->get('/enviaments/{id:\d+}', [MailoutController::class, 'show']);
     $router->get('/enviaments/{id:\d+}/editar', [MailoutController::class, 'edit']);
-    $router->post('/enviaments/{id:\d+}/editar', [MailoutController::class, 'update']);
-    $router->get('/enviaments/{id:\d+}/vista-previa', [MailoutController::class, 'preview']);
+    $router->post('/enviaments/{id:\d+}/desar', [MailoutController::class, 'save']);
+    $router->get('/enviaments/{id:\d+}/correu', [MailoutController::class, 'rendered']);
+    $router->get('/enviaments/{id:\d+}/versions', [MailoutController::class, 'versions']);
+    $router->get('/enviaments/{id:\d+}/versions/{v:\d+}', [MailoutController::class, 'versionPreview']);
+    $router->post('/enviaments/{id:\d+}/versions/{v:\d+}/recupera', [MailoutController::class, 'restore']);
     $router->post('/enviaments/{id:\d+}/prova', [MailoutController::class, 'test']);
-    $router->post('/enviaments/{id:\d+}/preparar', [MailoutController::class, 'start']);
-    $router->post('/enviaments/{id:\d+}/tanda', [MailoutController::class, 'batch']);
-    $router->post('/enviaments/{id:\d+}/esborrar', [MailoutController::class, 'destroy']);
+    $router->post('/enviaments/{id:\d+}/destinataris', [MailoutController::class, 'audience']);
+    $router->post('/enviaments/{id:\d+}/envia', [MailoutController::class, 'send']);
+    $router->post('/enviaments/{id:\d+}/accio', [MailoutController::class, 'action']);
 
     /* Els missatges del formulari de contacte de les webs públiques. */
     $router->get('/contacte', [ContactController::class, 'index']);

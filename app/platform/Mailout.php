@@ -855,7 +855,8 @@ class Mailout
         $escaped = array_map(static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8'), $values);
 
         return [
-            'subject' => mb_substr(trim(strtr((string) $mailing['subject'], $values)), 0, 190),
+            // A l'assumpte, cap salt de línia (un nom mal desat no pot afegir capçaleres).
+            'subject' => mb_substr(trim((string) preg_replace('/[\r\n\t]+/', ' ', strtr((string) $mailing['subject'], $values))), 0, 190),
             'html' => strtr($parts['html'], $escaped),
             'text' => strtr($parts['text'], $values),
             'headers' => [

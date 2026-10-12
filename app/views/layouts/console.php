@@ -27,6 +27,9 @@ $marca = static fn (string $key, string $default = ''): string => Site::value($p
 <meta name="robots" content="noindex, nofollow">
 <link rel="stylesheet" href="<?= e(asset('css/fonts.css')) ?>">
 <link rel="stylesheet" href="<?= e(asset('css/admin.css')) ?>">
+<?php foreach ((array) ($styles ?? []) as $sheet): ?>
+  <link rel="stylesheet" href="<?= e(asset((string) $sheet)) ?>">
+<?php endforeach; ?>
 <style>:root{--a-green: <?= e($marca('color_primary', '#1f4f5f')) ?>;}</style>
 <?php if ($icona = $marca('platform_favicon')): ?>
   <link rel="icon" href="<?= e(upload_url($icona)) ?>">
@@ -102,5 +105,8 @@ $marca = static fn (string $key, string $default = ''): string => Site::value($p
   </div>
 </div>
 <script src="<?= e(asset('js/admin.js')) ?>" defer></script>
+<?php foreach ((array) ($scripts ?? []) as $script): ?>
+  <script src="<?= e(asset((string) $script)) ?>" defer></script>
+<?php endforeach; ?>
 </body>
 </html>

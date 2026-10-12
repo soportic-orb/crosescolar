@@ -3,6 +3,52 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.47.0] — 2026-10-12
+
+### Afegit
+- **Editor visual de correus als Enviaments del Panell de Superadministració.**
+  És el del Mailing del Tauler de Gestió: els blocs (capçalera, títol, text,
+  imatge, botó, enllaç, requadre, columnes, imatge i text, separador, espai i
+  peu) s'arrosseguen al correu, el text s'escriu a sobre i les opcions del
+  bloc són a la dreta. Desfer i refer, historial de versions amb «Recupera»,
+  previsualització a l'ordinador i al mòbil, i prova a la pròpia adreça.
+  El correu surt bé a l'Outlook per a Windows, al Gmail i al mòbil.
+- Dos blocs propis de la plataforma: **Cursa** (copia un web del directori) i
+  **Novetat**.
+- **Plantilles base** (Comunicat, Novetats, Recordatori) que agafen el logotip
+  i els colors del domini que envia.
+- **Camps personals** al text, a l'assumpte i als enllaços: `{{nom}}`,
+  `{{entitat}}`, `{{correu}}`, `{{web}}`, `{{plataforma}}`, `{{any}}`.
+- **Enviar ara o programar-lo** per a un dia i una hora. Estats nous:
+  esborrany, programat, s'està enviant, en pausa, enviat i aturat, i es poden
+  arxivar. Pàgina de seguiment amb el progrés, a qui ha arribat i a qui no, i
+  com ha anat.
+- **Des de quin domini surt**: el seu servidor de correu, el remitent i els
+  colors. Les administradores i els clients, per defecte, només els del domini
+  triat, amb l'opció d'enviar-lo als de tots els dominis.
+- **Feina del cron `php tools/platform.php enviaments`**, cada cinc minuts:
+  comença els programats i envia les tandes. El tauler avisa si no passa.
+- **Límit de correus per hora** per a cada domini (Configuració → Correu).
+- **Pausa automàtica** quan en una tanda no en surt cap, amb l'error.
+- **La baixa dels enviaments**: un enllaç per persona al peu de cada correu i
+  la capçalera `List-Unsubscribe` amb la baixa d'un sol clic. Qui es dona de
+  baixa no rep cap més enviament del panell.
+- **IA a l'editor** (Configuració → Intel·ligència artificial): textos amb
+  Claude o OpenAI i imatges amb OpenAI, també a partir d'imatges de
+  referència. Botó per provar les claus.
+
+### Canviat
+- Els enviaments d'abans es conserven; els esborranys passen a l'editor amb el
+  seu text en un bloc.
+
+### Tret
+- L'editor de la capçalera i el peu en HTML (Enviaments → Plantilla): ara ho
+  fan les plantilles base.
+
+### Corregit
+- Les peticions JSON del panell ja no es prenen per un formulari massa gran
+  que el servidor ha descartat.
+
 ## [1.46.0] — 2026-10-06
 
 ### Canviat

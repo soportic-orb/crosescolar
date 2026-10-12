@@ -2536,99 +2536,147 @@ try {
         && (int) Db::val('SELECT active FROM mail_contacts WHERE id = :id',
             ['id' => (int) $per['anna@example.cat']['id']], 1) === 0);
 
-    echo "\n== La plantilla del correu ==\n";
-    $plantilla = $web('GET', '/enviaments/plantilla');
-    check('L\'editor de plantilla respon', $plantilla['status'] === 200);
-    check('I porta la capçalera de fàbrica', str_contains($plantilla['body'], '{{plataforma}}'));
-    $mostra = $web('GET', '/enviaments/plantilla/vista-previa');
-    check('La vista prèvia és un correu sencer',
-        str_contains($mostra['body'], '<!doctype html>') && str_contains($mostra['body'], 'Anna Duran'));
-    check('Amb els marcadors ja substituïts', !str_contains($mostra['body'], '{{nom}}'));
+    echo "\n== Enviaments: l'editor de blocs ==\n";
+    /** Una crida JSON de l'editor, amb el testimoni a la capçalera. */
+    $api = static function (string $method, string $path, array $data, string $csrf) use ($base, $jar): array {
+        $ch = curl_init($base . $path);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CUSTOMREQUEST => $method,
+            CURLOPT_HTTPHEADER => ['Host: admin.crosescolar.test', 'Content-Type: application/json', 'Accept: application/json',
+                'X-Requested-With: XMLHttpRequest', 'X-CSRF-TOKEN: ' . $csrf],
+            CURLOPT_COOKIEJAR => $jar,
+            CURLOPT_COOKIEFILE => $jar,
+            CURLOPT_TIMEOUT => 60,
+        ]);
+        if ($method === 'POST') {
+            curl_setopt($ch, CURLOPT_POSTFIELDS, (string) json_encode($data));
+        }
+        $body = (string) curl_exec($ch);
+        $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
 
-    $desada = $web('POST', '/enviaments/plantilla', [
-        '_token' => $token($plantilla['body']),
-        'header' => '<div style="padding:20px">Hola de part de {{plataforma}}</div>',
-        'footer' => '<div style="padding:20px">Escriviu-nos a hola@{{web}} · {{any}}</div>',
-    ]);
-    check('La plantilla es desa', $desada['status'] === 302);
-    $mostra = $web('GET', '/enviaments/plantilla/vista-previa');
-    check('I la vista prèvia la fa servir',
-        str_contains($mostra['body'], 'Hola de part de Cros Escolar')
-        && str_contains($mostra['body'], 'hola@crosescolar.test'));
+        return ['status' => $status, 'body' => $body, 'json' => json_decode($body, true) ?: []];
+    };
+    $cfgOf = static fn (string $html): array => preg_match('#<script type="application/json" id="me-cfg">(.*?)</script>#s', $html, $m)
+        ? (json_decode($m[1], true) ?: []) : [];
 
-    echo "\n== Enviaments de la plataforma ==\n";
-    $nouEnv = $web('GET', '/enviaments/nou');
-    check('El formulari d\'enviament respon', $nouEnv['status'] === 200);
+    $llistaEnv = $web('GET', '/enviaments');
+    check('La llista d\'enviaments respon', $llistaEnv['status'] === 200 && str_contains($llistaEnv['body'], 'Nou enviament'));
+    $plantilles = $web('GET', '/enviaments/plantilles');
+    check('Hi ha les plantilles base de partida',
+        $plantilles['status'] === 200 && str_contains($plantilles['body'], 'Comunicat') && str_contains($plantilles['body'], 'Recordatori'));
+    check('L\'editor de plantilla d\'abans ja no hi és', $web('GET', '/enviaments/plantilla')['status'] === 404);
+    $comunicat = (int) Db::val("SELECT id FROM platform_mailings WHERE kind = 'template' AND template_name = 'Comunicat'", [], 0);
+
     $creat = $web('POST', '/enviaments/nou', [
-        '_token' => $token($nouEnv['body']),
+        '_token' => $token($llistaEnv['body']),
         'subject' => 'Novetats per a {{entitat}}',
-        'body' => '<p>Hola, {{nom}}. Us escrivim a {{correu}}.</p>',
-        'audience' => 'list', 'list_id' => (string) $listId,
-        'instance_status' => 'active', 'manual_emails' => '',
+        'template_id' => (string) $comunicat,
+        'domain' => 'crosescolar.test',
     ]);
-    $mailingId = (int) Db::val('SELECT id FROM platform_mailings ORDER BY id DESC LIMIT 1', [], 0);
-    check('L\'esborrany es desa', $creat['status'] === 302 && $mailingId > 0);
+    $mailingId = (int) Db::val("SELECT id FROM platform_mailings WHERE kind = 'mail' ORDER BY id DESC LIMIT 1", [], 0);
+    check('Un correu nou neix de la plantilla i obre l\'editor',
+        $creat['status'] === 302 && str_contains($creat['headers'], '/enviaments/' . $mailingId . '/editar'));
+    $editor = $web('GET', '/enviaments/' . $mailingId . '/editar');
+    $cfg = $cfgOf($editor['body']);
+    check('L\'editor s\'obre amb el document del correu',
+        $editor['status'] === 200 && ($cfg['doc']['blocks'][0]['type'] ?? '') === 'header' && (int) ($cfg['version'] ?? 0) === 1);
+    check('I sap els colors i el remitent de cada domini',
+        isset($cfg['brands']['crosescolar.test']['primary'], $cfg['brands']['crosescolar.test']['sender']));
+    $csrf = (string) ($cfg['csrf'] ?? '');
 
-    $fitxaEnv = $web('GET', '/enviaments/' . $mailingId);
-    check('La fitxa s\'obre', $fitxaEnv['status'] === 200);
-    check('I només compta les adreces d\'alta',
-        str_contains($fitxaEnv['body'], 'Veure les 2 adreces'), 'no hi diu 2');
+    $doc = $cfg['doc'];
+    $doc['blocks'][] = ['type' => 'text', 'html' => '<p>Hola, {{nom}}. Us escrivim a {{correu}}.<script>x()</script></p>'];
+    $desat = $api('POST', '/enviaments/' . $mailingId . '/desar', ['subject' => 'Novetats per a {{entitat}}', 'doc' => $doc, 'base_version' => 1], $csrf);
+    check('Desar fa una versió nova', $desat['status'] === 200 && (int) ($desat['json']['version'] ?? 0) === 2, $desat['body']);
+    check('I el que arriba de l\'editor es neteja',
+        !str_contains((string) Db::val('SELECT doc FROM platform_mailings WHERE id = :id', ['id' => $mailingId]), 'script'));
+    $conflicte = $api('POST', '/enviaments/' . $mailingId . '/desar', ['subject' => 'Una altra cosa', 'doc' => $doc, 'base_version' => 1], $csrf);
+    check('Desar damunt d\'una versió vella avisa del conflicte', $conflicte['status'] === 409, (string) $conflicte['status']);
+    $versions = $api('GET', '/enviaments/' . $mailingId . '/versions', [], $csrf);
+    check('L\'historial té les dues versions', count($versions['json']['versions'] ?? []) === 2);
 
-    $previa = $web('GET', '/enviaments/' . $mailingId . '/vista-previa');
-    check('La vista prèvia porta la plantilla i el cos',
-        str_contains($previa['body'], 'Hola de part de Cros Escolar') && str_contains($previa['body'], 'Us escrivim a'));
+    $previa = $api('POST', '/enviaments/vista-previa', ['doc' => $doc, 'subject' => 'Prova', 'domain' => 'crosescolar.test'], $csrf);
+    check('La previsualització és el correu sencer amb els camps posats',
+        str_contains($previa['body'], '<!DOCTYPE html') && str_contains($previa['body'], 'Us escrivim a super@crosescolar.test')
+        && !str_contains($previa['body'], '{{'));
+    check('I amb l\'enllaç per donar-se de baixa', str_contains($previa['body'], 'https://crosescolar.test/baixa/'));
 
-    $preparat = $web('POST', '/enviaments/' . $mailingId . '/preparar', ['_token' => $token($fitxaEnv['body'])]);
-    check('Es prepara', $preparat['status'] === 302);
-    check('Amb un destinatari per adreça d\'alta',
-        (int) Db::val('SELECT COUNT(*) FROM platform_mailing_recipients WHERE mailing_id = :id', ['id' => $mailingId], 0) === 2);
+    $png = $site . '/storage/prova.png';
+    $im = imagecreatetruecolor(40, 20);
+    imagepng($im, $png);
+    $pujada = $web('POST', '/enviaments/imatge', ['_token' => $csrf, 'image' => new CURLFile($png, 'image/png', 'foto.png')]);
+    $pujadaJson = json_decode($pujada['body'], true) ?: [];
+    check('Es pot pujar una imatge al correu',
+        ($pujadaJson['ok'] ?? false) && str_starts_with((string) ($pujadaJson['src'] ?? ''), 'img:') && is_file($site . '/uploads/' . Db::val('SELECT file FROM platform_mailing_images ORDER BY id DESC LIMIT 1')),
+        $pujada['body']);
+    $noImatge = $web('POST', '/enviaments/imatge', ['_token' => $csrf, 'image' => new CURLFile(__FILE__, 'image/png', 'trampa.png')]);
+    check('Però no un fitxer que no és una imatge', str_contains(text($noImatge['body']), 'no és una imatge'));
 
-    $tanda = $web('POST', '/enviaments/' . $mailingId . '/tanda', [
-        '_token' => $token($web('GET', '/enviaments/' . $mailingId)['body']),
-    ]);
+    $compte = $api('POST', '/enviaments/' . $mailingId . '/destinataris', ['audience' => 'list', 'list_id' => $listId, 'domain' => 'crosescolar.test'], $csrf);
+    check('El diàleg d\'enviar compta la gent d\'alta de la llista', (int) ($compte['json']['count'] ?? -1) === 2, $compte['body']);
+    $curses = $api('GET', '/enviaments/curses', [], $csrf);
+    check('El bloc «Cursa» troba els webs del directori', ($curses['json']['ok'] ?? false) === true);
+    $ia = $api('POST', '/enviaments/ia/text', ['prompt' => 'Escriu alguna cosa', 'format' => 'paragraphs'], $csrf);
+    check('Sense cap clau, la IA diu on configurar-la', $ia['status'] === 422 && str_contains((string) ($ia['json']['message'] ?? ''), 'Configuració'));
+
+    $enviat = $api('POST', '/enviaments/' . $mailingId . '/envia', ['audience' => 'list', 'list_id' => $listId, 'domain' => 'crosescolar.test', 'when' => 'now'], $csrf);
     $enviament = Db::one('SELECT * FROM platform_mailings WHERE id = :id', ['id' => $mailingId]);
-    check('I s\'envia', $tanda['status'] === 302 && (string) $enviament['status'] === 'sent');
-    check('Sense cap error', (int) $enviament['sent'] === 2 && (int) $enviament['failed'] === 0,
+    check('S\'envia ara mateix', ($enviat['json']['ok'] ?? false) && (string) $enviament['status'] === 'sent', $enviat['body']);
+    check('Un correu per adreça d\'alta, sense errors', (int) $enviament['sent'] === 2 && (int) $enviament['failed'] === 0,
         $enviament['sent'] . '/' . $enviament['failed']);
-
     $log = (string) @file_get_contents($site . '/storage/logs/app-' . date('Y-m') . '.log');
-    check('L\'assumpte porta els marcadors substituïts',
-        str_contains($log, 'Novetats per a AFA Sant Jordi'), 'no surt al registre');
-    check('I no queda cap marcador per posar', !str_contains($log, 'Novetats per a {{entitat}}'));
+    check('L\'assumpte porta els camps de cada persona', str_contains($log, 'Novetats per a AFA Sant Jordi'), 'no surt al registre');
+    check('I no queda cap camp per posar', !str_contains($log, 'Novetats per a {{entitat}}'));
+    $seguiment = $web('GET', '/enviaments/' . $mailingId);
+    check('El seguiment diu a qui ha arribat', $seguiment['status'] === 200 && str_contains(text($seguiment['body']), 'Com ha anat'));
+    check('Un correu enviat ja no es pot canviar',
+        $api('POST', '/enviaments/' . $mailingId . '/desar', ['subject' => 'Ja no', 'base_version' => 0, 'force' => true], $csrf)['status'] === 423);
 
-    $repetit = $web('POST', '/enviaments/' . $mailingId . '/preparar', [
-        '_token' => $token($web('GET', '/enviaments/' . $mailingId)['body']),
-    ]);
-    check('Tornar-hi no repeteix cap correu', $repetit['status'] === 302
-        && (int) Db::val('SELECT COUNT(*) FROM platform_mailing_recipients WHERE mailing_id = :id', ['id' => $mailingId], 0) === 2);
+    // La baixa: l'enllaç surt al correu de cada persona i va al domini que envia.
+    $correu = $web('GET', '/enviaments/' . $mailingId . '/correu');
+    preg_match('#https://crosescolar\.test/baixa/([A-Za-z0-9_.-]+)#', $correu['body'], $baixaUrl);
+    $pagina = $web('GET', '/baixa/' . ($baixaUrl[1] ?? 'res'), [], 'crosescolar.test');
+    check('L\'enllaç de baixa demana confirmació (els filtres de correu l\'obren sols)',
+        $pagina['status'] === 200 && str_contains(text($pagina['body']), 'Doneu-me de baixa')
+        && Db::one('SELECT id FROM platform_unsubscribes WHERE email = :e', ['e' => 'super@crosescolar.test']) === null);
+    $confirmada = $web('POST', '/baixa/' . ($baixaUrl[1] ?? 'res'), [], 'crosescolar.test');
+    check('I confirmant-la, ja no en rep cap més',
+        str_contains(text($confirmada['body']), 'Us hem donat de baixa')
+        && Db::one('SELECT id FROM platform_unsubscribes WHERE email = :e', ['e' => 'super@crosescolar.test']) !== null);
+    $unClic = $web('POST', '/baixa/' . ($baixaUrl[1] ?? 'res'), ['List-Unsubscribe' => 'One-Click'], 'crosescolar.test');
+    check('La baixa d\'un sol clic dels programes de correu respon', $unClic['status'] === 200 && trim($unClic['body']) === 'OK');
+    check('Un enllaç de baixa tocat no serveix',
+        $web('POST', '/baixa/' . substr($baixaUrl[1] ?? 'res', 0, -3) . 'zzz', ['List-Unsubscribe' => 'One-Click'], 'crosescolar.test')['status'] === 400);
+    Db::delete('platform_unsubscribes', 'email = :e', ['e' => 'super@crosescolar.test']);
 
-    // Un enviament a les administradores dels webs: la llista surt de les instàncies.
-    $alsWebs = $web('POST', '/enviaments/nou', [
-        '_token' => $token($web('GET', '/enviaments/nou')['body']),
-        'subject' => 'Manteniment del dissabte',
-        'body' => '<p>Aquest dissabte el servei estarà aturat una estona.</p>',
-        'audience' => 'instances', 'list_id' => '0', 'instance_status' => 'active', 'manual_emails' => '',
-    ]);
-    $webId = (int) Db::val('SELECT id FROM platform_mailings ORDER BY id DESC LIMIT 1', [], 0);
-    check('També se\'n pot fer un a les administradores', $alsWebs['status'] === 302);
-    $web('POST', '/enviaments/' . $webId . '/preparar', ['_token' => $token($web('GET', '/enviaments/' . $webId)['body'])]);
+    // Programat a les administradores dels webs: el cron el comença quan toca.
+    $web('POST', '/enviaments/nou', ['_token' => $token($web('GET', '/enviaments')['body']), 'subject' => 'Manteniment del dissabte', 'template_id' => '', 'domain' => 'crosescolar.test']);
+    $webId = (int) Db::val("SELECT id FROM platform_mailings WHERE kind = 'mail' ORDER BY id DESC LIMIT 1", [], 0);
+    $programat = $api('POST', '/enviaments/' . $webId . '/envia', ['audience' => 'instances', 'instance_status' => 'active', 'domain' => 'crosescolar.test',
+        'when' => 'later', 'date' => date('Y-m-d', strtotime('+1 day')), 'time' => '09:00'], $csrf);
+    check('Es pot programar per a demà', ($programat['json']['ok'] ?? false)
+        && Db::val('SELECT status FROM platform_mailings WHERE id = :id', ['id' => $webId]) === 'scheduled', $programat['body']);
+    check('I encara no té destinataris', (int) Db::val('SELECT COUNT(*) FROM platform_mailing_recipients WHERE mailing_id = :id', ['id' => $webId], 0) === 0);
+    Db::update('platform_mailings', ['scheduled_at' => date('Y-m-d H:i:s', time() - 60)], 'id = :id', ['id' => $webId]);
+    exec('cd ' . escapeshellarg($site) . ' && php -r ' . escapeshellarg('require "app/core/Tenancy.php"; require "app/bootstrap.php"; Cros\Platform\Platform::boot(getcwd()); echo json_encode(Cros\Platform\Mailout::tick(5));') . ' 2>&1', $tickOut);
+    $tick = json_decode(implode('', $tickOut), true) ?: [];
+    check('Quan arriba l\'hora, el cron el comença i l\'envia', ($tick['started'] ?? 0) === 1
+        && Db::val('SELECT status FROM platform_mailings WHERE id = :id', ['id' => $webId]) === 'sent', implode(' ', $tickOut));
     $esperats = array_column(Db::all(
-        "SELECT DISTINCT admin_email FROM instances WHERE status = 'active' AND admin_email <> ''"
-    ), 'admin_email');
-    $rebran = array_column(Db::all(
-        'SELECT email FROM platform_mailing_recipients WHERE mailing_id = :id ORDER BY email', ['id' => $webId]
-    ), 'email');
+        "SELECT DISTINCT LOWER(admin_email) AS e FROM instances WHERE status = 'active' AND admin_email <> ''
+         AND COALESCE(NULLIF(domain, ''), 'crosescolar.test') = 'crosescolar.test'"
+    ), 'e');
+    $rebran = array_column(Db::all('SELECT email FROM platform_mailing_recipients WHERE mailing_id = :id ORDER BY email', ['id' => $webId]), 'email');
     sort($esperats);
-    check('Que agafa l\'adreça de cada web en marxa i cap més',
+    check('Només a les administradores dels webs del domini que envia',
         $rebran === $esperats && $rebran !== [], implode(', ', $rebran) . ' vs ' . implode(', ', $esperats));
 
-    $sense = $web('POST', '/enviaments/nou', [
-        '_token' => $token($web('GET', '/enviaments/nou')['body']),
-        'subject' => '', 'body' => '', 'audience' => 'clients', 'list_id' => '0',
-        'instance_status' => 'active', 'manual_emails' => '',
-    ]);
-    check('Un enviament sense assumpte ni cos no es desa',
-        $sense['status'] === 200 && str_contains(text($sense['body']), 'Cal posar un assumpte'));
+    $sense = $web('POST', '/enviaments/nou', ['_token' => $token($web('GET', '/enviaments')['body']), 'subject' => '', 'template_id' => '', 'domain' => 'crosescolar.test']);
+    $senseId = (int) Db::val("SELECT id FROM platform_mailings WHERE kind = 'mail' ORDER BY id DESC LIMIT 1", [], 0);
+    $intent = $api('POST', '/enviaments/' . $senseId . '/envia', ['audience' => 'clients', 'domain' => 'crosescolar.test', 'when' => 'now'], $csrf);
+    check('Un correu sense assumpte no s\'envia', $intent['status'] === 422 && str_contains((string) ($intent['json']['message'] ?? ''), 'assumpte'));
 
     echo "\n== Actualitzacions del sistema ==\n";
     $updates = $web('GET', '/actualitzacions');

@@ -40,8 +40,14 @@ $posar = static function (string $method, array $post, array $files, ?int $lengt
 
 echo "\n== Petició descartada per massa gran ==\n";
 
+$_SERVER['CONTENT_TYPE'] = 'multipart/form-data; boundary=x';
 $posar('POST', [], [], 12582912);
 check('Un POST buit amb cos de 12 MB és una pujada descartada', Uploader::postTooBig());
+
+$_SERVER['CONTENT_TYPE'] = 'application/json';
+$posar('POST', [], [], 4000);
+check('Una petició en JSON (l\'editor de correus) no ho és: mai no omple $_POST', !Uploader::postTooBig());
+$_SERVER['CONTENT_TYPE'] = 'multipart/form-data; boundary=x';
 
 $posar('POST', ['_token' => 'x'], [], 400);
 check('Un POST normal no ho és', !Uploader::postTooBig());

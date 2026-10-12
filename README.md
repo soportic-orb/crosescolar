@@ -9,7 +9,9 @@ tres coses:
   parla d'esport en general i `crosescolar.cat`, de cros escolars. El text, la
   imatge i les preguntes de cadascuna s'editen des del panell.
 - **El panell de superadministració**, a `admin.esportweb.cat`: clients,
-  instàncies, facturació, suport, enviaments i actualitzacions.
+  instàncies, facturació, suport, actualitzacions i enviaments de correu amb un
+  editor visual de blocs, programats i amb ajuda de la IA (vegeu
+  `docs/correu.md`).
 
 Qui vol el seu web se'l fa ell mateix des de la portada i entra al panell amb el
 botó que li arriba per correu. El web neix amagat i només es paga el dia que es

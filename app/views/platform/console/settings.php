@@ -64,6 +64,8 @@ $accio = url('/configuracio/' . $groupKey, $perSite ? ['domini' => $domain] : []
         <button class="btn" type="submit">Desar</button>
         <?php if ($groupKey === 'mail'): ?>
           <button class="btn btn--ghost" type="submit" name="provar_correu" value="1">Desar i enviar-me una prova</button>
+        <?php elseif ($groupKey === 'ai'): ?>
+          <button class="btn btn--ghost" type="submit" name="provar_ia" value="1">Desar i provar la IA</button>
         <?php endif; ?>
       </div>
     </div>

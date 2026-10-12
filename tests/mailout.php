@@ -41,8 +41,10 @@ require $site . '/app/bootstrap.php';
 
 use Cros\Core\Db;
 use Cros\Core\Settings;
+use Cros\Platform\Mail\Ai;
 use Cros\Platform\Mail\Brand;
 use Cros\Platform\Mail\Doc;
+use Cros\Platform\Mail\Images;
 use Cros\Platform\Mail\Renderer;
 use Cros\Platform\Mail\RichText;
 use Cros\Platform\Mail\Unsubscribe;
@@ -85,6 +87,12 @@ Settings::set('site:esportweb.test:color_primary', '#123456');
 Settings::set('site:crosescolar.test:site_name', 'Cros Escolar');
 Settings::set('site:crosescolar.test:color_primary', '#1f6f3f');
 Settings::set('site:esportweb.test:mail_hourly_limit', '');
+// Cada domini amb el seu remitent i en mode d'assaig, digui el que digui la
+// base de dades que han deixat altres proves.
+foreach (['crosescolar.test' => 'hola@crosescolar.test', 'esportweb.test' => 'hola@esportweb.test'] as $d => $from) {
+    Settings::set('site:' . $d . ':mail_transport', 'log');
+    Settings::set('site:' . $d . ':mail_from_email', $from);
+}
 Settings::forget();
 
 echo "== El document ==\n";
@@ -242,7 +250,7 @@ check('La resta s\'esperen', $m['status'] === 'sending' && Mailout::recipientCou
 check('Una tanda a mà tampoc no passa del límit', Mailout::sendBatch($id)['waiting'] === true);
 $log = (string) @file_get_contents($site . '/storage/logs/app-' . date('Y-m') . '.log');
 check('Els correus han sortit amb el nom de cadascú', str_contains($log, 'Benvinguda, Contacte Club B'), substr($log, -400));
-check('I des del domini que toca', str_contains($log, '"from":"hola@crosescolar.test"') || str_contains($log, 'esportweb.test'));
+check('I des del domini que toca', str_contains($log, '"from":"hola@esportweb.test"') && !str_contains($log, '"from":"hola@crosescolar.test"'));
 Db::update('platform_mailing_recipients', ['sent_at' => date('Y-m-d H:i:s', time() - 7200)], 'mailing_id = :id', ['id' => $id]);
 $r = Mailout::tick(3);
 check('Passada l\'hora, s\'acaba d\'enviar', $r['sent'] === 1 && Mailout::find($id)['status'] === 'sent', json_encode($r));
@@ -293,6 +301,84 @@ try {
     check('Sense destinataris no es pot enviar', str_contains($e->getMessage(), 'cap destinatari'));
 }
 check('Les pestanyes es compten bé', Mailout::counts()['enviats'] === 2 && Mailout::counts()['esborranys'] >= 1, json_encode(Mailout::counts()));
+
+echo "\n== La IA ==\n";
+Settings::set('ai_enabled', '1');
+Settings::set('ai_anthropic_key', '');
+Settings::set('ai_openai_key', '');
+Settings::forget();
+check('Sense claus, no hi ha cap servei', Ai::textProviders() === [] && !Ai::imageReady());
+Settings::set('ai_anthropic_key', 'sk-ant-prova');
+Settings::set('ai_openai_key', 'sk-openai-prova');
+Settings::set('ai_claude_model', '');
+Settings::forget();
+check('Les claus es desen xifrades', !str_contains((string) Db::val("SELECT v FROM settings WHERE k = 'ai_anthropic_key'"), 'sk-ant-prova'));
+check('Amb les claus, Claude i OpenAI', array_keys(Ai::textProviders()) === ['claude', 'openai'] && Ai::imageReady());
+$calls = [];
+$reply = [200, '{}'];
+Ai::$fake = static function (string $method, string $url, array $headers, string $body) use (&$calls, &$reply): array {
+    $calls[] = ['url' => $url, 'headers' => $headers, 'body' => $body];
+
+    return $reply;
+};
+$reply = [200, json_encode(['content' => [['type' => 'thinking', 'thinking' => 'x'], ['type' => 'text', 'text' => "Hola, {{nom}}:\n\nJa podeu obrir les inscripcions. <script>x()</script>"]], 'stop_reason' => 'end_turn'])];
+$r = Ai::text('claude', 'Explica que ja es poden obrir les inscripcions', ['format' => 'paragraphs', 'tone' => 'proper', 'brand' => Brand::of('esportweb.test'), 'context' => 'Un correu sobre inscripcions']);
+$call = $calls[0] ?? ['url' => '', 'headers' => [], 'body' => '{}'];
+$sent = json_decode($call['body'], true) ?: [];
+check('Claude: a l\'API de missatges', $call['url'] === 'https://api.anthropic.com/v1/messages');
+check('Amb la clau i la versió de l\'API', in_array('x-api-key: sk-ant-prova', $call['headers'], true) && in_array('anthropic-version: 2023-06-01', $call['headers'], true));
+check('El model per defecte, amb esforç baix i sense «thinking»', ($sent['model'] ?? '') === 'claude-opus-5-5'
+    && ($sent['output_config']['effort'] ?? '') === 'low' && !isset($sent['thinking']), $call['body']);
+check('I si el rebutja el filtre, que ho torni a provar un altre model',
+    ($sent['fallbacks'] ?? '') === 'default' && in_array('anthropic-beta: server-side-fallback-2026-07-01', $call['headers'], true));
+check('Les instruccions parlen del servei i del domini que envia', str_contains((string) ($sent['system'] ?? ''), 'EsportWeb (esportweb.test)'));
+check('I la petició porta el context del correu', str_contains((string) ($sent['messages'][0]['content'] ?? ''), '<context>'));
+check('Només es fa servir el text de la resposta, i net', str_contains($r['html'], '<p>Hola, {{nom}}:</p>') && !str_contains($r['html'], '<script') && !str_contains($r['html'], 'thinking'), $r['html']);
+$reply = [200, json_encode(['content' => [], 'stop_reason' => 'refusal'])];
+try {
+    Ai::text('claude', 'Una cosa', []);
+    check('Si Claude s\'hi nega, es diu', false);
+} catch (RuntimeException $e) {
+    check('Si Claude s\'hi nega, es diu', str_contains($e->getMessage(), 'no ha volgut'));
+}
+$reply = [401, json_encode(['error' => ['message' => 'invalid x-api-key']])];
+try {
+    Ai::text('claude', 'Una cosa', []);
+    check('Una clau dolenta es diu amb el missatge de l\'API', false);
+} catch (RuntimeException $e) {
+    check('Una clau dolenta es diu amb el missatge de l\'API', str_contains($e->getMessage(), 'invalid x-api-key'));
+}
+$reply = [200, json_encode(['content' => [['type' => 'text', 'text' => "**Assumpte:** «Inscripcions obertes»\nResum: Ja podeu obrir-les des del panell"]]])];
+$r = Ai::text('claude', 'Assumpte', ['format' => 'subject']);
+check('L\'assumpte i el resum, en dues línies netes', $r['text'] === 'Inscripcions obertes' && $r['preheader'] === 'Ja podeu obrir-les des del panell', json_encode($r));
+$calls = [];
+$reply = [200, json_encode(['output' => [['type' => 'message', 'content' => [['type' => 'output_text', 'text' => 'Obriu les inscripcions']]]]])];
+$r = Ai::text('openai', 'Un botó', ['format' => 'button']);
+$sent = json_decode($calls[0]['body'] ?? '{}', true) ?: [];
+check('OpenAI: a l\'API Responses, amb la seva clau', ($calls[0]['url'] ?? '') === 'https://api.openai.com/v1/responses'
+    && in_array('Authorization: Bearer sk-openai-prova', $calls[0]['headers'] ?? [], true) && ($sent['model'] ?? '') === 'gpt-5');
+check('I en treu el text', $r['text'] === 'Obriu les inscripcions');
+ob_start();
+$im = imagecreatetruecolor(30, 20);
+imagepng($im);
+$png = (string) ob_get_clean();
+$calls = [];
+$reply = [200, json_encode(['data' => [['b64_json' => base64_encode($png)]]])];
+$img = Ai::image('Una sortida de cros', 'landscape', 'illustration', true, [], false, Brand::of('crosescolar.test'));
+$sent = json_decode($calls[0]['body'] ?? '{}', true) ?: [];
+check('Imatges: a OpenAI, amb la mida i sense text', ($calls[0]['url'] ?? '') === 'https://api.openai.com/v1/images/generations'
+    && ($sent['size'] ?? '') === '1536x1024' && str_contains((string) ($sent['prompt'] ?? ''), 'Sense cap text') && str_contains((string) ($sent['prompt'] ?? ''), '#1f6f3f'));
+check('I la imatge es desa amb les de l\'editor', str_starts_with($img['src'], 'img:') && Images::file($img['src']) !== '');
+$calls = [];
+$ref = Ai::prepareRef($png, 'Captura de pantalla.PNG');
+Ai::image('Fes servir aquesta foto de fons', 'square', 'photo', true, [$ref, $ref], true);
+$multipart = (string) ($calls[0]['body'] ?? '');
+check('Amb referències, a l\'edició d\'imatges', ($calls[0]['url'] ?? '') === 'https://api.openai.com/v1/images/edits');
+check('I totes les referències amb el mateix nom de camp', substr_count($multipart, 'name="image[]"; filename="captura-de-pantalla.png"') === 2
+    && str_contains($multipart, 'name="input_fidelity"'));
+Ai::$fake = null;
+Settings::set('ai_anthropic_key', '');
+Settings::set('ai_openai_key', '');
 
 exec('rm -rf ' . escapeshellarg($site));
 

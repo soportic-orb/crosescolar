@@ -92,10 +92,15 @@ class Uploader
      */
     public static function postTooBig(): bool
     {
+        // Només els formularis: una petició en JSON (l'editor de correus)
+        // no omple mai $_POST i no vol dir que s'hagi perdut res.
+        $type = strtolower((string) ($_SERVER['CONTENT_TYPE'] ?? ''));
+
         return strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) === 'POST'
             && $_POST === []
             && $_FILES === []
-            && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0;
+            && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0
+            && (str_starts_with($type, 'multipart/form-data') || str_starts_with($type, 'application/x-www-form-urlencoded'));
     }
 
     /** El fitxer més gran que accepta aquest servidor, en bytes. */

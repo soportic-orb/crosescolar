@@ -233,7 +233,7 @@ return [
         'description' => 'L\'assistent «✨ IA» de l\'editor d\'enviaments: escriu textos (Claude o OpenAI) i crea imatges (OpenAI). '
             . 'Les claus es desen xifrades.',
         'fields' => [
-            'ai_enabled' => ['label' => 'Activa l\'assistent d\'IA a l\'editor', 'type' => 'checkbox', 'default' => '1'],
+            'ai_enabled' => ['label' => 'Activa l\'assistent d\'IA a l\'editor', 'type' => 'bool', 'default' => '1'],
             'ai_default_text' => ['label' => 'Per als textos, per defecte', 'type' => 'select', 'default' => 'claude',
                 'options' => ['claude' => 'Claude (Anthropic)', 'openai' => 'OpenAI']],
             'ai_anthropic_key' => ['label' => 'Clau d\'Anthropic (Claude)', 'type' => 'password', 'secret' => true, 'default' => '',

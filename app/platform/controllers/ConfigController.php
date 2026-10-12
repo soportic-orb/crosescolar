@@ -75,6 +75,14 @@ class ConfigController extends Controller
             }
         }
 
+        // La prova de la IA: una crida curta a cada servei que tingui clau.
+        if (($_POST['provar_ia'] ?? '') === '1' && !$errors) {
+            Settings::load(true);
+            foreach (\Cros\Platform\Mail\Ai::test() as $result) {
+                flash($result['ok'] ? 'success' : 'error', $result['message']);
+            }
+        }
+
         flash($errors ? 'error' : 'success', $errors ? implode(' ', $errors) : 'Configuració desada.');
         redirect(url('/configuracio/' . $key, $domain !== '' ? ['domini' => $domain] : []));
     }
