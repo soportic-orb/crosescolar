@@ -234,9 +234,26 @@ class Settings
     }
 
     /** Grups de l'esquema (per al menú del panell). */
+    /**
+     * Un grup de l'esquema, tal com es veu al panell.
+     *
+     * Al web d'un client de la plataforma, els camps marcats «standalone»
+     * (el servidor de correu, per exemple) no hi són: els porta la
+     * plataforma. Com que el formulari es desa a partir d'aquest mateix grup,
+     * tampoc no es poden canviar enviant-los a mà.
+     */
     public static function group(string $key): ?array
     {
-        return self::schema()[$key] ?? null;
+        $group = self::schema()[$key] ?? null;
+        if ($group === null || !Tenancy::isTenant()) {
+            return $group;
+        }
+        $group['fields'] = array_filter((array) ($group['fields'] ?? []), static fn (array $f): bool => empty($f['standalone']));
+        if (isset($group['tenant_description'])) {
+            $group['description'] = $group['tenant_description'];
+        }
+
+        return $group;
     }
 
     /**

@@ -117,6 +117,20 @@ use Cros\Core\Settings;
           <?php endif; ?>
         </div>
       <?php endif; ?>
+      <?php if ($groupKey === 'email' && \Cros\Core\Tenancy::isTenant()): ?>
+        <?php
+        $remitent = site_name('');
+        $adreca = \Cros\Core\Mailer::platformAddress();
+        $respostes = trim((string) setting('mail_reply_to', '')) ?: trim((string) setting('contact_email', ''));
+        ?>
+        <div class="alert alert--info">
+          Els correus del web surten pel servidor de correu de la plataforma, que és el que té el domini
+          preparat perquè arribin bé. El remitent és el nom del web:
+          <strong><?= e($remitent . ($adreca !== '' ? ' <' . $adreca . '>' : '')) ?></strong>
+          (es canvia a <a href="<?= e(url('/admin/configuracio/general')) ?>">Configuració → General</a>).
+          <?php if ($respostes !== ''): ?>Les respostes arriben a <strong><?= e($respostes) ?></strong>.<?php endif; ?>
+        </div>
+      <?php endif; ?>
       <?php if ($groupKey === 'updates'): ?>
         <div class="alert alert--info">Versió instal·lada: <strong><?= e(app_version()) ?></strong> ·
           <a href="<?= e(url('/admin/actualitzacions')) ?>">Comprovar actualitzacions</a></div>

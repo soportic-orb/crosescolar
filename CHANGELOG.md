@@ -3,6 +3,22 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.48.0] — 2026-10-12
+
+### Canviat
+- **El correu dels webs de la plataforma el porta la plataforma.** Al panell de
+  cada web, Configuració → Correu electrònic ja no deixa triar el mètode
+  d'enviament, el servidor SMTP, el remitent ni els correus per tanda: només
+  **Respondre a** i **Avisos a l'organització**. La pantalla explica per on
+  surten els correus i amb quin remitent.
+- Els correus d'un web de la plataforma surten sempre pel servidor de correu del
+  seu domini, encara que el web en tingui un altre de desat d'abans, i el nom del
+  remitent és sempre el nom del web (el de Configuració → General).
+- Tampoc no es poden canviar enviant els camps a mà: el formulari només desa
+  els que surten a la pantalla.
+- Els webs instal·lats tots sols, fora de la plataforma, ho conserven tot com
+  fins ara.
+
 ## [1.47.0] — 2026-10-12
 
 ### Afegit

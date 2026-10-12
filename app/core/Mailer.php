@@ -43,10 +43,13 @@ class Mailer
         // El web d'una cursa que és a la plataforma envia pel servidor de correu
         // d'ella, que és el que té el domini preparat perquè els correus arribin.
         // Surt amb el nom del web i l'adreça de la plataforma, i les respostes
-        // van a qui organitza la cursa.
-        if ($transport === 'platform') {
+        // van a qui organitza la cursa. Ho decideix la plataforma, no el web:
+        // encara que en tingui un altre de desat d'abans, no se'n fa cas.
+        $onPlatform = Tenancy::isTenant() || $transport === 'platform';
+        if ($onPlatform) {
             $platform = self::platformMail();
             if ($platform === null) {
+                log_line('mail', 'No s\'ha pogut llegir el correu de la plataforma: s\'envia amb mail()', ['to' => $to]);
                 $transport = 'mail';
             } else {
                 $transport = $platform['transport'];
@@ -63,7 +66,8 @@ class Mailer
             $host = parse_url(base_url(), PHP_URL_HOST) ?: 'localhost';
             $fromEmail = 'no-reply@' . preg_replace('/^www\./', '', (string) $host);
         }
-        $fromName = trim((string) setting('mail_from_name', ''));
+        // Al web d'una cursa, el remitent és sempre el nom del web.
+        $fromName = $onPlatform ? '' : trim((string) setting('mail_from_name', ''));
         if ($fromName === '') {
             $fromName = site_name('');
         }
@@ -127,7 +131,7 @@ class Mailer
             if ($transport === 'log') {
                 // Mode d'assaig: no surt res del servidor, però queda registrat
                 // com si s'hagués enviat, per poder-ho provar tot sense molestar ningú.
-                log_line('mail', 'Assaig (no s\'envia)', ['to' => $to, 'subject' => $subject, 'from' => $fromEmail]);
+                log_line('mail', 'Assaig (no s\'envia)', ['to' => $to, 'subject' => $subject, 'from' => $fromEmail, 'name' => $fromName, 'reply_to' => $replyTo]);
                 self::logEmail($to, $subject, 'sent');
                 return true;
             }
@@ -271,6 +275,12 @@ class Mailer
             'pass' => (string) setting('smtp_pass', ''),
             'secure' => (string) setting('smtp_secure', 'tls'), // tls | ssl | none
         ];
+    }
+
+    /** L'adreça des d'on surten els correus d'un web de la plataforma, o '' si no se sap. */
+    public static function platformAddress(): string
+    {
+        return (string) (self::platformMail()['from_email'] ?? '');
     }
 
     /**

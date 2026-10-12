@@ -474,13 +474,23 @@ tres noms. Al cos del correu hi podeu escriure marcadors que se substitueixen a 
 Quan s'acaba, el botó **«Enviar-lo a les inscripcions noves»** busca qui s'ha inscrit
 després i només escriu a aquestes adreces.
 
-> **Abans del primer enviament de debò**, poseu **Configuració → Correu electrònic →
-> Mètode d'enviament** en **«Assaig: no enviar res»** i feu-ne una prova sencera: tot
-> funcionarà igual i quedarà al registre de correus, però no sortirà cap missatge del
-> servidor. Recordeu tornar-ho a deixar com estava.
+**D'on surten els correus.** Si el web és a la plataforma (EsportWeb, Cros Escolar),
+els correus surten pel servidor de correu de la plataforma, que és el que té el domini
+preparat perquè arribin bé, i el remitent és el **nom del web** (Configuració →
+General). A **Configuració → Correu electrònic** només hi ha:
 
-Si l'allotjament limita quants correus es poden enviar per hora, abaixeu **Correus per
-tanda** a la mateixa pantalla de configuració (per defecte, 20).
+- **Respondre a**: on arriben les respostes de qui rep els correus (si és buit, a
+  l'adreça de contacte);
+- **Avisos a l'organització**: l'adreça que rep una còpia de cada comanda i inscripció.
+
+> **Abans del primer enviament de debò**, envieu-vos una prova des de **Sistema →
+> Correus** i feu un enviament a una sola adreça vostra (per exemple, amb una categoria
+> on només hi sigueu vosaltres).
+
+Si el web està instal·lat tot sol, fora de la plataforma, a la mateixa pantalla també
+hi ha el **Mètode d'enviament** (amb l'opció **«Assaig: no enviar res»** per fer-ne una
+prova sencera sense que surti res), el remitent, el servidor SMTP i **Correus per
+tanda**, per si l'allotjament limita quants correus es poden enviar per hora.
 
 ## Cobrar amb targeta
 

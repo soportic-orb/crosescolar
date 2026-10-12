@@ -151,6 +151,12 @@ final class Tenancy
         return (string) self::$current['mode'];
     }
 
+    /** És el web d'un client de la plataforma? (i no un web instal·lat tot sol) */
+    public static function isTenant(): bool
+    {
+        return self::mode() === 'tenant';
+    }
+
     /** Subdomini que s'està atenent, o '' si no n'hi ha cap. */
     public static function slugOf(): string
     {

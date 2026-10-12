@@ -476,6 +476,45 @@ try {
     check('Pel servidor de correu del seu domini', str_contains($darreraProva, 'correu@crosescolar.test'), $darreraProva);
     $pdo->prepare('UPDATE settings SET v = ? WHERE k = ?')->execute(['', 'site:crosescolar.test:mail_from_email']);
 
+    // El correu el porta la plataforma: el web no en pot canviar el servidor
+    // ni el remitent, encara que en tingui un de desat d'abans.
+    $configCorreu = $web('GET', '/admin/configuracio/email', [], 'santjordi.crosescolar.test');
+    check('Al panell del web hi ha «Respondre a» i «Avisos a l\'organització»',
+        $configCorreu['status'] === 200 && str_contains($configCorreu['body'], 'name="mail_reply_to"')
+        && str_contains($configCorreu['body'], 'name="mail_admin_notify"'), 'estat ' . $configCorreu['status']);
+    check('Però no el servidor de correu ni el remitent',
+        !str_contains($configCorreu['body'], 'name="smtp_host"') && !str_contains($configCorreu['body'], 'name="mail_transport"')
+        && !str_contains($configCorreu['body'], 'name="mail_from_name"') && !str_contains($configCorreu['body'], 'name="mail_from_email"'));
+    $nomJordi = (string) $jordiPdo->query("SELECT v FROM settings WHERE k = 'site_name'")->fetchColumn();
+    check('I diu que el remitent és el nom del web', str_contains(text($configCorreu['body']), $nomJordi));
+    $web('POST', '/admin/configuracio/email', [
+        '_token' => $token($configCorreu['body']),
+        'mail_reply_to' => 'organitzacio@santjordi.cat', 'mail_admin_notify' => 'avisos@santjordi.cat',
+        'smtp_host' => 'smtp.dolent.example', 'mail_transport' => 'smtp', 'mail_from_name' => 'Un altre nom',
+    ], 'santjordi.crosescolar.test');
+    $jordiVal = static fn (string $k): string => (string) $jordiPdo->query('SELECT v FROM settings WHERE k = ' . $jordiPdo->quote($k))->fetchColumn();
+    check('Es desen on van les respostes i els avisos',
+        $jordiVal('mail_reply_to') === 'organitzacio@santjordi.cat' && $jordiVal('mail_admin_notify') === 'avisos@santjordi.cat');
+    check('I el servidor i el remitent no es poden colar pel formulari',
+        $jordiVal('smtp_host') !== 'smtp.dolent.example' && $jordiVal('mail_transport') === 'platform' && $jordiVal('mail_from_name') !== 'Un altre nom');
+    // Un web amb un servidor propi desat d'abans de la plataforma.
+    $jordiPdo->exec("UPDATE settings SET v = 'smtp' WHERE k = 'mail_transport'");
+    $jordiPdo->prepare('INSERT INTO settings (k, v, updated_at) VALUES (?, ?, NOW()) ON DUPLICATE KEY UPDATE v = VALUES(v)')
+        ->execute(['mail_from_name', 'Nom antic del remitent']);
+    $web('POST', '/admin/correus/prova', [
+        '_token' => $token($web('GET', '/admin/correus', [], 'santjordi.crosescolar.test')['body']), 'to' => 'laia@example.cat',
+    ], 'santjordi.crosescolar.test');
+    $darreraProva = '';
+    foreach (explode("\n", (string) @file_get_contents($site . '/tenants/santjordi/storage/logs/app-' . date('Y-m') . '.log')) as $linia) {
+        if (str_contains($linia, 'Prova de correu')) {
+            $darreraProva = $linia;
+        }
+    }
+    check('Encara que el web en tingui un altre de desat, surt pel servidor de la plataforma', str_contains($darreraProva, 'Assaig'), $darreraProva);
+    check('Amb el nom del web com a remitent', str_contains($darreraProva, '"name":' . json_encode($nomJordi, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)), $darreraProva);
+    check('I les respostes van a qui ha dit el web', str_contains($darreraProva, '"reply_to":"organitzacio@santjordi.cat"'), $darreraProva);
+    $jordiPdo->exec("UPDATE settings SET v = 'platform' WHERE k = 'mail_transport'");
+
     check('El client no pot actualitzar el codi de tothom',
         $web('GET', '/admin/actualitzacions', [], 'santjordi.crosescolar.test')['status'] === 403);
     check('Ni li surt al menú',
