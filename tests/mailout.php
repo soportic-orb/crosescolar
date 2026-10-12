@@ -131,7 +131,8 @@ $token = Unsubscribe::token('Familia@Exemple.cat', 7);
 $read = Unsubscribe::read($token);
 check('L\'enllaç es torna a llegir', $read === ['email' => 'familia@exemple.cat', 'mailing' => 7], json_encode($read));
 $tampered = Unsubscribe::token('una-altra@exemple.cat', 7);
-check('Canviar l\'adreça de l\'enllaç no serveix', Unsubscribe::read(explode('.', $tampered)[0] . '.' . explode('.', $token)[1]) === null);
+check('Canviar l\'adreça de l\'enllaç no serveix', Unsubscribe::read(substr($tampered, 0, -24) . substr($token, -24)) === null);
+check('L\'enllaç no porta cap punt (semblaria l\'extensió d\'un fitxer)', !str_contains($token, '.'));
 check('Un enllaç tallat no serveix', Unsubscribe::read(substr($token, 0, -3)) === null);
 check('L\'adreça de baixa és del domini que envia',
     str_starts_with(Unsubscribe::url('a@b.cat', 'esportweb.test'), 'https://esportweb.test/baixa/'));

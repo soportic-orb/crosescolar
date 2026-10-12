@@ -32,7 +32,10 @@ final class Unsubscribe
     {
         $payload = rtrim(strtr(base64_encode(mb_strtolower(trim($email)) . '|' . $mailingId), '+/', '-_'), '=');
 
-        return $payload . '.' . substr(Crypto::hmac('baixa|' . $payload), 0, 24);
+        // Sense punt entre les dues parts: un punt a l'adreça fa que alguns
+        // servidors el prenguin per l'extensió d'un fitxer. La signatura fa
+        // sempre 24 caràcters i va al final.
+        return $payload . substr(Crypto::hmac('baixa|' . $payload), 0, 24);
     }
 
     /**
@@ -42,7 +45,7 @@ final class Unsubscribe
      */
     public static function read(string $token): ?array
     {
-        if (!preg_match('/^([A-Za-z0-9_-]{4,400})\.([0-9a-f]{24})$/', $token, $m)) {
+        if (!preg_match('/^([A-Za-z0-9_-]{4,400})([0-9a-f]{24})$/', $token, $m)) {
             return null;
         }
         if (!hash_equals(substr(Crypto::hmac('baixa|' . $m[1]), 0, 24), $m[2])) {

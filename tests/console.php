@@ -2636,11 +2636,12 @@ try {
 
     // La baixa: l'enllaç surt al correu de cada persona i va al domini que envia.
     $correu = $web('GET', '/enviaments/' . $mailingId . '/correu');
-    preg_match('#https://crosescolar\.test/baixa/([A-Za-z0-9_.-]+)#', $correu['body'], $baixaUrl);
+    preg_match('#https://crosescolar\.test/baixa/([A-Za-z0-9_-]+)#', $correu['body'], $baixaUrl);
     $pagina = $web('GET', '/baixa/' . ($baixaUrl[1] ?? 'res'), [], 'crosescolar.test');
     check('L\'enllaç de baixa demana confirmació (els filtres de correu l\'obren sols)',
         $pagina['status'] === 200 && str_contains(text($pagina['body']), 'Doneu-me de baixa')
-        && Db::one('SELECT id FROM platform_unsubscribes WHERE email = :e', ['e' => 'super@crosescolar.test']) === null);
+        && Db::one('SELECT id FROM platform_unsubscribes WHERE email = :e', ['e' => 'super@crosescolar.test']) === null,
+        'estat ' . $pagina['status'] . ', enllaç «' . ($baixaUrl[1] ?? 'no trobat') . '»');
     $confirmada = $web('POST', '/baixa/' . ($baixaUrl[1] ?? 'res'), [], 'crosescolar.test');
     check('I confirmant-la, ja no en rep cap més',
         str_contains(text($confirmada['body']), 'Us hem donat de baixa')
