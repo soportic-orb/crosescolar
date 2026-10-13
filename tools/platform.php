@@ -190,7 +190,13 @@ switch ($command) {
         }
         foreach (Dns::hosts($root) as $host) {
             $ips = Dns::ips($host);
-            echo '  ' . str_pad($host, 34) . ($ips === [] ? 'NO EXISTEIX' : implode(', ', $ips)) . "\n";
+            echo '  ' . str_pad($host, 34) . ($ips === [] ? 'NO EXISTEIX' : implode(', ', $ips))
+                . (in_array($host, $dns['local'] ?? [], true) ? '  (ho diu l\'/etc/hosts d\'aquest servidor, no el DNS)' : '') . "\n";
+        }
+        if (!empty($dns['local'])) {
+            echo "\n  Els noms marcats, el servidor se'ls contesta a si mateix (/etc/hosts) i no es\n";
+            echo "  poden comprovar. Sol ser la línia 127.0.1.1 amb el nom del servidor: deixeu-hi\n";
+            echo "  només el nom curt (per exemple «127.0.1.1 crosescolar») i torneu-ho a mirar.\n";
         }
         break;
 

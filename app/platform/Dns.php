@@ -59,15 +59,36 @@ class Dns
     }
 
     /**
+     * Una adreça que és el mateix servidor.
+     *
+     * No ve del DNS: és l'`/etc/hosts`, que sovint hi posa el nom del servidor
+     * apuntat a 127.0.1.1, i el resolutor local (systemd-resolved) el contesta
+     * abans de preguntar enlloc. No vol dir que apunti a un altre servidor.
+     */
+    public static function loopback(string $ip): bool
+    {
+        return str_starts_with($ip, '127.') || $ip === '::1';
+    }
+
+    /** @param array<int,string> $ips @return array<int,string> */
+    private static function outside(array $ips): array
+    {
+        return array_values(array_filter($ips, static fn (string $ip): bool => !self::loopback($ip)));
+    }
+
+    /**
      * Com està el DNS de la plataforma.
      *
-     * @return array{checked_at:string,ips:array<int,string>,wildcard:bool,missing:array<int,string>,elsewhere:array<int,string>,error:string}
+     * Els noms que el servidor es contesta a si mateix (local) no es poden
+     * comprovar des d'aquí i no donen cap avís.
+     *
+     * @return array{checked_at:string,ips:array<int,string>,wildcard:bool,missing:array<int,string>,elsewhere:array<int,string>,local:array<int,string>,error:string}
      */
     public static function status(?string $root = null, bool $fresh = false): array
     {
         $root = $root ?? CROS_ROOT;
         $buit = ['checked_at' => '', 'ips' => [], 'wildcard' => true,
-            'missing' => [], 'elsewhere' => [], 'error' => ''];
+            'missing' => [], 'elsewhere' => [], 'local' => [], 'error' => ''];
         if (!$fresh) {
             // Com amb el certificat: el tauler ensenya l'últim repàs i no es
             // posa a preguntar noms mentre algú espera una pàgina.
@@ -79,9 +100,13 @@ class Dns
         $principal = Platform::domain($root);
         $estat = $buit;
         $estat['checked_at'] = date('Y-m-d H:i:s');
-        $estat['ips'] = self::ips($principal);
+        $propies = self::ips($principal);
+        $estat['ips'] = self::outside($propies);
         if ($estat['ips'] === []) {
-            $estat['error'] = 'El domini ' . $principal . ' no resol enlloc.';
+            $estat['error'] = $propies !== []
+                ? 'Aquest servidor es contesta a si mateix el nom ' . $principal . ' (' . implode(', ', $propies) . ', de l\'/etc/hosts), '
+                    . 'i així no es pot comprovar el DNS. Traieu ' . $principal . ' de la línia 127.0.1.1 de l\'/etc/hosts.'
+                : 'El domini ' . $principal . ' no resol enlloc.';
             Settings::set('platform_dns_status', json_encode($estat, JSON_UNESCAPED_UNICODE));
 
             return $estat;
@@ -92,8 +117,11 @@ class Dns
         $estat['wildcard'] = self::ips($inventat) !== [];
 
         foreach (self::hosts($root) as $host) {
-            $ips = self::ips($host);
-            if ($ips === []) {
+            $totes = self::ips($host);
+            $ips = self::outside($totes);
+            if ($totes !== [] && $ips === []) {
+                $estat['local'][] = $host;
+            } elseif ($ips === []) {
                 $estat['missing'][] = $host;
             } elseif (array_intersect($ips, $estat['ips']) === []) {
                 // Resol, però cap a un altre lloc: sol ser un registre vell que

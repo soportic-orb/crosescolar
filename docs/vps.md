@@ -774,6 +774,12 @@ Al tauler hi surt un avís quan:
 
 Les preguntes es fan al DNS de debò i no al sistema a propòsit: l'`/etc/hosts`
 del servidor sol tenir el seu propi nom apuntat a `127.0.1.1` i això despista.
+Amb systemd-resolved, però, el resolutor local també contesta el que diu
+l'`/etc/hosts`: si el servidor es diu com un dels dominis (per exemple
+`127.0.1.1 crosescolar.cat crosescolar`), aquell nom li surt com a `127.0.1.1`.
+El tauler no ho pren per un altre servidor i no avisa; l'ordre de sota ho marca
+com «ho diu l'/etc/hosts». Per poder-lo comprovar, deixeu a la línia només el
+nom curt (`127.0.1.1 crosescolar`).
 
 ```bash
 sudo -u www-data php tools/platform.php dns

@@ -1105,6 +1105,23 @@ try {
         str_contains($web('GET', '/')['body'], 'no existeixen al DNS')
         || str_contains($web('GET', '/')['body'], 'Adreces que no existeixen'));
 
+    // El servidor es contesta a si mateix un nom (l'/etc/hosts, 127.0.1.1):
+    // no ve del DNS i no vol dir que apunti a un altre servidor.
+    $local = $zona;
+    $local['crosescolar.example'] = ['127.0.1.1'];
+    Dns::using(static fn (string $host): array => $local[$host] ?? []);
+    $dns = Dns::status($site, true);
+    check('Un nom que l\'/etc/hosts apunta al mateix servidor no es pren per un altre servidor',
+        !in_array('crosescolar.example', $dns['elsewhere'], true) && !in_array('crosescolar.example', $dns['missing'], true),
+        implode(', ', $dns['elsewhere']));
+    check('Sinó que es diu que no es pot comprovar des d\'aquí', in_array('crosescolar.example', $dns['local'], true));
+    check('I el tauler no avisa de res', !str_contains($web('GET', '/')['body'], 'Adreces que apunten a un altre servidor'));
+    $local['crosescolar.test'] = ['127.0.1.1'];
+    Dns::using(static fn (string $host): array => $local[$host] ?? []);
+    $dns = Dns::status($site, true);
+    check('Si és el domini principal, es diu què cal tocar de l\'/etc/hosts',
+        str_contains($dns['error'], '/etc/hosts') && $dns['elsewhere'] === [], $dns['error']);
+
     // I si el domini no resol enlloc, no s'inventa res.
     Dns::using(static fn (string $host): array => []);
     $dns = Dns::status($site, true);

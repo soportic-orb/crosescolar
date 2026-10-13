@@ -3,6 +3,16 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.52.0] — 2026-10-13
+
+### Corregit
+- **Falsa alarma «Adreces que apunten a un altre servidor»** quan el servidor
+  es diu com un dels dominis: l'`/etc/hosts` hi posa el nom apuntat a
+  `127.0.1.1` i el resolutor local (systemd-resolved) el contesta abans de
+  preguntar al DNS. Una resposta del mateix servidor ja no es pren per un altre
+  servidor; `php tools/platform.php dns` la marca i diu com arreglar-ho, i si és
+  el domini principal el tauler explica què cal tocar de l'`/etc/hosts`.
+
 ## [1.51.0] — 2026-10-13
 
 ### Corregit
