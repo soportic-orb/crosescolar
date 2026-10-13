@@ -3,6 +3,27 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.51.0] — 2026-10-13
+
+### Corregit
+- **Els enviaments programats no sortien als servidors instal·lats amb
+  l'instal·lador**: no posava la feina dels enviaments al cron (només la
+  vigilància, les còpies, el repàs i la purga), i el panell avisava que «el cron
+  dels enviaments no passa». Ara l'hi posa.
+- `tools/platform.php` acaba amb error, i no com si hagués anat bé, quan no hi
+  ha cap plataforma configurada.
+
+### Afegit
+- **`tools/instalar-cron.sh`**: posa (o torna a posar) totes les feines
+  automàtiques al cron amb una sola ordre, com a root:
+  `sudo bash /var/www/crosescolar/tools/instalar-cron.sh`. No toca cap altra
+  línia del cron, es pot repetir i, en acabar, fa la primera passada dels
+  enviaments. Per als servidors que ja funcionen, és l'únic que cal fer.
+- L'avís del panell quan el cron dels enviaments no passa dona aquesta ordre,
+  amb la carpeta del servidor.
+- **«Envia'l ara»** a l'editor d'un enviament programat: surt al moment, sense
+  esperar l'hora ni el cron.
+
 ## [1.50.0] — 2026-10-13
 
 ### Afegit

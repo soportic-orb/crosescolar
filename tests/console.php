@@ -2768,6 +2768,29 @@ try {
     check('Només a les administradores dels webs del domini que envia',
         $rebran === $esperats && $rebran !== [], implode(', ', $rebran) . ' vs ' . implode(', ', $esperats));
 
+    // Si el cron no passa, un programat no surt sol: el panell ho diu, dona
+    // l'ordre per arreglar-ho i deixa enviar-lo ara.
+    $web('POST', '/enviaments/nou', ['_token' => $token($web('GET', '/enviaments')['body']), 'subject' => 'Sense cron', 'template_id' => '', 'domain' => 'crosescolar.test']);
+    $senseCronId = (int) Db::val("SELECT id FROM platform_mailings WHERE kind = 'mail' ORDER BY id DESC LIMIT 1", [], 0);
+    $api('POST', '/enviaments/' . $senseCronId . '/envia', ['audience' => 'instances', 'instance_status' => 'active', 'domain' => 'crosescolar.test',
+        'when' => 'later', 'date' => date('Y-m-d', strtotime('+1 day')), 'time' => '09:00'], $csrf);
+    Db::q('INSERT INTO settings (k, v) VALUES (:k, :v) ON DUPLICATE KEY UPDATE v = VALUES(v)',
+        ['k' => 'platform_mailout_tick', 'v' => date('Y-m-d H:i:s', time() - 3600)]);
+    $llistaSenseCron = $web('GET', '/enviaments');
+    check('Sense cron, la llista diu quina ordre l\'arregla',
+        str_contains($llistaSenseCron['body'], 'El cron dels enviaments no passa') && str_contains($llistaSenseCron['body'], 'tools/instalar-cron.sh'));
+    $editorSenseCron = $web('GET', '/enviaments/' . $senseCronId . '/editar');
+    check('I el programat avisa que no sortirà sol i es pot enviar ara',
+        str_contains(text($editorSenseCron['body']), 'no sortirà sol') && str_contains($editorSenseCron['body'], 'value="start_now"'));
+    $ara = $web('POST', '/enviaments/' . $senseCronId . '/accio', ['_token' => $token($editorSenseCron['body']), 'action' => 'start_now']);
+    check('«Envia\'l ara» l\'envia sense esperar el cron', $ara['status'] === 302
+        && in_array(Db::val('SELECT status FROM platform_mailings WHERE id = :id', ['id' => $senseCronId]), ['sent', 'sending'], true)
+        && (int) Db::val('SELECT COUNT(*) FROM platform_mailing_recipients WHERE mailing_id = :id', ['id' => $senseCronId], 0) > 0,
+        (string) Db::val('SELECT status FROM platform_mailings WHERE id = :id', ['id' => $senseCronId]));
+    $dosCops = $web('POST', '/enviaments/' . $senseCronId . '/accio', ['_token' => $token($web('GET', '/enviaments')['body']), 'action' => 'start_now']);
+    check('I dues vegades no l\'envia dues vegades',
+        (int) Db::val('SELECT COUNT(*) FROM platform_mailing_recipients WHERE mailing_id = :id', ['id' => $senseCronId], 0) === count($rebran));
+
     $sense = $web('POST', '/enviaments/nou', ['_token' => $token($web('GET', '/enviaments')['body']), 'subject' => '', 'template_id' => '', 'domain' => 'crosescolar.test']);
     $senseId = (int) Db::val("SELECT id FROM platform_mailings WHERE kind = 'mail' ORDER BY id DESC LIMIT 1", [], 0);
     $intent = $api('POST', '/enviaments/' . $senseId . '/envia', ['audience' => 'clients', 'domain' => 'crosescolar.test', 'when' => 'now'], $csrf);

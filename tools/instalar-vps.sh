@@ -379,26 +379,9 @@ fi
 
 titol "8/8 · Feines automàtiques i assistent"
 if [ "$ASSAIG" = "0" ]; then
-    CRON="$(mktemp)"
-    crontab -u "$USUARI_WEB" -l 2>/dev/null | grep -v 'tools/platform.php' > "$CRON" || true
-    cat >> "$CRON" <<EOF
-*/15 * * * * cd $ARREL && php tools/platform.php vigilar >/dev/null 2>&1
-0 3 * * *    cd $ARREL && php tools/platform.php copies >/dev/null 2>&1
-30 4 * * *   cd $ARREL && php tools/platform.php repassar >/dev/null 2>&1
-15 5 * * 1   cd $ARREL && php tools/platform.php purgar --de-veritat >/dev/null 2>&1
-EOF
-    crontab -u "$USUARI_WEB" "$CRON"
-    rm -f "$CRON"
-    # La renovació del certificat va al cron de root, no al del servidor web:
-    # renovar demana permisos que el web no ha de tenir mai.
-    CRON_ROOT="$(mktemp)"
-    crontab -l 2>/dev/null | grep -v 'renovar-certificat.sh' > "$CRON_ROOT" || true
-    echo "17 4 * * *   $ARREL/tools/renovar-certificat.sh $ARREL >/dev/null 2>&1" >> "$CRON_ROOT"
-    crontab "$CRON_ROOT"
-    rm -f "$CRON_ROOT"
-    chmod +x "$ARREL/tools/renovar-certificat.sh" 2>/dev/null || true
-    verd "   Vigilància cada quart, còpies a les 3, repàs a les 4:30 i purga els dilluns."
-    verd "   I la renovació del certificat, cada nit, al cron de root."
+    # Les feines són a tools/instalar-cron.sh, que també serveix per posar-les
+    # al dia en un servidor que ja funciona.
+    bash "$ARREL/tools/instalar-cron.sh" --sense-provar --usuari "$USUARI_WEB" "$ARREL" | sed 's/^/   /'
 
     TESTIMONI="$(clau 24)"
     cat > "$ARREL/tenants/instalacio.json" <<EOF

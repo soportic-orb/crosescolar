@@ -128,9 +128,9 @@ $certAvis = ($certificate['checked_at'] ?? '') !== ''
     <?= ($mailoutTick ?? '') === ''
         ? 'la feina dels enviaments no ha passat mai,'
         : 'la feina dels enviaments no passa des del ' . e(dt((string) $mailoutTick)) . ',' ?>
-    i els correus programats o a mig enviar no surten. El cron de <code>www-data</code> ha de fer
-    <code>php tools/platform.php enviaments</code> cada cinc minuts. Mentrestant, es poden enviar a mà
-    des de cada <a href="<?= e(url('/enviaments?filtre=enviant')) ?>">enviament</a>.
+    i els correus programats o a mig enviar no surten. Per arreglar-ho, root ha d'executar una vegada al
+    servidor <code><?= e(\Cros\Platform\Mailout::cronCommand()) ?></code>. Mentrestant, es poden enviar a mà
+    des de cada <a href="<?= e(url('/enviaments')) ?>">enviament</a>.
   </div>
 <?php endif; ?>
 

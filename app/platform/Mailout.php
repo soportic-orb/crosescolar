@@ -773,6 +773,12 @@ class Mailout
         return (string) Settings::get('platform_mailout_tick', '');
     }
 
+    /** L'ordre que posa el cron en aquest servidor (l'ha de fer root). */
+    public static function cronCommand(): string
+    {
+        return 'sudo bash ' . CROS_ROOT . '/tools/instalar-cron.sh';
+    }
+
     /**
      * Cal avisar que el cron no passa? Només si hi ha feina esperant-lo: un
      * programat o un que s'està enviant.

@@ -392,6 +392,24 @@ Proveu-ho:
 
 ## 8. Feines automàtiques
 
+L'instal·lador ja les hi posa. En un servidor que ja funciona (o si el panell
+avisa que **el cron dels enviaments no passa**), n'hi ha prou amb una ordre, com
+a root:
+
+```bash
+sudo bash /var/www/crosescolar/tools/instalar-cron.sh
+```
+
+Deixa les cinc feines al cron de `www-data` i la renovació del certificat al de
+root, sense tocar cap altra línia, i fa la primera passada dels enviaments: el
+que estigui programat i ja toqui surt al moment. Es pot tornar a fer tantes
+vegades com calgui; amb `--assaig` només ensenya què hi posaria.
+
+Els servidors instal·lats abans de la versió 1.51 no tenien la feina dels
+enviaments: si hi heu programat un correu i no surt, és això.
+
+O bé, a mà:
+
 ```bash
 crontab -u www-data -e
 ```

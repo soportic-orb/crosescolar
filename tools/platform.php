@@ -38,7 +38,8 @@ use Cros\Platform\Platform;
 use Cros\Platform\Provisioner;
 
 if (!Platform::configured($root)) {
-    exit("No hi ha cap plataforma configurada: copieu tenants/platform.php.example a tenants/platform.php.\n");
+    fwrite(STDERR, "No hi ha cap plataforma configurada: copieu tenants/platform.php.example a tenants/platform.php.\n");
+    exit(1);
 }
 
 try {

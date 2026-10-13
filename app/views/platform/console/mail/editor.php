@@ -139,9 +139,20 @@ $cfg = [
   </div>
 
   <?php if (!$isTemplate && $mailing['status'] === 'scheduled' && $when): ?>
-    <div class="me-banner">
-      <strong>Programat per al <?= e(dt((string) $mailing['scheduled_at'])) ?>.</strong>
-      Sortirà sol a l'hora. Fins llavors el podeu continuar retocant: s'enviarà l'última versió desada.
+    <div class="me-banner<?= !empty($cronStale) ? ' warn' : '' ?>">
+      <span class="me-banner__text">
+        <strong>Programat per al <?= e(dt((string) $mailing['scheduled_at'])) ?>.</strong>
+        <?php if (!empty($cronStale)): ?>
+          Però el cron dels enviaments no passa, i <b>no sortirà sol</b>. Envieu-lo ara, o feu que root
+          executi <code><?= e(Mailout::cronCommand()) ?></code> al servidor.
+        <?php else: ?>
+          Sortirà sol a l'hora. Fins llavors el podeu continuar retocant: s'enviarà l'última versió desada.
+        <?php endif; ?>
+      </span>
+      <form method="post" action="<?= e(url('/enviaments/' . $id . '/accio')) ?>" data-confirm="Enviar-lo ara mateix, sense esperar l'hora programada?">
+        <?= csrf_field() ?><input type="hidden" name="action" value="start_now">
+        <button class="btn btn--sm" type="submit">Envia'l ara</button>
+      </form>
       <form method="post" action="<?= e(url('/enviaments/' . $id . '/accio')) ?>">
         <?= csrf_field() ?><input type="hidden" name="action" value="unschedule">
         <button class="btn btn--ghost btn--sm" type="submit">Desprograma</button>

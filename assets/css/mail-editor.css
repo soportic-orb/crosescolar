@@ -103,6 +103,9 @@ dialog.ml-dialog::backdrop { background: rgba(24, 37, 29, .45); }
 .me-banner { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 14px; border-radius: 12px; margin-bottom: 12px; font-size: .88rem; background: #e4eef8; color: #1f5480; }
 .me-banner.warn { background: #fdf4e3; color: #7d5a13; }
 .me-banner form { margin: 0 0 0 auto; }
+.me-banner form + form { margin-left: 0; }
+.me-banner__text { flex: 1 1 420px; }
+.me-banner code { overflow-wrap: anywhere; }
 
 .me-grid { display: grid; grid-template-columns: 236px minmax(0, 1fr) 300px; gap: 12px; align-items: start; }
 .me-side { background: var(--a-surface); border-radius: 16px; box-shadow: var(--a-shadow); padding: 12px; position: sticky; top: 74px; max-height: calc(100vh - 90px); overflow: auto; }

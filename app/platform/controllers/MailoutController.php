@@ -134,6 +134,7 @@ class MailoutController extends Controller
             'lists' => MailList::all(),
             'me' => Console::user() ?? [],
             'batch' => Mailout::batchSize(),
+            'cronStale' => Mailout::cronStale(),
             'ai' => [
                 'show' => Ai::enabled(),
                 'text' => Ai::textProviders(),
@@ -329,6 +330,24 @@ class MailoutController extends Controller
         $id = (int) $mailing['id'];
         $back = '/enviaments/' . $id;
         switch ((string) input('action')) {
+            case 'start_now':
+                // Un programat que no pot esperar el cron: surt ara.
+                if (($mailing['status'] ?? '') !== 'scheduled') {
+                    flash('info', 'Aquest enviament ja no està programat.');
+                    break;
+                }
+                try {
+                    $count = Mailout::start($id);
+                    $first = Mailout::sendBatch($id);
+                    Console::log('mailout_send_now', 'mailout', $id);
+                    flash('success', $first['done']
+                        ? 'Enviat a ' . $count . ' ' . ($count === 1 ? 'destinatari' : 'destinataris') . ($first['failed'] ? ', ' . $first['failed'] . ' amb error.' : '.')
+                        : 'En marxa: ha sortit la primera tanda. La resta, amb «Envia una tanda ara» o amb el cron.');
+                } catch (\RuntimeException $e) {
+                    flash('error', $e->getMessage());
+                    $back .= '/editar';
+                }
+                break;
             case 'unschedule':
                 Mailout::unschedule($id);
                 flash('success', 'Desprogramat: torna a ser un esborrany.');

@@ -225,9 +225,10 @@ Altres ordres de la mateixa eina:
 | `php tools/platform.php purgar` | diu quines baixes ja han passat els 90 dies |
 | `php tools/platform.php purgar --de-veritat` | les esborra de debò (base de dades i carpeta) |
 
-Va bé posar `enviaments` al cron cada cinc minuts (és qui envia els correus del
-panell, també els programats), `repassar` un cop al dia i `purgar --de-veritat` un
-cop a la setmana:
+Totes aquestes feines les posa al cron, com a root, `sudo bash tools/instalar-cron.sh`
+(l'instal·lador del servidor ja ho fa). Si es fa a mà: `enviaments` cada cinc minuts
+(és qui envia els correus del panell, també els programats), `repassar` un cop al dia
+i `purgar --de-veritat` un cop a la setmana:
 
 ```
 */5 * * * *  cd /var/www/crosescolar && php tools/platform.php enviaments

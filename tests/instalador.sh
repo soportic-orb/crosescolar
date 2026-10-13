@@ -78,6 +78,27 @@ check "I el de comodí per DNS" "$?"
 grep -q 'sense xifrar' "$SCRIPT"
 check "Sense certificat, avisa que el web va sense xifrar" "$?"
 
+# Les feines automàtiques: les posa tools/instalar-cron.sh, també en un
+# servidor que ja funciona. Hi ha de ser la dels enviaments de correu, que
+# va faltar als servidors instal·lats abans de la 1.51.
+CRONSH="$(dirname "$SCRIPT")/instalar-cron.sh"
+bash -n "$CRONSH" >/dev/null 2>&1
+check "El guió del cron té la sintaxi correcta" "$?"
+
+FEINES="$(bash "$CRONSH" --assaig --usuari www-data /var/www/prova 2>&1)"
+check "I l'assaig ensenya les feines sense tocar res" "$?" "$FEINES"
+for FEINA in enviaments vigilar copies repassar purgar; do
+    echo "$FEINES" | grep -q "cd /var/www/prova && php tools/platform.php $FEINA"
+    check "Hi ha la feina «$FEINA», amb la carpeta del servidor" "$?"
+done
+echo "$FEINES" | grep -q '^\*/5 .*enviaments'
+check "Els enviaments, cada cinc minuts" "$?"
+echo "$FEINES" | grep -q "renovar-certificat.sh /var/www/prova"
+check "I la renovació del certificat, al cron de root" "$?"
+
+grep -q 'tools/instalar-cron.sh' "$SCRIPT"
+check "L'instal·lador posa les feines amb aquest mateix guió" "$?"
+
 rm -rf "$TEMP"
 
 echo

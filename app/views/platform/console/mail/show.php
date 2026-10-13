@@ -63,7 +63,7 @@ $eta = $pending > 0 ? (int) ceil($pending / max(1, $perHour) * 60) : 0;
       Quan estigui arreglat, cliqueu <b>Reprèn</b>.</div>
   <?php elseif ($status === 'sending' && $cronStale): ?>
     <div class="alert alert--warning"><strong>El cron dels enviaments no passa</strong>, i les tandes no surten soles.
-      Feu que el cron de <code>www-data</code> faci <code>php tools/platform.php enviaments</code> cada cinc minuts, o envieu-les a mà amb <b>Envia una tanda ara</b>.</div>
+      Envieu-les a mà amb <b>Envia una tanda ara</b>, o feu que root executi <code><?= e(Mailout::cronCommand()) ?></code> al servidor.</div>
   <?php elseif ($status === 'sending'): ?>
     <div class="alert alert--info">No cal tenir aquesta pàgina oberta: les tandes surten soles cada cinc minuts.</div>
   <?php endif; ?>

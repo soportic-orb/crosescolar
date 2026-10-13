@@ -43,9 +43,10 @@ $action = static fn (int $id, string $what, string $label, string $confirm = '',
 
   <?php if ($cronStale): ?>
     <div class="alert alert--warning">
-      <strong>El cron dels enviaments no passa.</strong> Els programats i els que s'estan enviant no surten sols:
-      el cron de <code>www-data</code> ha de fer <code>php tools/platform.php enviaments</code> cada cinc minuts.
-      Mentrestant, podeu enviar-ne tandes a mà des del seguiment de cadascun.
+      <strong>El cron dels enviaments no passa.</strong> Els programats i els que s'estan enviant no surten sols.
+      Per arreglar-ho, root ha d'executar una vegada al servidor <code><?= e(Mailout::cronCommand()) ?></code>,
+      que posa les feines al cron de <code>www-data</code>. Mentrestant, obriu cada enviament: els programats
+      tenen el botó <b>Envia'l ara</b>, i els que s'estan enviant, <b>Envia una tanda ara</b>.
     </div>
   <?php endif; ?>
 
