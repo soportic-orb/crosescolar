@@ -2,6 +2,10 @@
 
 Guia pràctica per a l'equip de l'AFA. Accés: `https://cros.afalagranada.cat/admin`
 
+El menú lateral es pot plegar amb **Redueix el menú** (a baix de tot) o amb **Ctrl+B**:
+queda estret, només amb les icones, i passant-hi per sobre surt el nom de cada apartat.
+El panell ho recorda la propera vegada.
+
 ## Rols
 
 | Rol | Pot fer |

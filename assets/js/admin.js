@@ -2,6 +2,70 @@
 (function () {
   'use strict';
 
+  /* Menú lateral plegable (ordinador) -------------------------------- */
+  // Plegat, només s'hi veuen les icones. Es recorda en aquest navegador, i
+  // cada panell té el seu (el de la plataforma i el de cada web). L'estat ja
+  // l'ha posat un script del <head> abans de pintar, perquè no salti.
+  (function () {
+    var button = document.querySelector('[data-sidebar-toggle]');
+    var side = document.querySelector('.sidebar');
+    if (!button || !side) { return; }
+    var root = document.documentElement;
+    var key = 'menu-plegat:' + (document.body.getAttribute('data-sidebar-key') || 'panell');
+    var label = button.querySelector('[data-sidebar-label]');
+    var tip = null;
+    var paint = function () {
+      var mini = root.classList.contains('sb-mini');
+      var text = mini ? 'Amplia el menú' : 'Redueix el menú';
+      button.setAttribute('aria-expanded', mini ? 'false' : 'true');
+      button.setAttribute('aria-label', text);
+      button.title = text + ' (Ctrl+B)';
+      if (label) { label.textContent = text; }
+    };
+    var hideTip = function () { if (tip) { tip.remove(); tip = null; } };
+    var flip = function () {
+      hideTip();
+      root.classList.add('sb-anim');
+      root.classList.toggle('sb-mini');
+      try { localStorage.setItem(key, root.classList.contains('sb-mini') ? '1' : '0'); } catch (e) { /* sense memòria: només aquesta pàgina */ }
+      window.setTimeout(function () { root.classList.remove('sb-anim'); }, 260);
+      paint();
+    };
+    button.addEventListener('click', flip);
+    document.addEventListener('keydown', function (e) {
+      if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey || (e.key || '').toLowerCase() !== 'b') { return; }
+      // Mentre s'escriu, Ctrl+B és la negreta.
+      if (e.target.closest && e.target.closest('input, textarea, select, [contenteditable="true"], [contenteditable=""]')) { return; }
+      if (window.matchMedia && window.matchMedia('(max-width: 900px)').matches) { return; }
+      e.preventDefault();
+      flip();
+    });
+    // El nom de cada opció, en una etiqueta al costat de la icona.
+    var showTip = function (el) {
+      if (!root.classList.contains('sb-mini')) { return; }
+      // El nom, sense el número del comptador (que ja es veu a la icona).
+      var own = Array.prototype.filter.call(el.childNodes, function (n) { return n.nodeType === 3; })
+        .map(function (n) { return n.nodeValue; }).join(' ').replace(/\s+/g, ' ').trim();
+      var text = el === button ? button.getAttribute('aria-label') : (own || (el.textContent || '').replace(/\s+/g, ' ').trim());
+      if (!text) { return; }
+      hideTip();
+      var r = el.getBoundingClientRect();
+      tip = document.createElement('div');
+      tip.className = 'sidebar-tip';
+      tip.setAttribute('role', 'tooltip');
+      tip.textContent = text;
+      tip.style.left = (r.right + 8) + 'px';
+      tip.style.top = (r.top + r.height / 2) + 'px';
+      document.body.appendChild(tip);
+    };
+    side.addEventListener('mouseover', function (e) { var el = e.target.closest('a.nav-link, [data-sidebar-toggle]'); if (el) { showTip(el); } });
+    side.addEventListener('mouseleave', hideTip);
+    side.addEventListener('focusin', function (e) { var el = e.target.closest('a.nav-link, [data-sidebar-toggle]'); if (el) { showTip(el); } });
+    side.addEventListener('focusout', hideTip);
+    side.addEventListener('scroll', hideTip, { passive: true });
+    paint();
+  })();
+
   /* Menú lateral en mòbil -------------------------------------------- */
   var toggle = document.querySelector('.menu-toggle');
   var sidebar = document.querySelector('.sidebar');

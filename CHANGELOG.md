@@ -3,6 +3,19 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.49.0] — 2026-10-13
+
+### Afegit
+- **El menú lateral es pot plegar**, al panell de superadministració i al panell
+  de cada web. El botó **Redueix el menú**, a baix de tot del menú, el deixa
+  estret (72 px) amb només les icones; **Amplia el menú** el torna a obrir.
+  També es fa amb **Ctrl+B** (⌘+B al Mac).
+- Amb el menú plegat, passar per sobre d'una icona (o arribar-hi amb el
+  teclat) en mostra el nom, els comptadors queden com un punt sobre la icona i
+  els títols dels apartats passen a ser una ratlla.
+- Cada panell recorda com el vau deixar, en aquell navegador, també en tornar a
+  entrar. Al mòbil el menú funciona igual que abans.
+
 ## [1.48.0] — 2026-10-12
 
 ### Canviat

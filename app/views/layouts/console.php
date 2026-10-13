@@ -34,8 +34,9 @@ $marca = static fn (string $key, string $default = ''): string => Site::value($p
 <?php if ($icona = $marca('platform_favicon')): ?>
   <link rel="icon" href="<?= e(upload_url($icona)) ?>">
 <?php endif; ?>
+<script>try{if(localStorage.getItem('menu-plegat:panell')==='1'){document.documentElement.classList.add('sb-mini')}}catch(e){}</script>
 </head>
-<body class="admin">
+<body class="admin" data-sidebar-key="panell">
 <div class="admin-layout">
   <aside class="sidebar">
     <a class="sidebar__brand" href="<?= e(url('/')) ?>">
@@ -83,7 +84,13 @@ $marca = static fn (string $key, string $default = ''): string => Site::value($p
         <?= Icons::svg('eye', 'icon', 18) ?> Veure <?= e($public) ?>
       </a>
     <?php endforeach; ?>
-    <div style="padding:1rem 1.3rem;font-size:.75rem;color:rgba(255,255,255,.4)">Versió <?= e(app_version()) ?></div>
+    <div class="sidebar__foot">
+      <button class="sidebar__toggle" type="button" data-sidebar-toggle aria-expanded="true" title="Redueix el menú (Ctrl+B)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 7l-5 5l5 5"/><path d="M17 7l-5 5l5 5"/></svg>
+        <span data-sidebar-label>Redueix el menú</span>
+      </button>
+      <span class="sidebar__version">Versió <?= e(app_version()) ?></span>
+    </div>
   </aside>
 
   <div class="admin-main">

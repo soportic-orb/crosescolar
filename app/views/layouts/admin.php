@@ -27,8 +27,9 @@ $calPagar = $amagat && !empty($activacio['applies']) && empty($activacio['paid']
 <link rel="stylesheet" href="<?= e(asset('css/fonts.css')) ?>">
 <link rel="stylesheet" href="<?= e(asset('css/admin.css')) ?>">
 <style>:root{--a-green: <?= e(setting('color_primary', '#2f6b3c')) ?>;}</style>
+<script>try{if(localStorage.getItem('menu-plegat:web')==='1'){document.documentElement.classList.add('sb-mini')}}catch(e){}</script>
 </head>
-<body class="admin">
+<body class="admin" data-sidebar-key="web">
 <div class="admin-layout">
   <aside class="sidebar">
     <a class="sidebar__brand" href="<?= e(url('/admin')) ?>">
@@ -102,7 +103,13 @@ $calPagar = $amagat && !empty($activacio['applies']) && empty($activacio['paid']
       <a class="nav-link<?= $isActive('/admin/dades') ? ' is-active' : '' ?>" href="<?= e(url('/admin/dades')) ?>"><?= Icons::svg('download', 'icon', 18) ?> Les meves dades</a>
     <?php endif; ?>
     <a class="nav-link<?= $isActive('/admin/registre') ? ' is-active' : '' ?>" href="<?= e(url('/admin/registre')) ?>"><?= Icons::svg('file', 'icon', 18) ?> Registre</a>
-    <div style="padding:1rem 1.3rem;font-size:.75rem;color:rgba(255,255,255,.4)">Versió <?= e(app_version()) ?></div>
+    <div class="sidebar__foot">
+      <button class="sidebar__toggle" type="button" data-sidebar-toggle aria-expanded="true" title="Redueix el menú (Ctrl+B)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 7l-5 5l5 5"/><path d="M17 7l-5 5l5 5"/></svg>
+        <span data-sidebar-label>Redueix el menú</span>
+      </button>
+      <span class="sidebar__version">Versió <?= e(app_version()) ?></span>
+    </div>
   </aside>
 
   <div class="admin-main">
