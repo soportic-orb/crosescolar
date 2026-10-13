@@ -188,9 +188,8 @@ class SupportController extends Controller
             $department = Support::department((int) $ticket['department_id']);
             $to = (string) ($department['email'] ?? '');
         }
-        $to = $to !== '' ? $to : trim((string) setting('support_notify', ''));
-        $to = $to !== '' ? $to : Platform::notifyEmail();
-        if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
+        $to = Platform::notifyTo($to, (string) setting('support_notify', ''));
+        if ($to === '') {
             return;
         }
         Mailer::sendTemplate(

@@ -184,6 +184,26 @@ class Platform
         return (string) ($mail['notify'] ?? ('hola@' . self::domain($root)));
     }
 
+    /**
+     * On ha d'anar un avís concret: la primera adreça bona de les que es
+     * donen (la del contacte, la del suport…), i si no n'hi ha cap, la
+     * d'avisos del correu del domini i, al final, la del fitxer de la
+     * instal·lació.
+     */
+    public static function notifyTo(string ...$candidates): string
+    {
+        $candidates[] = (string) setting('mail_admin_notify', '');
+        $candidates[] = self::notifyEmail();
+        foreach ($candidates as $email) {
+            $email = trim($email);
+            if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                return $email;
+            }
+        }
+
+        return '';
+    }
+
     /** Hi ha plataforma configurada en aquest servidor? */
     public static function configured(?string $root = null): bool
     {

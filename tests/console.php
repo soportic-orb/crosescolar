@@ -597,6 +597,21 @@ try {
     check('Hi ha el formulari de consulta nova', $nova['status'] === 200);
     check('Amb el departament que ve de fàbrica', str_contains($nova['body'], 'Suport general'));
 
+    // On arriba l'avís: l'adreça que es posa a Opcions del suport.
+    $avisA = static function (string $log, string $subject): string {
+        foreach (array_reverse(explode("\n", $log)) as $line) {
+            if (str_contains($line, '"subject":"' . $subject)) {
+                return (string) (json_decode(substr($line, (int) strpos($line, '{')), true)['to'] ?? '');
+            }
+        }
+
+        return '';
+    };
+    $opcionsSuport = $web('GET', '/configuracio/support');
+    check('A Opcions del suport es diu on arriben els avisos de tiquet nou', str_contains($opcionsSuport['body'], 'name="support_notify"'));
+    $web('POST', '/configuracio/support', array_merge(formData($opcionsSuport['body']), ['support_notify' => 'tiquets@plataforma.test']));
+    check('I es desa', (string) Db::val("SELECT v FROM settings WHERE k = 'support_notify'", [], '') === 'tiquets@plataforma.test');
+
     $departmentId = (int) Db::val("SELECT id FROM support_departments WHERE name = 'Suport general'", [], 0);
     $oberta = $web('POST', '/admin/suport/nou', [
         '_token' => $token($nova['body']),
@@ -625,6 +640,8 @@ try {
 
     $log = (string) @file_get_contents($site . '/tenants/santjordi/storage/logs/app-' . date('Y-m') . '.log');
     check('S\'avisa el suport per correu', str_contains($log, 'Consulta nova ' . $ticket['reference']));
+    check('A l\'adreça dels avisos de tiquet nou', $avisA($log, 'Consulta nova ' . $ticket['reference']) === 'tiquets@plataforma.test',
+        $avisA($log, 'Consulta nova ' . $ticket['reference']));
 
     check('El web del client continua funcionant després de tocar la plataforma',
         $web('GET', '/', [], 'santjordi.crosescolar.test')['status'] === 200);
@@ -672,6 +689,9 @@ try {
     $ticket = Db::one('SELECT * FROM support_tickets WHERE id = :id', ['id' => $ticketId]);
     check('Cosa que la torna a obrir',
         (string) $ticket['status'] === 'open' && (string) $ticket['last_sender'] === 'client');
+    $log = (string) @file_get_contents($site . '/tenants/santjordi/storage/logs/app-' . date('Y-m') . '.log');
+    check('La resposta del client també s\'avisa a la mateixa adreça',
+        $avisA($log, 'Resposta a ' . $ticket['reference']) === 'tiquets@plataforma.test', $avisA($log, 'Resposta a ' . $ticket['reference']));
 
     $tancada = $web('POST', '/admin/suport/' . $ticketId . '/tancar', [
         '_token' => $token($web('GET', '/admin/suport/' . $ticketId, [], 'santjordi.crosescolar.test')['body']),
@@ -1586,6 +1606,14 @@ try {
     $web('POST', '/contacte', $intent['fields'] + ['captcha' => $codi], 'crosescolar.test');
     check('Sense acceptar la privadesa, no es desa', $missatges() === 0);
 
+    // On arriben els avisos: cada domini pot tenir la seva adreça.
+    $configContacte = $web('GET', '/configuracio/contact?domini=crosescolar.test');
+    check('A Contacte es diu on arriben els avisos de contacte nou', str_contains($configContacte['body'], 'name="contact_notify"'));
+    $web('POST', '/configuracio/contact?domini=crosescolar.test',
+        array_merge(formData($configContacte['body']), ['contact_notify' => 'contacte@crosescolar.test']));
+    check('I es desa per a aquell domini',
+        (string) Db::val("SELECT v FROM settings WHERE k = 'site:crosescolar.test:contact_notify'", [], '') === 'contacte@crosescolar.test');
+
     // I ara bé.
     $intent = $envia([]);
     $codi = $respostaCaptcha();
@@ -1602,6 +1630,8 @@ try {
         str_contains(text($web('GET', '/contacte', [], 'crosescolar.test')['body']), 'Hem rebut el vostre missatge'));
     $log = (string) @file_get_contents($site . '/storage/logs/app-' . date('Y-m') . '.log');
     check('I se n\'avisa la plataforma per correu', str_contains($log, 'Contacte: Núria Vidal'));
+    check('A l\'adreça d\'avisos de contacte del domini', $avisA($log, 'Contacte: Núria Vidal') === 'contacte@crosescolar.test',
+        $avisA($log, 'Contacte: Núria Vidal'));
 
     // El mateix codi no serveix dues vegades.
     $intent = $envia([]);

@@ -515,8 +515,8 @@ class SiteController extends Controller
                 ['request' => $request, 'domain' => $domain]
             );
         }
-        $notify = Platform::notifyEmail();
-        if ($notify !== '' && filter_var($notify, FILTER_VALIDATE_EMAIL)) {
+        $notify = Platform::notifyTo();
+        if ($notify !== '') {
             Mailer::sendTemplate(
                 $notify,
                 'Nova sol·licitud: ' . $request['entity'],
@@ -671,8 +671,8 @@ class SiteController extends Controller
      */
     private function notifyContact(array $contact): void
     {
-        $notify = Platform::notifyEmail();
-        if ($notify === '' || !filter_var($notify, FILTER_VALIDATE_EMAIL)) {
+        $notify = Platform::notifyTo((string) setting('contact_notify', ''));
+        if ($notify === '') {
             return;
         }
         Mailer::sendTemplate(

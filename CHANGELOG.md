@@ -3,6 +3,23 @@
 El format segueix [Keep a Changelog](https://keepachangelog.com/ca/1.1.0/)
 i el versionatge semàntic.
 
+## [1.50.0] — 2026-10-13
+
+### Afegit
+- **On arriben els avisos de contacte nou**, al panell de superadministració,
+  a Configuració → Contacte. Cada domini pot tenir la seva adreça; si es deixa
+  buida, els missatges van a l'adreça d'avisos del correu d'aquell domini.
+
+### Canviat
+- **On arriben els avisos de tiquet nou** (Configuració → Opcions del suport)
+  explica què hi arriba: cada tiquet nou i cada resposta d'un client. Un
+  departament amb adreça pròpia continua tenint preferència.
+
+### Corregit
+- Les sol·licituds, els contactes i els tiquets que no tenien adreça pròpia
+  anaven a l'adreça del fitxer de la instal·lació i no feien cas de la que es
+  posa a Configuració → Correu → On arriben els avisos. Ara hi van.
+
 ## [1.49.0] — 2026-10-13
 
 ### Afegit

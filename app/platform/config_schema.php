@@ -97,7 +97,7 @@ return [
         'title' => 'Contacte',
         'icon' => 'mail',
         'per_site' => true,
-        'description' => 'La pàgina amb el formulari de contacte, a /contacte. Els missatges arriben a l\'apartat «Contacte» del panell i, si el correu en té, a l\'adreça d\'avisos.',
+        'description' => 'La pàgina amb el formulari de contacte, a /contacte. Els missatges arriben a l\'apartat «Contacte» del panell i, a més, per correu a l\'adreça que digueu aquí.',
         'fields' => [
             'contact_enabled' => ['label' => 'Ensenyar la pàgina de contacte', 'type' => 'bool', 'default' => '1',
                 'help' => 'Si es desactiva, l\'adreça deixa d\'existir i desapareix del menú, del peu i del mapa del web.'],
@@ -106,6 +106,10 @@ return [
                 'default' => 'Teniu una cursa, una activitat o un dubte sobre la plataforma? Escriviu-nos i us respondrem tan aviat com puguem.'],
             'contact_success' => ['label' => 'Text en enviar el missatge', 'type' => 'textarea', 'rows' => 2,
                 'default' => 'Gràcies! Hem rebut el vostre missatge i us respondrem al correu que ens heu deixat.'],
+            'contact_notify' => ['label' => 'On arriben els avisos de contacte nou', 'type' => 'email', 'default' => '',
+                'placeholder' => 'Buit: l\'adreça d\'avisos del correu',
+                'help' => 'Cada missatge del formulari d\'aquest domini s\'hi envia per correu, i en contestar-lo la resposta va directament a qui l\'ha escrit. '
+                    . 'Si es deixa buit, va a «On arriben els avisos» de Correu.'],
         ],
     ],
 
@@ -145,7 +149,8 @@ return [
                     . 'Si no, els correus poden anar a parar al correu brossa.'],
             'mail_reply_to' => ['label' => 'Adreça per a les respostes', 'type' => 'email', 'default' => ''],
             'mail_admin_notify' => ['label' => 'On arriben els avisos', 'type' => 'email', 'default' => '',
-                'help' => 'Sol·licituds noves i webs que deixen de respondre.'],
+                'help' => 'Sol·licituds noves i webs que deixen de respondre. També els missatges de contacte i els tiquets de suport, '
+                    . 'si a Contacte i a Opcions del suport no se\'ls n\'ha posat una de pròpia.'],
             'mail_transport' => ['label' => 'Com s\'envia', 'type' => 'select', 'default' => 'mail',
                 'options' => ['mail' => 'Funció mail() del servidor', 'smtp' => 'Servidor SMTP', 'log' => 'Assaig: no enviar res']],
             'smtp_host' => ['label' => 'Servidor SMTP', 'type' => 'text', 'default' => '', 'show_if' => 'mail_transport:smtp'],
@@ -327,7 +332,10 @@ return [
             'support_intro' => ['label' => 'Què es diu a dalt de l\'apartat', 'type' => 'textarea', 'rows' => 3,
                 'default' => 'Expliqueu-nos què us passa i us contestarem tan aviat com puguem. Si és sobre una inscripció concreta, digueu-ne el nom i el dorsal.'],
             'support_notify' => ['label' => 'On arriben els avisos de tiquet nou', 'type' => 'email', 'default' => '',
-                'help' => 'Si es deixa buit, van a l\'adreça d\'avisos del correu. Cada departament pot tenir-ne una de pròpia.'],
+                'placeholder' => 'Buit: l\'adreça d\'avisos del correu',
+                'help' => 'Cada tiquet nou i cada resposta d\'un client s\'hi envien per correu, amb l\'enllaç per contestar-lo des del panell. '
+                    . 'Un departament amb adreça pròpia (Suport → Departaments) fa servir la seva. '
+                    . 'Si es deixa buit, van a «On arriben els avisos» de Correu del domini del client.'],
             'support_hours' => ['label' => 'Horari que s\'ensenya al client', 'type' => 'text', 'default' => 'De dilluns a divendres, de 9 a 18 h.'],
         ],
     ],

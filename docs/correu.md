@@ -26,8 +26,9 @@ pestanya per domini. Per a cadascun:
 - **Com s'envia**: *Servidor SMTP*.
 - **Servidor, port, usuari, contrasenya i xifratge**: els que us doni el
   proveïdor de correu d'aquell domini (587 amb TLS, o 465 amb SSL).
-- **On arriben els avisos**: on voleu rebre les sol·licituds i els missatges
-  de contacte d'aquell domini.
+- **On arriben els avisos**: on voleu rebre les sol·licituds d'aquell domini, i
+  també els missatges de contacte i els tiquets de suport si a **Contacte** i a
+  **Opcions del suport** no se'ls ha posat una adreça pròpia.
 - Deseu amb **«Desar i enviar-me una prova»**: envia una prova a l'adreça
   d'avisos d'aquell domini. Comproveu que arriba.
 

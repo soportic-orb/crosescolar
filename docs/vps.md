@@ -548,9 +548,10 @@ client** torna a estar *obert* (és a dir, ens espera); quan **contestem
 nosaltres** queda *respost*. Les notes internes no el mouen de lloc i el client
 no les veu mai.
 
-Els avisos de consulta nova van a l'adreça del **departament**; si no en té, a
-la de **Configuració → Opcions del suport**, i si tampoc, a l'adreça d'avisos
-del correu. La resposta arriba al client per correu i li surt al seu panell amb
+Els avisos de consulta nova (i de cada resposta del client) van a l'adreça del
+**departament**; si no en té, a **Configuració → Opcions del suport → On
+arriben els avisos de tiquet nou**, i si tampoc, a l'adreça d'avisos del correu
+del domini del client (**Configuració → Correu → On arriben els avisos**). La resposta arriba al client per correu i li surt al seu panell amb
 un distintiu al menú.
 
 Esborrar un departament **no** esborra les seves consultes: es queden sense
@@ -658,9 +659,10 @@ rebre novetats. Són obligatoris el nom, el correu, el missatge i la privadesa.
 Els missatges arriben al **Panell de Superadministració → Contacte**, amb la
 xifra dels que queden per llegir al menú. Cadascun diu de quin domini ha vingut.
 S'hi poden marcar com a responsos, arxivar, cercar i esborrar, i des de la fitxa
-es respon per correu amb un clic. Si l'adreça d'avisos del correu està posada,
-també hi arriba un correu per cada missatge; responent-lo, la resposta va
-directament a qui ha escrit.
+es respon per correu amb un clic. A més, cada missatge arriba per correu a
+l'adreça de **Configuració → Contacte → On arriben els avisos de contacte nou**,
+que és de cada domini; si es deixa buida, a l'adreça d'avisos del correu
+d'aquell domini. Responent el correu, la resposta va directament a qui ha escrit.
 
 Per frenar el correu brossa hi ha quatre filtres, i cap no depèn de serveis de
 fora:
